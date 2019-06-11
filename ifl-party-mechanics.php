@@ -19,6 +19,8 @@ global $movie_quotes_db_version;
 global $quotes_csv_file;
 global $user_pairings_table_name;
 global $user_pairings_db_version;
+global $rf_tokens_table_name;
+global $rf_tokens_db_version;
 
 $movie_quotes_table_name = $wpdb->prefix . "movie_quotes";
 $movie_quotes_db_version = "1.0";
@@ -27,7 +29,10 @@ $quotes_csv_file = 'wp-content/plugins/ifl-party-mechanics/quotes.csv';
 $user_pairings_table_name = $wpdb->prefix . "user_pairings";
 $user_pairings_db_version = "1.0";
 
-$IFLPartyMechanics = new IFLPartyMechanics;
+$rf_tokens_table_name = $wpdb->prefix . "rf_tokens";
+$rf_tokens_db_version = "1.0";
+
+    $IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
 
 Class IFLPartyMechanics {  
@@ -76,8 +81,9 @@ Class IFLPartyMechanics {
     public function run($options = array()) {
 
         // for testing movie quotes functions
-        add_action( 'wp_footer', array( $this, 'test_user_pairings_stuff' )  );
+        // add_action( 'wp_footer', array( $this, 'test_user_pairings_stuff' )  );
         // add_action( 'wp_footer', array( $this, 'test_movie_quotes_stuff' )  );
+        add_action( 'wp_footer', array( $this, 'test_rf_tokens_stuff' )  );
 
 
         $this->menu_options = array_merge( $this->defaultOptions, $options );
@@ -568,7 +574,8 @@ Class IFLPartyMechanics {
 
         // $this->drop_movie_quotes_table();
 
-        if ($this->does_movie_quotes_table_exist_in_database()) {
+        global $movie_quotes_table_name;
+        if ($this->does_table_exist_in_database($movie_quotes_table_name)) {
             echo "Movie quotes table exists<br>";
         } else {
             echo "Movie quotes table does not exist, creating movie quotes table<br>";
@@ -577,7 +584,7 @@ Class IFLPartyMechanics {
 
          $this->delete_all_quotes_from_movie_quotes_table();
 
-        if ($this->is_movie_quotes_table_empty()) {
+        if ($this->is_table_empty($movie_quotes_table_name)) {
             echo "Movie quotes table is empty<br>";
             if ($this->does_quotes_csv_file_exist()) {
                 $this->import_movie_quotes_to_database();
@@ -592,14 +599,15 @@ Class IFLPartyMechanics {
     public function test_user_pairings_stuff() {
         // for testing user pairings functions
         // $this->delete_all_pairings_from_user_pairings_table();
-        if ($this->does_user_pairings_table_exist_in_database()) {
+        global $user_pairings_table_name;
+        if ($this->does_table_exist_in_database($user_pairings_table_name)) {
             echo "User pairings table exists<br>";
         } else {
             echo "User pairings table does not exist, creating user pairings table<br>";
             $this->create_user_pairings_table();
         }
 
-        if ($this->is_user_pairings_table_empty()) {
+        if ($this->is_table_empty($user_pairings_table_name)) {
             echo "User pairings table is empty<br>";
         } else {
             echo "User pairings table is not empty<br>";
@@ -608,18 +616,45 @@ Class IFLPartyMechanics {
         echo $this->get_movie_quote_by_pairing(1, 2) . "<br>";
     }
 
+    public function test_rf_tokens_stuff() {
+        // for testing rf tokens functions
+
+        // $this->drop_rf_tokens_table();
+
+        global $rf_tokens_table_name;
+        if ($this->does_table_exist_in_database($rf_tokens_table_name)) {
+            echo "RF tokens table exists<br>";
+        } else {
+            echo "RF tokens table does not exist, creating RF tokens table<br>";
+            $this->create_rf_tokens_table();
+        }
+
+        if ($this->is_table_empty($rf_tokens_table_name)) {
+            echo "RF tokens table is empty<br>";
+        } else {
+            echo "RF tokens table is not empty<br>";
+        }
+
+        echo $this->get_rf_token_ids_by_user_id("0") . "<br>";
+        echo $this->get_user_id_from_rf_token_id("5") . "<br>";
+        echo $this->add_rf_token_id_and_user_id_to_rf_tokens_table("7", "0") . "<br>";
+    }
+
     public function does_movie_quotes_table_exist_in_database() {
         global $wpdb;
         global $movie_quotes_table_name;
         return $this->does_table_exist_in_database($movie_quotes_table_name);
     }
-
     public function does_user_pairings_table_exist_in_database() {
         global $wpdb;
         global $user_pairings_table_name;
         return $this->does_table_exist_in_database($user_pairings_table_name);
     }
-
+    public function does_rf_tokens_table_exist_in_database() {
+        global $wpdb;
+        global $rf_tokens_table_name;
+        return $this->does_table_exist_in_database($rf_tokens_table_name);
+    }
     public function does_table_exist_in_database($table_name) {
         global $wpdb;
         $mytables=$wpdb->get_results("SHOW TABLES");
@@ -635,15 +670,18 @@ Class IFLPartyMechanics {
     }
 
     public function is_movie_quotes_table_empty() {
-        global $wpdb;
         global $movie_quotes_table_name;
         return $this->is_table_empty($movie_quotes_table_name);
     }
 
     public function is_user_pairings_table_empty() {
-        global $wpdb;
         global $user_pairings_table_name;
         return $this->is_table_empty($user_pairings_table_name);
+    }
+
+    public function is_rf_tokens_table_empty() {
+        global $rf_tokens_table_name;
+        return $this->is_table_empty($rf_tokens_table_name);
     }
 
     public function is_table_empty($table_name) {
@@ -691,6 +729,28 @@ Class IFLPartyMechanics {
         add_option( 'user_pairings_db_version', $user_pairings_db_version );
     }
 
+    public function create_rf_tokens_table() {
+        global $wpdb;
+        global $rf_tokens_table_name;
+        global $rf_tokens_db_version;
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        // I had wanted to use token_id as the primary key but the table was not getting created,
+        // even when I switched from tinytext to varchar(10)
+        $sql = "CREATE TABLE $rf_tokens_table_name (
+              id mediumint(9) NOT NULL AUTO_INCREMENT,
+              token_id tinytext NOT NULL,
+              user_id tinytext NOT NULL,
+              PRIMARY KEY  (id)
+            ) $charset_collate;";
+
+        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+        dbDelta( $sql );
+
+        add_option( 'rf_tokens_db_version', $rf_tokens_db_version );
+    }
+
     public function delete_all_quotes_from_movie_quotes_table() {
         global $wpdb;
         global $movie_quotes_table_name;
@@ -703,21 +763,30 @@ Class IFLPartyMechanics {
         $this->delete_all_rows_from_table($user_pairings_table_name);
     }
 
+    public function delete_all_tokens_from_rf_tokens_table() {
+        global $wpdb;
+        global $rf_tokens_table_name;
+        $this->delete_all_rows_from_table($rf_tokens_table_name);
+    }
+
     public function delete_all_rows_from_table($table_name) {
         global $wpdb;
         $result = $wpdb->query("TRUNCATE TABLE " . $table_name);
     }
 
     public function drop_movie_quotes_table() {
-        global $wpdb;
         global $movie_quotes_table_name;
         $this->drop_table($movie_quotes_table_name);
     }
 
     public function drop_user_pairings_table() {
-        global $wpdb;
         global $user_pairings_table_name;
         $this->drop_table($user_pairings_table_name);
+    }
+
+    public function drop_rf_tokens_table() {
+        global $rf_tokens_table_name;
+        $this->drop_table($rf_tokens_table_name);
     }
 
     public function drop_table($table_name) {
@@ -765,7 +834,7 @@ Class IFLPartyMechanics {
     public function get_movie_quote_by_id($id) {
         global $wpdb;
         global $movie_quotes_table_name;
-        if (!$this->does_movie_quotes_table_exist_in_database() || $this->is_movie_quotes_table_empty()) {
+        if (!$this->does_table_exist_in_database($movie_quotes_table_name) || $this->is_movie_quotes_table_empty()) {
             return null;
         } else {
             $result = $wpdb->get_results("SELECT * FROM " . $movie_quotes_table_name . " WHERE id = " . $id);
@@ -788,7 +857,7 @@ Class IFLPartyMechanics {
         $users = [$user_id_1, $user_id_2];
         sort($users);
         $pairing_string = "{$users[0]}-{$users[1]}";
-        if (!$this->does_user_pairings_table_exist_in_database()) {
+        if (!$this->does_table_exist_in_database($user_pairings_table_name)) {
             return null;
         }
         $id = $this->get_id_by_pairing($pairing_string);
@@ -818,6 +887,63 @@ Class IFLPartyMechanics {
         );
         $result = $wpdb->get_results("SELECT * FROM " . $user_pairings_table_name . " WHERE pairing = '" . $pairing_string . "'");
         return $result[0]->id;
+    }
+
+    public function get_user_id_from_rf_token_id($token_id) {
+        // if the token ID is in the tokens table, returns associated user ID as string,
+        // otherwise returns an error message
+        global $wpdb;
+        global $rf_tokens_table_name;
+        if (!$this->does_table_exist_in_database($rf_tokens_table_name)) {
+            return "RF tokens table does not exist in database";
+        }
+        $result = $wpdb->get_results("SELECT user_id FROM " . $rf_tokens_table_name . " WHERE token_id = '" . $token_id . "'");
+        if ($wpdb->num_rows == 0) {
+            return "Token id " . $token_id . " not found in database";
+        } else {
+            return $result[0]->user_id;
+        }
+    }
+
+    public function get_rf_token_ids_by_user_id($user_id) {
+        // if the user ID is in the tokens table, returns associated token ID(s) as ", "-separated string,
+        // otherwise returns an error message
+        global $wpdb;
+        global $rf_tokens_table_name;
+        if (!$this->does_table_exist_in_database($rf_tokens_table_name)) {
+            return "RF tokens table does not exist in database";
+        }
+        $result = $wpdb->get_results("SELECT token_id FROM " . $rf_tokens_table_name . " WHERE user_id = '" . $user_id . "'");
+        if ($wpdb->num_rows == 0) {
+            return "No tokens found for user ID " . $user_id;
+        } else {
+            return join(", ", array_map(function($token) {return $token->token_id;}, $result));
+        }
+    }
+
+    public function add_rf_token_id_and_user_id_to_rf_tokens_table($token_id, $user_id) {
+        global $wpdb;
+        global $rf_tokens_table_name;
+        if (!$this->does_table_exist_in_database($rf_tokens_table_name)) {
+            return "RF tokens table does not exist in database";
+        }
+        $result = $wpdb->get_results("SELECT * FROM " . $rf_tokens_table_name . " WHERE token_id = '" . $token_id . "'");
+        if ($wpdb->num_rows != 0) {
+            return "Token ID " . $token_id . " is already in the database";
+        }
+        $wpdb->insert(
+            $rf_tokens_table_name,
+            array(
+                'token_id' => $token_id,
+                'user_id' => $user_id,
+            )
+        );
+        $result = $wpdb->get_results("SELECT * FROM " . $rf_tokens_table_name . " WHERE token_id = '" . $token_id . "'");
+        if ($wpdb->num_rows != 0) {
+            return "Token ID " . $token_id . " and user ID " . $user_id . " pairing added to the database";
+        } else {
+            return "Error adding token and user IDs to the database";
+        }
     }
 
     /*

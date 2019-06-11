@@ -25,9 +25,10 @@
 class Movie_Quotes_Controller extends WP_REST_Controller {
   	public function register_routes() {
     	$namespace = 'mint/v1';
-    	$path = 'quote_pair';
+    	$quote_pair_path = 'quote_pair';
+    	$get_user_id_from_token_id_path = 'get_user_id_from_token_id';
 
-    	register_rest_route( $namespace, '/' . $path, [
+    	register_rest_route( $namespace, '/' . $quote_pair_path, [
       	array(
         	'methods'             => 'GET',
         	'callback'            => array( $this, 'get_item' ),
@@ -39,8 +40,10 @@ class Movie_Quotes_Controller extends WP_REST_Controller {
                 'permission_callback' => array( $this, 'get_items_permissions_check' )
             ),
 
-        ]);     
+        ]);
+
     }
+
     public function get_item($request) {
 
         $fortune = get_option('fortune');
