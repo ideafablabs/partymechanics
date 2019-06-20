@@ -19,8 +19,8 @@ global $movie_quotes_db_version;
 global $quotes_csv_file;
 global $user_pairings_table_name;
 global $user_pairings_db_version;
-global $rf_tokens_table_name;
-global $rf_tokens_db_version;
+global $tokens_table_name;
+global $tokens_db_version;
 
 $movie_quotes_table_name = $wpdb->prefix . "movie_quotes";
 $movie_quotes_db_version = "1.0";
@@ -29,13 +29,13 @@ $quotes_csv_file = 'wp-content/plugins/ifl-party-mechanics/quotes.csv';
 $user_pairings_table_name = $wpdb->prefix . "user_pairings";
 $user_pairings_db_version = "1.0";
 
-$rf_tokens_table_name = $wpdb->prefix . "rf_tokens";
-$rf_tokens_db_version = "1.0";
+$tokens_table_name = $wpdb->prefix . "rf_tokens";
+$tokens_db_version = "1.0";
 
     $IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
 
-Class IFLPartyMechanics {  
+Class IFLPartyMechanics {
 
     // https://www.ibenic.com/creating-wordpress-menu-pages-oop/
 
@@ -43,8 +43,8 @@ Class IFLPartyMechanics {
     private $form_id = '1';
     private $email_id = '9';
     private $event_field_id = '12';
-    private $attendees_list_id = '7';    
-    private $attended_list_id = '16'; 
+    private $attendees_list_id = '7';
+    private $attended_list_id = '16';
 
 
     public $defaultOptions = array(
@@ -71,7 +71,7 @@ Class IFLPartyMechanics {
         'desc' => '', // Description displayed below the title
         'function' => ''
 
-    );      
+    );
     public $menu_options = array();
 
 
@@ -83,7 +83,7 @@ Class IFLPartyMechanics {
         // for testing movie quotes functions
         // add_action( 'wp_footer', array( $this, 'test_user_pairings_stuff' )  );
         // add_action( 'wp_footer', array( $this, 'test_movie_quotes_stuff' )  );
-        add_action( 'wp_footer', array( $this, 'test_rf_tokens_stuff' )  );
+        add_action( 'wp_footer', array( $this, 'test_tokens_stuff' )  );
 
 
         $this->menu_options = array_merge( $this->defaultOptions, $options );
@@ -91,8 +91,8 @@ Class IFLPartyMechanics {
         // Enqueue plugin styles and scripts
         add_action( 'plugins_loaded', array( $this, 'register_iflpm_scripts' ) );
         add_action( 'plugins_loaded', array( $this, 'enqueue_iflpm_scripts' ) );
-        add_action( 'plugins_loaded', array( $this, 'enqueue_iflpm_styles' ) );      
-        add_action( 'plugins_loaded', array( $this, 'register_rest_api' ) );      
+        add_action( 'plugins_loaded', array( $this, 'enqueue_iflpm_styles' ) );
+        add_action( 'plugins_loaded', array( $this, 'register_rest_api' ) );
 
         // Register REST API Controllers
         add_action('rest_api_init', function () {
@@ -121,7 +121,7 @@ Class IFLPartyMechanics {
 
         register_activation_hook( __FILE__, 'iflpm_install' );
         register_activation_hook( __FILE__, 'iflpm_install_data' );
-    }   
+    }
 
     /**
      * Register plugin styles and scripts
@@ -129,42 +129,42 @@ Class IFLPartyMechanics {
     public function register_iflpm_scripts() {
         wp_register_script( 'iflpm-script', plugins_url( 'js/iflpm.js', __FILE__ ), array('jquery'), null, true );
         wp_register_style( 'iflpm-style', plugins_url( 'css/iflpm.css', __FILE__ ) );
-    }   
+    }
     /**
      * Enqueues plugin-specific scripts.
      */
-    public function enqueue_iflpm_scripts() {        
+    public function enqueue_iflpm_scripts() {
         wp_enqueue_script( 'iflpm-script' );
 
-        wp_localize_script( 'iflpm-script', 'iflpm_ajax', array( 'ajax_url' => admin_url('admin-ajax.php'), 'check_nonce' => wp_create_nonce('iflpm-nonce') ) ); 
-    }   
+        wp_localize_script( 'iflpm-script', 'iflpm_ajax', array( 'ajax_url' => admin_url('admin-ajax.php'), 'check_nonce' => wp_create_nonce('iflpm-nonce') ) );
+    }
     /**
      * Enqueues plugin-specific styles.
      */
-    public function enqueue_iflpm_styles() {         
-        wp_enqueue_style( 'iflpm-style' ); 
+    public function enqueue_iflpm_styles() {
+        wp_enqueue_style( 'iflpm-style' );
     }
 
     /**
     * Add Menu Page in Wordpress Admin
     */
     public function wpdocs_register_my_custom_menu_page(){
-        
+
         if( $admin_page_call == '' ) {
             $admin_page_call = array( $this, 'admin_page_call' );
         }
 
-        add_menu_page( 
-            __( 
+        add_menu_page(
+            __(
             'Custom Menu Title', 'textdomain' ),        // Page Title
-            'Exhibition RSVPs',                         // Menu Title   
+            'Exhibition RSVPs',                         // Menu Title
             'manage_options',                           // Required Capability
             'my_custom_menu_page',                      // Menu Slug
             $admin_page_call,                           // Function
             plugins_url( 'myplugin/images/icon.png' ),  // Icon URL
             6
-        ); 
-    }    
+        );
+    }
 
     /**
     * Build HTML for admin page.
@@ -180,10 +180,10 @@ Class IFLPartyMechanics {
     public function ifl_admit_guest() {
 
         // check_ajax_referer( 'guestlistadd_nonce', 'security' );
-        
+
         $iflpm_entry_id = $_POST['entry_id'];
         $iflpm_attendee_id = $_POST['attendee_id'];
-                
+
         $entry = GFAPI::get_entry($iflpm_entry_id);
         $attended_list = unserialize($entry[$this->menu_options['attended_list_id']]);
 
@@ -192,16 +192,16 @@ Class IFLPartyMechanics {
         $serialized_attended_list = serialize($attended_list);
 
         $result = GFAPI::update_entry_field( $iflpm_entry_id, $this->menu_options['attended_list_id'], $serialized_attended_list );
-        
+
         // echo 'Entry: '.$iflpm_entry_id ."\n";
         // echo 'Attendee: '.$iflpm_attendee_id ."\n";
-        // echo 'Attended List'."\n";       
+        // echo 'Attended List'."\n";
         // pr($attended_list);
-        // echo 'Serialized Attended List'."\n";        
+        // echo 'Serialized Attended List'."\n";
         // pr($serialized_attended_list);
         // echo 'Entry: '.$iflpm_entry_id ."\n";
         // echo 'Entry: '.$iflpm_entry_id ."\n";
-      
+
         // pr($result);
 
         die();
@@ -213,7 +213,7 @@ Class IFLPartyMechanics {
     public function ifl_admit_all() {
 
         // check_ajax_referer( 'iflpm-nonce', 'security' );
-        
+
         $iflpm_entry_id = $_POST['entry_id'];
         // $iflpm_attended_id = $_POST['attended_id'];
         echo 'Admitting all for ';
@@ -229,7 +229,7 @@ Class IFLPartyMechanics {
         // pr($attendee_list);
 
         foreach ($attendee_list as $key => $attendee) {
-            
+
             // $iflpm_attended_id = $this->menu_options['attended_list_id'].'.'.$key;
             // $entry[$iflpm_attended_id] = 1;
 
@@ -240,7 +240,7 @@ Class IFLPartyMechanics {
         $serialized_attended_list = serialize($attended_list);
 
         $result = GFAPI::update_entry_field( $iflpm_entry_id, $this->menu_options['attended_list_id'], $serialized_attended_list );
-        
+
         die();
 
     }
@@ -251,9 +251,9 @@ Class IFLPartyMechanics {
     public function ifl_import_members($event_name) {
 
         global $wpdb;
-        
+
         $users = $wpdb->get_results( "SELECT first_name, last_name FROM mm_user_data WHERE status = 1 OR status = 9 ORDER BY first_name" );
-        
+
         // pr($users);
 
         // echo count($users);
@@ -262,20 +262,20 @@ Class IFLPartyMechanics {
         $active_member_list = array();
 
         foreach ($users as $key => $user) {
-            
+
             $active_member_list[0]['First Name'] = $user->first_name;
             $active_member_list[0]['Last Name'] = $user->last_name;
 
             $entries[$key] = array(
-                'form_id' => $this->menu_options['form_id'], 
+                'form_id' => $this->menu_options['form_id'],
                 '9' => 'chico@ideafablabs.com',
                 $this->menu_options['event_field_id'] => $event_name,
                 // $this->attendees_list_id => $active_member_list
                 $this->menu_options['attendees_list_id'] => serialize($active_member_list)
             );
-            
-        }       
-        // pr($entries);       
+
+        }
+        // pr($entries);
 
         $result = GFAPI::add_entries( $entries );
 
@@ -286,7 +286,7 @@ Class IFLPartyMechanics {
     * Ex: [ticketform form="44" event="Event Title Goes Here" price="16.00"]
     */
     public function ifl_display_purchase_form( $atts ) {
-        extract( shortcode_atts( array( 
+        extract( shortcode_atts( array(
             'form' => $this->menu_options['form_id'],
             'event' => $this->menu_options['form_event_title'],
             'price' => $this->menu_options['form_price'],
@@ -294,7 +294,7 @@ Class IFLPartyMechanics {
             'method' => $this->menu_options['form_payment_method']
         ), $atts ) );
 
-        $field_values = array( 
+        $field_values = array(
             'event' => $event,
             'price' => $price,
             'method' => $method,
@@ -320,7 +320,7 @@ Class IFLPartyMechanics {
     * Ex: [registrationform form="1" event="Event Title Goes Here" price="16.00"]
     */
     public function ifl_display_registration_form( $atts ) {
-        extract( shortcode_atts( array( 
+        extract( shortcode_atts( array(
             'form' => $this->menu_options['form_id'],
             // 'reader_id' => $this->menu_options['reader_id'],
             // 'event' => $this->menu_options['form_event_title'],
@@ -329,7 +329,7 @@ Class IFLPartyMechanics {
             // 'method' => $this->menu_options['form_payment_method']
         ), $atts ) );
 
-        $field_values = array( 
+        $field_values = array(
             // 'event' => $event,
             // 'price' => $price,
             // 'reader_id' => $reader_id,
@@ -337,7 +337,7 @@ Class IFLPartyMechanics {
         );
         // echo '<p>[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']</p>';
 
-        
+
         $content = "<p>";
         // Pass everything on to Gravity Forms
 
@@ -359,7 +359,7 @@ Class IFLPartyMechanics {
     * Ex: [guestlist form="44" event="Event Title Goes Here" ]
     */
     public function ifl_display_guest_list( $atts ) {
-        extract( shortcode_atts( array( 
+        extract( shortcode_atts( array(
             'form_id' => $this->menu_options['form_id'],
             'event' => $this->menu_options['form_event_title']
             // 'admin' => $this->menu_options['form_admin_mode'],
@@ -367,8 +367,8 @@ Class IFLPartyMechanics {
         ), $atts ) );
 
         // echo '<p>[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']</p>';
-        
-        ///TODO: 
+
+        ///TODO:
         //  Include members in listing.
         //  Include entry ID for confirmation.
         //  Sorting list. Either first or during search.
@@ -376,10 +376,10 @@ Class IFLPartyMechanics {
         // https://www.sitepoint.com/how-to-use-ajax-in-wordpress-a-real-world-example/
 
         $nonce = wp_create_nonce("guestlistadd_nonce");
-                
+
         $email_id = $this->menu_options['email_id'];
         $event_field_id = $this->menu_options['event_field_id'];
-        $attendees_list_id = $this->menu_options['attendees_list_id'];    
+        $attendees_list_id = $this->menu_options['attendees_list_id'];
         $attended_list_id = $this->menu_options['attended_list_id'];
 
         // This adds an offset so the id number will always be way beyond the other expected form field IDs.
@@ -399,12 +399,12 @@ Class IFLPartyMechanics {
         // pr($entries);
 
         $admit_list_html .=  '<h2>'.$event_name.'</h2>';
-        $admit_list_html .= '<div class="row">';        
-        $admit_list_html .= '<div class="member-list ifl-admit-guest small-12 columns">';       
+        $admit_list_html .= '<div class="row">';
+        $admit_list_html .= '<div class="member-list ifl-admit-guest small-12 columns">';
         $admit_list_html .= '<h2>'.$event.'</h2>';
         $admit_list_html .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\'">X</button></div>';
         $admit_list_html .= '<ul class="member_select_list">';
-          
+
          // pr($entries[3]);
 
         $attendee_count = 0;
@@ -413,7 +413,7 @@ Class IFLPartyMechanics {
         foreach ($entries as $entry_key => $entry) {
             // echo $entry['3.3']." - ".$entry['3.6']." <br />";
              // pr(unserialize($entry['7']));
-             // pr(unserialize($entry['17']));        
+             // pr(unserialize($entry['17']));
 
              // $entry_id = $entry['id'];
 
@@ -425,7 +425,7 @@ Class IFLPartyMechanics {
 
             // https://www.sitepoint.com/how-to-use-ajax-in-wordpress-a-real-world-example/
 
-            // $formlink = 'http://www.ideafablabs.com/confirm-admit?attendee_id='.$attendee_id.'&membername='.urlencode($attendee_name);     
+            // $formlink = 'http://www.ideafablabs.com/confirm-admit?attendee_id='.$attendee_id.'&membername='.urlencode($attendee_name);
             // pr($entry);
 
             $admit_list_html .= '<li data-sort="'.$attendee_names[0]['First Name'].'">
@@ -434,16 +434,16 @@ Class IFLPartyMechanics {
                     // <a class="admit-all" data-entry="'.$entry['id'].'">Admit All</a>
 
                     foreach ($attendee_names as $attendee_key => $attendee) {
-                        
+
                         $attended_key = $attended_list_id.'.'.$attendee_key;
                         if ($attendee_key == 0) $attended_key = $attended_list_id;
-                        
+
                         if ($entry[$attended_key] == 1) {
                             $admitted = " admitted";
                             $admitted_count++;
                         } else {
                             $admitted = "";
-                        }               
+                        }
 
                         $admit_list_html .= '<a class="admit-button'.$admitted.'"  data-entry="'
                         .$entry['id'].'" data-attended="'.$attended_key.'">'
@@ -452,8 +452,8 @@ Class IFLPartyMechanics {
                         // pr($attendee);
 
                         $attendee_count++;
-                    }                
-                
+                    }
+
                 $admit_list_html .= '<span class="entry-email">'.$entry[$email_id].' - <span class="entry-id">#'.$entry['id'].'</span></span>
 
                 </div>
@@ -465,7 +465,7 @@ Class IFLPartyMechanics {
 
         // pr($this->menu_options['form_id']);
         // pr($event_name);
-        
+
         return $admit_list_html;
 
     }
@@ -493,10 +493,10 @@ Class IFLPartyMechanics {
 
 
     /**
-    * Reset all the attendee statuses for an event. 
+    * Reset all the attendee statuses for an event.
     */
     public function reset_attendees($event_name) {
-              
+
         $search_criteria['field_filters'][] = array( 'key' => $event_field_id, 'value' => $event_name );
         $sorting = array();
         $paging = array( 'offset' => 0, 'page_size' => 900 );
@@ -506,7 +506,7 @@ Class IFLPartyMechanics {
             $entry[$this->attended_list_id] = "";
         }
         // $result = GFAPI::update_entry_field( $iflpm_entry_id, $iflpm_attended_id, 1 );
-        
+
         $result = GFAPI::update_entries($entries);
 
         pr("All entries purged.");
@@ -515,7 +515,7 @@ Class IFLPartyMechanics {
     }
 
     public function register_rest_api() {
-        
+
         register_meta('user', 'fortune', [
             'type' => 'string',
             'single' => true,
@@ -531,16 +531,16 @@ Class IFLPartyMechanics {
                 'methods'  => 'GET',
                 'callback' => array($this,'get_fortune')
             ));
-            
+
             // register_rest_field( 'user', 'fortune', array(
          //        'get_callback' => array( $this, 'get_user_fortune' ),
          //        'update_callback' => array( $this, 'add_user_fortune' ),
          //        'schema' => null
-      //    ));        
-            
+      //    ));
+
         } );
 
-            
+
     }
 
     public function get_fortune($request) {
@@ -548,7 +548,7 @@ Class IFLPartyMechanics {
         $fortune = get_user_meta( $request[ 'id' ], 'fortune', true );
         if (empty($fortune)) {
             return new WP_Error( 'empty_meta', 'there is no fortune in this cookie', array('status' => 404) );
-        }      
+        }
 
         $response = new WP_REST_Response($fortune);
         $response->set_status(200);
@@ -556,11 +556,11 @@ Class IFLPartyMechanics {
         return $response;
     }
 
-    public function get_user_fortune( $user, $field_name, $request ) { 
+    public function get_user_fortune( $user, $field_name, $request ) {
         return get_user_meta( $user[ 'id' ], $field_name, true );
     }
 
-    public function add_user_fortune( $user, $meta_value ) { 
+    public function add_user_fortune( $user, $meta_value ) {
         $fortune = get_user_meta( $user[ 'id' ], 'fortune', false );
         if( $fortune ) {
             update_user_meta( $user[ 'id' ], 'fortune', $meta_value );
@@ -616,28 +616,28 @@ Class IFLPartyMechanics {
         echo $this->get_movie_quote_by_pairing(1, 2) . "<br>";
     }
 
-    public function test_rf_tokens_stuff() {
-        // for testing rf tokens functions
+    public function test_tokens_stuff() {
+        // for testing tokens functions
 
-        // $this->drop_rf_tokens_table();
+        // $this->drop_tokens_table();
 
-        global $rf_tokens_table_name;
-        if ($this->does_table_exist_in_database($rf_tokens_table_name)) {
-            echo "RF tokens table exists<br>";
+        global $tokens_table_name;
+        if ($this->does_table_exist_in_database($tokens_table_name)) {
+            echo "Tokens table exists<br>";
         } else {
-            echo "RF tokens table does not exist, creating RF tokens table<br>";
-            $this->create_rf_tokens_table();
+            echo "Tokens table does not exist, creating Tokens table<br>";
+            $this->create_tokens_table();
         }
 
-        if ($this->is_table_empty($rf_tokens_table_name)) {
-            echo "RF tokens table is empty<br>";
+        if ($this->is_table_empty($tokens_table_name)) {
+            echo "Tokens table is empty<br>";
         } else {
-            echo "RF tokens table is not empty<br>";
+            echo "Tokens table is not empty<br>";
         }
 
-        echo $this->get_rf_token_ids_by_user_id("0") . "<br>";
-        echo $this->get_user_id_from_rf_token_id("5") . "<br>";
-        echo $this->add_rf_token_id_and_user_id_to_rf_tokens_table("7", "0") . "<br>";
+        echo $this->get_token_ids_by_user_id("0") . "<br>";
+        echo $this->get_user_id_from_token_id("5") . "<br>";
+        echo $this->add_token_id_and_user_id_to_tokens_table("7", "0") . "<br>";
     }
 
     public function does_movie_quotes_table_exist_in_database() {
@@ -650,10 +650,10 @@ Class IFLPartyMechanics {
         global $user_pairings_table_name;
         return $this->does_table_exist_in_database($user_pairings_table_name);
     }
-    public function does_rf_tokens_table_exist_in_database() {
+    public function does_tokens_table_exist_in_database() {
         global $wpdb;
-        global $rf_tokens_table_name;
-        return $this->does_table_exist_in_database($rf_tokens_table_name);
+        global $tokens_table_name;
+        return $this->does_table_exist_in_database($tokens_table_name);
     }
     public function does_table_exist_in_database($table_name) {
         global $wpdb;
@@ -679,9 +679,9 @@ Class IFLPartyMechanics {
         return $this->is_table_empty($user_pairings_table_name);
     }
 
-    public function is_rf_tokens_table_empty() {
-        global $rf_tokens_table_name;
-        return $this->is_table_empty($rf_tokens_table_name);
+    public function is_tokens_table_empty() {
+        global $tokens_table_name;
+        return $this->is_table_empty($tokens_table_name);
     }
 
     public function is_table_empty($table_name) {
@@ -729,16 +729,16 @@ Class IFLPartyMechanics {
         add_option( 'user_pairings_db_version', $user_pairings_db_version );
     }
 
-    public function create_rf_tokens_table() {
+    public function create_tokens_table() {
         global $wpdb;
-        global $rf_tokens_table_name;
-        global $rf_tokens_db_version;
+        global $tokens_table_name;
+        global $tokens_db_version;
 
         $charset_collate = $wpdb->get_charset_collate();
 
         // I had wanted to use token_id as the primary key but the table was not getting created,
         // even when I switched from tinytext to varchar(10)
-        $sql = "CREATE TABLE $rf_tokens_table_name (
+        $sql = "CREATE TABLE $tokens_table_name (
               id mediumint(9) NOT NULL AUTO_INCREMENT,
               token_id tinytext NOT NULL,
               user_id tinytext NOT NULL,
@@ -748,7 +748,7 @@ Class IFLPartyMechanics {
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
         dbDelta( $sql );
 
-        add_option( 'rf_tokens_db_version', $rf_tokens_db_version );
+        add_option( 'tokens_db_version', $tokens_db_version );
     }
 
     public function delete_all_quotes_from_movie_quotes_table() {
@@ -763,10 +763,10 @@ Class IFLPartyMechanics {
         $this->delete_all_rows_from_table($user_pairings_table_name);
     }
 
-    public function delete_all_tokens_from_rf_tokens_table() {
+    public function delete_all_tokens_from_tokens_table() {
         global $wpdb;
-        global $rf_tokens_table_name;
-        $this->delete_all_rows_from_table($rf_tokens_table_name);
+        global $tokens_table_name;
+        $this->delete_all_rows_from_table($tokens_table_name);
     }
 
     public function delete_all_rows_from_table($table_name) {
@@ -784,9 +784,9 @@ Class IFLPartyMechanics {
         $this->drop_table($user_pairings_table_name);
     }
 
-    public function drop_rf_tokens_table() {
-        global $rf_tokens_table_name;
-        $this->drop_table($rf_tokens_table_name);
+    public function drop_tokens_table() {
+        global $tokens_table_name;
+        $this->drop_table($tokens_table_name);
     }
 
     public function drop_table($table_name) {
@@ -889,31 +889,31 @@ Class IFLPartyMechanics {
         return $result[0]->id;
     }
 
-    public function get_user_id_from_rf_token_id($token_id) {
+    public function get_user_id_from_token_id($token_id) {
         // if the token ID is in the tokens table, returns associated user ID as string,
         // otherwise returns an error message
         global $wpdb;
-        global $rf_tokens_table_name;
-        if (!$this->does_table_exist_in_database($rf_tokens_table_name)) {
-            return "RF tokens table does not exist in database";
+        global $tokens_table_name;
+        if (!$this->does_table_exist_in_database($tokens_table_name)) {
+            return "Tokens table does not exist in database";
         }
-        $result = $wpdb->get_results("SELECT user_id FROM " . $rf_tokens_table_name . " WHERE token_id = '" . $token_id . "'");
+        $result = $wpdb->get_results("SELECT user_id FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
         if ($wpdb->num_rows == 0) {
-            return "Token id " . $token_id . " not found in database";
+            return "Token id " . $token_id . " not found in database, you need to register it with a user ID";
         } else {
             return $result[0]->user_id;
         }
     }
 
-    public function get_rf_token_ids_by_user_id($user_id) {
+    public function get_token_ids_by_user_id($user_id) {
         // if the user ID is in the tokens table, returns associated token ID(s) as ", "-separated string,
         // otherwise returns an error message
         global $wpdb;
-        global $rf_tokens_table_name;
-        if (!$this->does_table_exist_in_database($rf_tokens_table_name)) {
-            return "RF tokens table does not exist in database";
+        global $tokens_table_name;
+        if (!$this->does_table_exist_in_database($tokens_table_name)) {
+            return "Tokens table does not exist in database";
         }
-        $result = $wpdb->get_results("SELECT token_id FROM " . $rf_tokens_table_name . " WHERE user_id = '" . $user_id . "'");
+        $result = $wpdb->get_results("SELECT token_id FROM " . $tokens_table_name . " WHERE user_id = '" . $user_id . "'");
         if ($wpdb->num_rows == 0) {
             return "No tokens found for user ID " . $user_id;
         } else {
@@ -921,28 +921,28 @@ Class IFLPartyMechanics {
         }
     }
 
-    public function add_rf_token_id_and_user_id_to_rf_tokens_table($token_id, $user_id) {
+    public function add_token_id_and_user_id_to_tokens_table($token_id, $user_id) {
         global $wpdb;
-        global $rf_tokens_table_name;
-        if (!$this->does_table_exist_in_database($rf_tokens_table_name)) {
-            return "RF tokens table does not exist in database";
+        global $tokens_table_name;
+        if (!$this->does_table_exist_in_database($tokens_table_name)) {
+            return "Tokens table does not exist in database";
         }
-        $result = $wpdb->get_results("SELECT * FROM " . $rf_tokens_table_name . " WHERE token_id = '" . $token_id . "'");
+        $result = $wpdb->get_results("SELECT * FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
         if ($wpdb->num_rows != 0) {
-            return "Token ID " . $token_id . " is already in the database";
+            return "Token ID " . $token_id . " is already in the tokens table";
         }
         $wpdb->insert(
-            $rf_tokens_table_name,
+            $tokens_table_name,
             array(
                 'token_id' => $token_id,
                 'user_id' => $user_id,
             )
         );
-        $result = $wpdb->get_results("SELECT * FROM " . $rf_tokens_table_name . " WHERE token_id = '" . $token_id . "'");
+        $result = $wpdb->get_results("SELECT * FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
         if ($wpdb->num_rows != 0) {
-            return "Token ID " . $token_id . " and user ID " . $user_id . " pairing added to the database";
+            return "Token ID " . $token_id . " and user ID " . $user_id . " pairing added to the tokens table";
         } else {
-            return "Error adding token and user IDs to the database";
+            return "Error adding token and user IDs to the tokens table";
         }
     }
 

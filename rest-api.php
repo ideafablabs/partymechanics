@@ -26,17 +26,61 @@ class Movie_Quotes_Controller extends WP_REST_Controller {
   	public function register_routes() {
     	$namespace = 'mint/v1';
     	$quote_pair_path = 'quote_pair';
-    	$get_user_id_from_token_id_path = 'get_user_id_from_token_id';
+        $get_user_id_from_token_id_path = 'get_user_id_from_token_id';
+        $get_token_ids_from_user_id_path = 'get_token_ids_from_user_id';
+        $add_token_id_and_user_id_to_tokens_table_path = 'add_token_id_and_user_id_to_tokens_table';
 
-    	register_rest_route( $namespace, '/' . $quote_pair_path, [
-      	array(
-        	'methods'             => 'GET',
-        	'callback'            => array( $this, 'get_item' ),
-        	'permission_callback' => array( $this, 'get_items_permissions_check' )
+        register_rest_route( $namespace, '/' . $quote_pair_path, [
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_item' ),
+                'permission_callback' => array( $this, 'get_items_permissions_check' )
             ),
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'post_item' ),
+                'permission_callback' => array( $this, 'get_items_permissions_check' )
+            ),
+
+        ]);
+
+        register_rest_route( $namespace, '/' . $get_user_id_from_token_id_path, [
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_item' ),
+                'permission_callback' => array( $this, 'get_items_permissions_check' )
+            ),
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'post_token_id' ),
+                'permission_callback' => array( $this, 'get_items_permissions_check' )
+            ),
+
+        ]);
+
+        register_rest_route( $namespace, '/' . $get_token_ids_from_user_id_path, [
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_item' ),
+                'permission_callback' => array( $this, 'get_items_permissions_check' )
+            ),
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'post_user_id' ),
+                'permission_callback' => array( $this, 'get_items_permissions_check' )
+            ),
+
+        ]);
+
+        register_rest_route( $namespace, '/' . $add_token_id_and_user_id_to_tokens_table_path, [
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_item' ),
+                'permission_callback' => array( $this, 'get_items_permissions_check' )
+            ),
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'post_token_id_and_user_id' ),
                 'permission_callback' => array( $this, 'get_items_permissions_check' )
             ),
 
@@ -53,7 +97,7 @@ class Movie_Quotes_Controller extends WP_REST_Controller {
 	}
 
     public function post_item($request) {
-  	    
+
         global $IFLPartyMechanics;
 
 //        if ($request->get_param( 'DONE' )) {
@@ -63,8 +107,8 @@ class Movie_Quotes_Controller extends WP_REST_Controller {
 //        }
 
         $nfc1 = $request->get_param( 'NFC1' );
-  	    $nfc2 = $request->get_param( 'NFC2' );
-  	    if (!empty($nfc1) && !empty($nfc2) ) {
+        $nfc2 = $request->get_param( 'NFC2' );
+        if (!empty($nfc1) && !empty($nfc2) ) {
 
 
             $user1 = get_users(array('meta_key' => 'nfcid1', 'meta_value' => $nfc1));
@@ -92,12 +136,45 @@ class Movie_Quotes_Controller extends WP_REST_Controller {
             return new WP_REST_Response($fortune,200);
 
             // return new WP_REST_Response($users[0]->ID);
-            
+
             // return new WP_REST_Response("NFC1: " . $nfc1 . ", NFC2: " . $nfc2, 200);
         } else {
             return new WP_REST_Response("NFC parameters not found", 200);
         }
 
+    }
+    public function post_token_id($request) {
+        global $IFLPartyMechanics;
+        $token_id = $request->get_param( 'TOKEN_ID' );
+        $user_id = $IFLPartyMechanics->get_user_id_from_token_id($token_id);
+
+        // put the user id into options memory.
+        update_option('user_id',$user_id);
+
+        return new WP_REST_Response($user_id,200);
+    }
+
+    public function post_user_id($request) {
+        global $IFLPartyMechanics;
+        $user_id = $request->get_param( 'USER_ID' );
+        $token_ids = $IFLPartyMechanics->get_token_ids_by_user_id($user_id);
+
+        // put the user's token id(s) into options memory.
+        update_option('token_ids',$token_ids);
+
+        return new WP_REST_Response($token_ids,200);
+    }
+
+    public function post_token_id_and_user_id($request) {
+        global $IFLPartyMechanics;
+        $token_id = $request->get_param( 'TOKEN_ID' );
+        $user_id = $request->get_param( 'USER_ID' );
+        $result = $IFLPartyMechanics->add_token_id_and_user_id_to_tokens_table($token_id, $user_id);
+
+        // put the result into options memory.
+        update_option('result',$result);
+
+        return new WP_REST_Response($result,200);
     }
 
     public function get_items_permissions_check($request) {
@@ -123,7 +200,7 @@ class NFC_Registration_Controller extends WP_REST_Controller {
                 'permission_callback' => array( $this, 'get_items_permissions_check' )
             ),
 
-        ]);     
+        ]);
     }
     public function get_item($request) {
 
@@ -137,7 +214,7 @@ class NFC_Registration_Controller extends WP_REST_Controller {
         if ($reader_value == 0) {
             return new WP_Error( 'no_id', 'No new ID available.', array( 'status' => 200 ) );
         }
-        
+
         // Clear the reader value.
         // update_option('reader_'.$reader_id,0);
 
@@ -147,7 +224,7 @@ class NFC_Registration_Controller extends WP_REST_Controller {
     public function post_item($request) {
         $reader_id = $request->get_param( 'reader_id' );
         $reader_value = $request->get_param( 'reader_value' );
-        
+
         if (!empty($reader_value) && !empty($reader_id) ) {
 
             update_option('reader_'.$reader_id,$reader_value);
@@ -162,7 +239,7 @@ class NFC_Registration_Controller extends WP_REST_Controller {
     public function get_items_permissions_check($request) {
         return true;
     }
-}   
+}
 
 
 
