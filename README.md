@@ -1,4 +1,4 @@
-# Some in-process WordPress plugin/API files for Idea Fab Labs Santa Cruz's Mint party project
+# Some in-process WordPress and Arduino files for Idea Fab Labs Santa Cruz's Mint party project
 
 [ifl-party-mechanics.php](https://github.com/ideafablabs/partymechanics/blob/master/ifl-party-mechanics.php) is a
 WordPress plugin containing the functions used by rest-api.php, and also functions for working with the movie
@@ -15,3 +15,10 @@ pairing (if that pairing has not been seen previously, then a new quote gets ass
 * **get_token_ids_from_user_id** - call it with a user ID *USER_ID* to retrieve all token IDs registered to that user
 * **add_token_id_and_user_id_to_tokens_table** - call it with a token ID *TOKEN_ID* and a user ID *USER_ID* to register
 that token to that user in the tokens table
+
+The [Party Mechanics Notes](https://docs.google.com/document/d/1-3XrTe-Q02qRC4WK6LZkSj_1pk22UXLcHj5TGS_8biM/edit)
+Google Doc is the place to collaborate on more extensive documentation.
+
+Right now the Arduino folder contains the ESP example sketch WiFiMulti, illustrating configuring your WeMos D1 R1
+board to connect to whichever one of one or more predefined wifi networks is available, and many in-process
+sketches from just before last March's Doublemint party.
