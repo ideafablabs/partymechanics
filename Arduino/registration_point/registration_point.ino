@@ -41,10 +41,10 @@ WiFiClient client;
 HTTPClient http;
 
 // Replace with your network credentials
-//const char* ssid = "Idea Fab Labs";
-//const char* password = "vortexrings";
-const char* ssid = "loadingdockap";
-const char* password = "Ldock55AP$securityKEY*";
+const char* ssid = "Idea Fab Labs";
+const char* password = "vortexrings";
+//const char* ssid = "loadingdockap";
+//const char* password = "Ldock55AP$securityKEY*";
 
 long now,lastBlink,lastRead =0;
 uint16_t ledPeriod = 300; // ms

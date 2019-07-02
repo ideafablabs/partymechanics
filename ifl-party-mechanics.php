@@ -927,9 +927,19 @@ Class IFLPartyMechanics {
         if (!$this->does_table_exist_in_database($tokens_table_name)) {
             return "Tokens table does not exist in database";
         }
+        if ($token_id == "") {
+            return "Error - empty token ID";
+        }
+        if ($user_id == "") {
+            return "Error - empty user ID";
+        }
         $result = $wpdb->get_results("SELECT * FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
         if ($wpdb->num_rows != 0) {
-            return "Token ID " . $token_id . " is already in the tokens table";
+            $user_id_already_registered = $result[0]->user_id;
+            if ($user_id_already_registered != $user_id) {
+                return "Error - token ID " . $token_id . " is already registered to a different userID (". $user_id_already_registered . ")";
+            }
+            return "Token ID " . $token_id . " is already registered to that user ID (" . $user_id . ")";
         }
         $wpdb->insert(
             $tokens_table_name,
