@@ -39,12 +39,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800)
 
 WiFiClient client;
 HTTPClient http;
-
-// Replace with your network credentials
-const char* ssid = "Idea Fab Labs";
-const char* password = "vortexrings";
-//const char* ssid = "loadingdockap";
-//const char* password = "Ldock55AP$securityKEY*";
+ESP8266WiFiMulti wifiMulti;
 
 long now,lastBlink,lastRead =0;
 uint16_t ledPeriod = 300; // ms
@@ -65,19 +60,20 @@ uint16_t cardreaderPeriod = 500; // ms
   uint8_t colorCase= 0;
 
 void setupWiFi() {
-  WiFi.begin(ssid, password); //begin WiFi connection
+  WiFi.mode(WIFI_STA);
+  wifiMulti.addAP("loadingdockap", "Ldock55AP$securityKEY*");
+  wifiMulti.addAP("Idea Fab Labs", "vortexrings");
+  wifiMulti.addAP("ssid_from_AP_3", "your_password_for_AP_3");
+
+  while (wifiMulti.run() != WL_CONNECTED) {
+    Serial.println("WiFi not connected!");
+    delay(1000);
+  } 
   Serial.println("");
- 
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  Serial.println(WiFi.SSID());
 }
 
 void setup() {

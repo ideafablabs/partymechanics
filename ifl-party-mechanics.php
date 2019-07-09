@@ -1,15 +1,14 @@
-<?php 
+<?php
 
 /**
  * Plugin Name: IFL Admit Guests
- * Plugin URI: 
+ * Plugin URI:
  * Description: This plugin allow you check in guests who've signed up through Gravity Forms
  * Version: 2.0.0
  * Author: Jordan Layman
  * Author URI: https://github.com/factor8/
  * License: GPL3
-
-*/
+ */
 
 include 'rest-api.php';
 
@@ -32,10 +31,11 @@ $user_pairings_db_version = "1.0";
 $tokens_table_name = $wpdb->prefix . "rf_tokens";
 $tokens_db_version = "1.0";
 
-    $IFLPartyMechanics = new IFLPartyMechanics;
+$IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
 
-Class IFLPartyMechanics {
+Class IFLPartyMechanics
+{
 
     // https://www.ibenic.com/creating-wordpress-menu-pages-oop/
 
@@ -83,16 +83,16 @@ Class IFLPartyMechanics {
         // for testing movie quotes functions
         // add_action( 'wp_footer', array( $this, 'test_user_pairings_stuff' )  );
         // add_action( 'wp_footer', array( $this, 'test_movie_quotes_stuff' )  );
-        add_action( 'wp_footer', array( $this, 'test_tokens_stuff' )  );
+        // add_action( 'wp_footer', array( $this, 'test_tokens_stuff' )  );
 
 
-        $this->menu_options = array_merge( $this->defaultOptions, $options );
+        $this->menu_options = array_merge($this->defaultOptions, $options);
 
         // Enqueue plugin styles and scripts
-        add_action( 'plugins_loaded', array( $this, 'register_iflpm_scripts' ) );
-        add_action( 'plugins_loaded', array( $this, 'enqueue_iflpm_scripts' ) );
-        add_action( 'plugins_loaded', array( $this, 'enqueue_iflpm_styles' ) );
-        add_action( 'plugins_loaded', array( $this, 'register_rest_api' ) );
+        add_action('plugins_loaded', array($this, 'register_iflpm_scripts'));
+        add_action('plugins_loaded', array($this, 'enqueue_iflpm_scripts'));
+        add_action('plugins_loaded', array($this, 'enqueue_iflpm_styles'));
+        add_action('plugins_loaded', array($this, 'register_rest_api'));
 
         // Register REST API Controllers
         add_action('rest_api_init', function () {
@@ -105,78 +105,85 @@ Class IFLPartyMechanics {
         });
 
         // Setup Ajax action hook
-        add_action( 'wp_ajax_ifl_sanity_check', array( $this, 'ifl_sanity_check' ) );
-        add_action( 'wp_ajax_nopriv_ifl_sanity_check', array( $this, 'ifl_sanity_check' ) );
-        add_action( 'wp_ajax_ifl_admit_guest', array( $this, 'ifl_admit_guest' ) );
-        add_action( 'wp_ajax_nopriv_ifl_admit_guest', array( $this, 'ifl_admit_guest' ) );
-        add_action( 'wp_ajax_ifl_admit_all', array( $this, 'ifl_admit_all' ) );
-        add_action( 'wp_ajax_nopriv_ifl_admit_all', array( $this, 'ifl_admit_all' ) );
+        add_action('wp_ajax_ifl_sanity_check', array($this, 'ifl_sanity_check'));
+        add_action('wp_ajax_nopriv_ifl_sanity_check', array($this, 'ifl_sanity_check'));
+        add_action('wp_ajax_ifl_admit_guest', array($this, 'ifl_admit_guest'));
+        add_action('wp_ajax_nopriv_ifl_admit_guest', array($this, 'ifl_admit_guest'));
+        add_action('wp_ajax_ifl_admit_all', array($this, 'ifl_admit_all'));
+        add_action('wp_ajax_nopriv_ifl_admit_all', array($this, 'ifl_admit_all'));
 
         // Menu Page Setup
-        add_action( 'admin_menu', array( $this, 'wpdocs_register_my_custom_menu_page' ) );
+        add_action('admin_menu', array($this, 'wpdocs_register_my_custom_menu_page'));
 
-        add_shortcode( 'registrationform', array( $this,'ifl_display_registration_form') );
-        add_shortcode( 'ticketform', array( $this,'ifl_display_purchase_form') );
-        add_shortcode( 'guestlist', array( $this,'ifl_display_guest_list') );
+        add_shortcode('registrationform', array($this, 'ifl_display_registration_form'));
+        add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));
+        add_shortcode('guestlist', array($this, 'ifl_display_guest_list'));
 
-        register_activation_hook( __FILE__, 'iflpm_install' );
-        register_activation_hook( __FILE__, 'iflpm_install_data' );
+//        register_activation_hook( __FILE__, 'iflpm_install' );
+//        register_activation_hook( __FILE__, 'iflpm_install_data' );
     }
 
     /**
      * Register plugin styles and scripts
      */
     public function register_iflpm_scripts() {
-        wp_register_script( 'iflpm-script', plugins_url( 'js/iflpm.js', __FILE__ ), array('jquery'), null, true );
-        wp_register_style( 'iflpm-style', plugins_url( 'css/iflpm.css', __FILE__ ) );
+        wp_register_script('iflpm-script', plugins_url('js/iflpm.js', __FILE__), array('jquery'), null, true);
+        wp_register_style('iflpm-style', plugins_url('css/iflpm.css', __FILE__));
     }
+
     /**
      * Enqueues plugin-specific scripts.
      */
     public function enqueue_iflpm_scripts() {
-        wp_enqueue_script( 'iflpm-script' );
+        wp_enqueue_script('iflpm-script');
 
-        wp_localize_script( 'iflpm-script', 'iflpm_ajax', array( 'ajax_url' => admin_url('admin-ajax.php'), 'check_nonce' => wp_create_nonce('iflpm-nonce') ) );
+        wp_localize_script('iflpm-script', 'iflpm_ajax', array('ajax_url' => admin_url('admin-ajax.php'), 'check_nonce' => wp_create_nonce('iflpm-nonce')));
     }
+
     /**
      * Enqueues plugin-specific styles.
      */
     public function enqueue_iflpm_styles() {
-        wp_enqueue_style( 'iflpm-style' );
+        wp_enqueue_style('iflpm-style');
     }
 
     /**
-    * Add Menu Page in Wordpress Admin
-    */
-    public function wpdocs_register_my_custom_menu_page(){
+     * Add Menu Page in Wordpress Admin
+     */
+    public function wpdocs_register_my_custom_menu_page() {
 
-        if( $admin_page_call == '' ) {
-            $admin_page_call = array( $this, 'admin_page_call' );
+        if ($admin_page_call == '') {
+            $admin_page_call = array($this, 'admin_page_call');
         }
 
         add_menu_page(
             __(
-            'Custom Menu Title', 'textdomain' ),        // Page Title
+                'Custom Menu Title', 'textdomain'),        // Page Title
             'Exhibition RSVPs',                         // Menu Title
             'manage_options',                           // Required Capability
             'my_custom_menu_page',                      // Menu Slug
             $admin_page_call,                           // Function
-            plugins_url( 'myplugin/images/icon.png' ),  // Icon URL
+            plugins_url('myplugin/images/icon.png'),  // Icon URL
             6
         );
     }
 
     /**
-    * Build HTML for admin page.
-    */
+     * Build HTML for admin page.
+     */
     public function admin_page_call() {
-         // Echo the html here...
-        echo "XING!";
+        // Echo the html here...
+        echo "XING!</br>";
+        $this->test_event_title_stuff();
+        $this->test_user_pairings_stuff();
+        $this->test_movie_quotes_stuff();
+        $this->test_tokens_stuff();
+        $this->test_option_stuff();
     }
 
     /**
-    * WPAJAX response to record whether a guest attended the party.
-    */
+     * WPAJAX response to record whether a guest attended the party.
+     */
     public function ifl_admit_guest() {
 
         // check_ajax_referer( 'guestlistadd_nonce', 'security' );
@@ -191,7 +198,7 @@ Class IFLPartyMechanics {
 
         $serialized_attended_list = serialize($attended_list);
 
-        $result = GFAPI::update_entry_field( $iflpm_entry_id, $this->menu_options['attended_list_id'], $serialized_attended_list );
+        $result = GFAPI::update_entry_field($iflpm_entry_id, $this->menu_options['attended_list_id'], $serialized_attended_list);
 
         // echo 'Entry: '.$iflpm_entry_id ."\n";
         // echo 'Attendee: '.$iflpm_attendee_id ."\n";
@@ -208,8 +215,8 @@ Class IFLPartyMechanics {
     }
 
     /**
-    * Hook into wp_ajax_ to save post ids, then display those posts using get_posts() function
-    */
+     * Hook into wp_ajax_ to save post ids, then display those posts using get_posts() function
+     */
     public function ifl_admit_all() {
 
         // check_ajax_referer( 'iflpm-nonce', 'security' );
@@ -217,7 +224,7 @@ Class IFLPartyMechanics {
         $iflpm_entry_id = $_POST['entry_id'];
         // $iflpm_attended_id = $_POST['attended_id'];
         echo 'Admitting all for ';
-        echo 'entry: '.$iflpm_entry_id ."\n";
+        echo 'entry: ' . $iflpm_entry_id . "\n";
         // echo 'Attendee: '.$iflpm_attended_id;
 
         $entry = GFAPI::get_entry($iflpm_entry_id);
@@ -239,20 +246,20 @@ Class IFLPartyMechanics {
 
         $serialized_attended_list = serialize($attended_list);
 
-        $result = GFAPI::update_entry_field( $iflpm_entry_id, $this->menu_options['attended_list_id'], $serialized_attended_list );
+        $result = GFAPI::update_entry_field($iflpm_entry_id, $this->menu_options['attended_list_id'], $serialized_attended_list);
 
         die();
 
     }
 
     /**
-    * Hook into wp_ajax_ to save post ids, then display those posts using get_posts() function
-    */
+     * Hook into wp_ajax_ to save post ids, then display those posts using get_posts() function
+     */
     public function ifl_import_members($event_name) {
 
         global $wpdb;
 
-        $users = $wpdb->get_results( "SELECT first_name, last_name FROM mm_user_data WHERE status = 1 OR status = 9 ORDER BY first_name" );
+        $users = $wpdb->get_results("SELECT first_name, last_name FROM mm_user_data WHERE status = 1 OR status = 9 ORDER BY first_name");
 
         // pr($users);
 
@@ -277,22 +284,22 @@ Class IFLPartyMechanics {
         }
         // pr($entries);
 
-        $result = GFAPI::add_entries( $entries );
+        $result = GFAPI::add_entries($entries);
 
     }
 
     /**
-    * Shortcode wrapper for displaying the ticket purchase gravity form.
-    * Ex: [ticketform form="44" event="Event Title Goes Here" price="16.00"]
-    */
-    public function ifl_display_purchase_form( $atts ) {
-        extract( shortcode_atts( array(
+     * Shortcode wrapper for displaying the ticket purchase gravity form.
+     * Ex: [ticketform form="44" event="Event Title Goes Here" price="16.00"]
+     */
+    public function ifl_display_purchase_form($atts) {
+        extract(shortcode_atts(array(
             'form' => $this->menu_options['form_id'],
             'event' => $this->menu_options['form_event_title'],
             'price' => $this->menu_options['form_price'],
             'admin' => $this->menu_options['form_admin_mode'],
             'method' => $this->menu_options['form_payment_method']
-        ), $atts ) );
+        ), $atts));
 
         $field_values = array(
             'event' => $event,
@@ -306,7 +313,7 @@ Class IFLPartyMechanics {
         // Pass everything on to Gravity Forms
 
         // gravity_form( $id_or_title, $display_title = true, $display_description = true, $display_inactive = false, $field_values = null, $ajax = false, $tabindex, $echo = true );
-        $content .= gravity_form($form,0,1,0,$field_values,1,0,0);
+        $content .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
         // echo do_shortcode('[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']' );
         $content .= "</p>";
 
@@ -316,18 +323,18 @@ Class IFLPartyMechanics {
     }
 
     /**
-    * Shortcode wrapper for displaying the registration gravity form.
-    * Ex: [registrationform form="1" event="Event Title Goes Here" price="16.00"]
-    */
-    public function ifl_display_registration_form( $atts ) {
-        extract( shortcode_atts( array(
+     * Shortcode wrapper for displaying the registration gravity form.
+     * Ex: [registrationform form="1" event="Event Title Goes Here" price="16.00"]
+     */
+    public function ifl_display_registration_form($atts) {
+        extract(shortcode_atts(array(
             'form' => $this->menu_options['form_id'],
             // 'reader_id' => $this->menu_options['reader_id'],
             // 'event' => $this->menu_options['form_event_title'],
             // 'price' => $this->menu_options['form_price'],
             'admin' => $this->menu_options['form_admin_mode'],
             // 'method' => $this->menu_options['form_payment_method']
-        ), $atts ) );
+        ), $atts));
 
         $field_values = array(
             // 'event' => $event,
@@ -342,7 +349,7 @@ Class IFLPartyMechanics {
         // Pass everything on to Gravity Forms
 
         // gravity_form( $id_or_title, $display_title = true, $display_description = true, $display_inactive = false, $field_values = null, $ajax = false, $tabindex, $echo = true );
-        $content .= gravity_form($form,0,1,0,$field_values,1,0,0);
+        $content .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
         // echo do_shortcode('[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']' );
         $content .= "</p>";
 
@@ -355,16 +362,16 @@ Class IFLPartyMechanics {
     }
 
     /**
-    * Shortcode wrapper for displaying the guest admissions list
-    * Ex: [guestlist form="44" event="Event Title Goes Here" ]
-    */
-    public function ifl_display_guest_list( $atts ) {
-        extract( shortcode_atts( array(
+     * Shortcode wrapper for displaying the guest admissions list
+     * Ex: [guestlist form="44" event="Event Title Goes Here" ]
+     */
+    public function ifl_display_guest_list($atts) {
+        extract(shortcode_atts(array(
             'form_id' => $this->menu_options['form_id'],
             'event' => $this->menu_options['form_event_title']
             // 'admin' => $this->menu_options['form_admin_mode'],
             // 'method' => $this->menu_options['form_payment_method']
-        ), $atts ) );
+        ), $atts));
 
         // echo '<p>[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']</p>';
 
@@ -386,39 +393,39 @@ Class IFLPartyMechanics {
         $attended_id_offset = 100;
 
         // Get all the entries where the "event" field is the event "title"
-        $search_criteria['field_filters'][] = array( 'key' => $event_field_id, 'value' => $event );
+        $search_criteria['field_filters'][] = array('key' => $event_field_id, 'value' => $event);
 
         /// I think we are sorting via JS now...
         // $sorting = array( 'key' => $sort_field, 'direction' => 'ASC', 'is_numeric' => true );
 
         // $search_criteria = array();
         $sorting = array();
-        $paging = array( 'offset' => 0, 'page_size' => 600 );
-        $entries = GFAPI::get_entries( $form_id, $search_criteria, $sorting, $paging);
+        $paging = array('offset' => 0, 'page_size' => 600);
+        $entries = GFAPI::get_entries($form_id, $search_criteria, $sorting, $paging);
 
         // pr($entries);
 
-        $admit_list_html .=  '<h2>'.$event_name.'</h2>';
+        $admit_list_html .= '<h2>' . $event_name . '</h2>';
         $admit_list_html .= '<div class="row">';
         $admit_list_html .= '<div class="member-list ifl-admit-guest small-12 columns">';
-        $admit_list_html .= '<h2>'.$event.'</h2>';
+        $admit_list_html .= '<h2>' . $event . '</h2>';
         $admit_list_html .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\'">X</button></div>';
         $admit_list_html .= '<ul class="member_select_list">';
 
-         // pr($entries[3]);
+        // pr($entries[3]);
 
         $attendee_count = 0;
         $admitted_count = 0;
 
         foreach ($entries as $entry_key => $entry) {
             // echo $entry['3.3']." - ".$entry['3.6']." <br />";
-             // pr(unserialize($entry['7']));
-             // pr(unserialize($entry['17']));
+            // pr(unserialize($entry['7']));
+            // pr(unserialize($entry['17']));
 
-             // $entry_id = $entry['id'];
+            // $entry_id = $entry['id'];
 
-             // $result = GFAPI::update_entry_field( $entry_id, '35.1', "value" );
-             // pr($result);
+            // $result = GFAPI::update_entry_field( $entry_id, '35.1', "value" );
+            // pr($result);
 
             // $attendee_id = '';
             $attendee_names = unserialize($entry[$attendees_list_id]);
@@ -428,40 +435,40 @@ Class IFLPartyMechanics {
             // $formlink = 'http://www.ideafablabs.com/confirm-admit?attendee_id='.$attendee_id.'&membername='.urlencode($attendee_name);
             // pr($entry);
 
-            $admit_list_html .= '<li data-sort="'.$attendee_names[0]['First Name'].'">
+            $admit_list_html .= '<li data-sort="' . $attendee_names[0]['First Name'] . '">
                 <div class="entry large '
-                    .$attendee_class.'" '.$admin_guest_list_flag.'>';
-                    // <a class="admit-all" data-entry="'.$entry['id'].'">Admit All</a>
+                . $attendee_class . '" ' . $admin_guest_list_flag . '>';
+            // <a class="admit-all" data-entry="'.$entry['id'].'">Admit All</a>
 
-                    foreach ($attendee_names as $attendee_key => $attendee) {
+            foreach ($attendee_names as $attendee_key => $attendee) {
 
-                        $attended_key = $attended_list_id.'.'.$attendee_key;
-                        if ($attendee_key == 0) $attended_key = $attended_list_id;
+                $attended_key = $attended_list_id . '.' . $attendee_key;
+                if ($attendee_key == 0) $attended_key = $attended_list_id;
 
-                        if ($entry[$attended_key] == 1) {
-                            $admitted = " admitted";
-                            $admitted_count++;
-                        } else {
-                            $admitted = "";
-                        }
+                if ($entry[$attended_key] == 1) {
+                    $admitted = " admitted";
+                    $admitted_count++;
+                } else {
+                    $admitted = "";
+                }
 
-                        $admit_list_html .= '<a class="admit-button'.$admitted.'"  data-entry="'
-                        .$entry['id'].'" data-attended="'.$attended_key.'">'
-                        .$attendee['First Name'].' '.$attendee['Last Name']
-                        .'</a>';
-                        // pr($attendee);
+                $admit_list_html .= '<a class="admit-button' . $admitted . '"  data-entry="'
+                    . $entry['id'] . '" data-attended="' . $attended_key . '">'
+                    . $attendee['First Name'] . ' ' . $attendee['Last Name']
+                    . '</a>';
+                // pr($attendee);
 
-                        $attendee_count++;
-                    }
+                $attendee_count++;
+            }
 
-                $admit_list_html .= '<span class="entry-email">'.$entry[$email_id].' - <span class="entry-id">#'.$entry['id'].'</span></span>
+            $admit_list_html .= '<span class="entry-email">' . $entry[$email_id] . ' - <span class="entry-id">#' . $entry['id'] . '</span></span>
 
                 </div>
             </li>';
         }
 
-        $admit_list_html .=  '</ul></div></div>';
-        $admit_list_html .=  '<p class="attendee_count">'.$admitted_count.'/'.$attendee_count.'</p>';
+        $admit_list_html .= '</ul></div></div>';
+        $admit_list_html .= '<p class="attendee_count">' . $admitted_count . '/' . $attendee_count . '</p>';
 
         // pr($this->menu_options['form_id']);
         // pr($event_name);
@@ -497,10 +504,10 @@ Class IFLPartyMechanics {
     */
     public function reset_attendees($event_name) {
 
-        $search_criteria['field_filters'][] = array( 'key' => $event_field_id, 'value' => $event_name );
+        $search_criteria['field_filters'][] = array('key' => $event_field_id, 'value' => $event_name);
         $sorting = array();
-        $paging = array( 'offset' => 0, 'page_size' => 900 );
-        $entries = GFAPI::get_entries( $this->form_id, $search_criteria, $sorting, $paging);
+        $paging = array('offset' => 0, 'page_size' => 900);
+        $entries = GFAPI::get_entries($this->form_id, $search_criteria, $sorting, $paging);
 
         foreach ($entries as $key => $entry) {
             $entry[$this->attended_list_id] = "";
@@ -524,30 +531,30 @@ Class IFLPartyMechanics {
 
         // add_user_meta(1,'fortune','May The Force Be With You');
 
-        add_action( 'rest_api_init', function () {
+        add_action('rest_api_init', function () {
 
             // register_rest_route( 'mint/v1', '/fortune/(?P<id>\d+)', array(
-            register_rest_route( 'mint/v1', 'fortunes/(?P<id>\d+)',array(
-                'methods'  => 'GET',
-                'callback' => array($this,'get_fortune')
+            register_rest_route('mint/v1', 'fortunes/(?P<id>\d+)', array(
+                'methods' => 'GET',
+                'callback' => array($this, 'get_fortune')
             ));
 
             // register_rest_field( 'user', 'fortune', array(
-         //        'get_callback' => array( $this, 'get_user_fortune' ),
-         //        'update_callback' => array( $this, 'add_user_fortune' ),
-         //        'schema' => null
-      //    ));
+            //        'get_callback' => array( $this, 'get_user_fortune' ),
+            //        'update_callback' => array( $this, 'add_user_fortune' ),
+            //        'schema' => null
+            //    ));
 
-        } );
+        });
 
 
     }
 
     public function get_fortune($request) {
 
-        $fortune = get_user_meta( $request[ 'id' ], 'fortune', true );
+        $fortune = get_user_meta($request['id'], 'fortune', true);
         if (empty($fortune)) {
-            return new WP_Error( 'empty_meta', 'there is no fortune in this cookie', array('status' => 404) );
+            return new WP_Error('empty_meta', 'there is no fortune in this cookie', array('status' => 404));
         }
 
         $response = new WP_REST_Response($fortune);
@@ -556,17 +563,23 @@ Class IFLPartyMechanics {
         return $response;
     }
 
-    public function get_user_fortune( $user, $field_name, $request ) {
-        return get_user_meta( $user[ 'id' ], $field_name, true );
+    public function get_user_fortune($user, $field_name, $request) {
+        return get_user_meta($user['id'], $field_name, true);
     }
 
-    public function add_user_fortune( $user, $meta_value ) {
-        $fortune = get_user_meta( $user[ 'id' ], 'fortune', false );
-        if( $fortune ) {
-            update_user_meta( $user[ 'id' ], 'fortune', $meta_value );
+    public function add_user_fortune($user, $meta_value) {
+        $fortune = get_user_meta($user['id'], 'fortune', false);
+        if ($fortune) {
+            update_user_meta($user['id'], 'fortune', $meta_value);
         } else {
-            add_user_meta( $user[ 'id' ], 'fortune', $meta_value, true );
+            add_user_meta($user['id'], 'fortune', $meta_value, true);
         }
+    }
+
+    public function test_event_title_stuff() {
+        // update_option('current_event_title', "Juicy Fruit");
+        echo"<label for='current_event_title'><br><b>Current event title:</b></label>
+        <input type='text' name='email' value='" . get_option('current_event_title') . "'/><br>";
     }
 
     public function test_movie_quotes_stuff() {
@@ -575,6 +588,8 @@ Class IFLPartyMechanics {
         // $this->drop_movie_quotes_table();
 
         global $movie_quotes_table_name;
+        global $wpdb;
+        echo "<br>";
         if ($this->does_table_exist_in_database($movie_quotes_table_name)) {
             echo "Movie quotes table exists<br>";
         } else {
@@ -582,7 +597,7 @@ Class IFLPartyMechanics {
             $this->create_movie_quotes_table();
         }
 
-         $this->delete_all_quotes_from_movie_quotes_table();
+        // $this->delete_all_quotes_from_movie_quotes_table();
 
         if ($this->is_table_empty($movie_quotes_table_name)) {
             echo "Movie quotes table is empty<br>";
@@ -590,16 +605,21 @@ Class IFLPartyMechanics {
                 $this->import_movie_quotes_to_database();
             }
         } else {
-            echo "Movie quotes table is not empty<br>";
+//            echo "Movie quotes table is not empty<br>";
+            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $movie_quotes_table_name);
+            echo "Movie quotes table contains " . $rows[0]->num_rows . " records.<br>";
         }
 
-        echo $this->get_movie_quote_by_id(1) . "<BR>";
+        echo "Movie quote #1: " . $this->get_movie_quote_by_id(1) . "<BR>";
     }
 
     public function test_user_pairings_stuff() {
         // for testing user pairings functions
         // $this->delete_all_pairings_from_user_pairings_table();
         global $user_pairings_table_name;
+        global $wpdb;
+
+        echo "<br>";
         if ($this->does_table_exist_in_database($user_pairings_table_name)) {
             echo "User pairings table exists<br>";
         } else {
@@ -610,10 +630,12 @@ Class IFLPartyMechanics {
         if ($this->is_table_empty($user_pairings_table_name)) {
             echo "User pairings table is empty<br>";
         } else {
-            echo "User pairings table is not empty<br>";
+//            echo "User pairings table is not empty<br>";
+            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $user_pairings_table_name);
+            echo "User pairings table contains " . $rows[0]->num_rows . " records.<br>";
         }
 
-        echo $this->get_movie_quote_by_pairing(1, 2) . "<br>";
+        echo "Movie quote for pairing of users 1 and 3: " . $this->get_movie_quote_by_pairing(1, 3) . "<br>";
     }
 
     public function test_tokens_stuff() {
@@ -622,6 +644,8 @@ Class IFLPartyMechanics {
         // $this->drop_tokens_table();
 
         global $tokens_table_name;
+        global $wpdb;
+        echo "<br>";
         if ($this->does_table_exist_in_database($tokens_table_name)) {
             echo "Tokens table exists<br>";
         } else {
@@ -632,12 +656,23 @@ Class IFLPartyMechanics {
         if ($this->is_table_empty($tokens_table_name)) {
             echo "Tokens table is empty<br>";
         } else {
-            echo "Tokens table is not empty<br>";
+//            echo "Tokens table is not empty<br>";
+            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $tokens_table_name);
+            echo "Tokens table contains " . $rows[0]->num_rows . " records.<br>";
         }
 
-        echo $this->get_token_ids_by_user_id("0") . "<br>";
-        echo $this->get_user_id_from_token_id("5") . "<br>";
-        echo $this->add_token_id_and_user_id_to_tokens_table("7", "0") . "<br>";
+//        echo $this->get_token_ids_by_user_id("0") . "<br>";
+//        echo $this->get_user_id_from_token_id("5") . "<br>";
+//        echo $this->add_token_id_and_user_id_to_tokens_table("7", "0") . "<br>";
+    }
+
+    public function test_option_stuff() {
+        echo "<br><b>Reader NFC IDs in options table:</b><br>";
+        for ($i = 1; $i < 5; $i++) {
+            $rstr = strval($i);
+            $reader_value = get_option('reader_' . "1");
+            echo "Reader " . $rstr . ": " . get_option('reader_' . $rstr) . "<br>";
+        }
     }
 
     public function does_movie_quotes_table_exist_in_database() {
@@ -645,19 +680,22 @@ Class IFLPartyMechanics {
         global $movie_quotes_table_name;
         return $this->does_table_exist_in_database($movie_quotes_table_name);
     }
+
     public function does_user_pairings_table_exist_in_database() {
         global $wpdb;
         global $user_pairings_table_name;
         return $this->does_table_exist_in_database($user_pairings_table_name);
     }
+
     public function does_tokens_table_exist_in_database() {
         global $wpdb;
         global $tokens_table_name;
         return $this->does_table_exist_in_database($tokens_table_name);
     }
+
     public function does_table_exist_in_database($table_name) {
         global $wpdb;
-        $mytables=$wpdb->get_results("SHOW TABLES");
+        $mytables = $wpdb->get_results("SHOW TABLES");
         foreach ($mytables as $mytable) {
             foreach ($mytable as $t) {
                 // echo $t . "<br>";
@@ -704,10 +742,10 @@ Class IFLPartyMechanics {
               PRIMARY KEY  (id)
             ) $charset_collate;";
 
-        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        dbDelta( $sql );
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
 
-        add_option( 'movie_quotes_db_version', $movie_quotes_db_version );
+        add_option('movie_quotes_db_version', $movie_quotes_db_version);
     }
 
     public function create_user_pairings_table() {
@@ -723,10 +761,10 @@ Class IFLPartyMechanics {
               PRIMARY KEY  (id)
             ) $charset_collate;";
 
-        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        dbDelta( $sql );
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
 
-        add_option( 'user_pairings_db_version', $user_pairings_db_version );
+        add_option('user_pairings_db_version', $user_pairings_db_version);
     }
 
     public function create_tokens_table() {
@@ -745,10 +783,10 @@ Class IFLPartyMechanics {
               PRIMARY KEY  (id)
             ) $charset_collate;";
 
-        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        dbDelta( $sql );
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
 
-        add_option( 'tokens_db_version', $tokens_db_version );
+        add_option('tokens_db_version', $tokens_db_version);
     }
 
     public function delete_all_quotes_from_movie_quotes_table() {
@@ -803,10 +841,10 @@ Class IFLPartyMechanics {
         global $wpdb;
         global $movie_quotes_table_name;
         global $quotes_csv_file;
-        $file = fopen($quotes_csv_file,"r");
+        $file = fopen($quotes_csv_file, "r");
         $quotes_array = [];
         // read all quotes into an array
-        while(! feof($file)) {
+        while (!feof($file)) {
             $entry = fgetcsv($file);
             if ($entry[0] != "") {
                 array_push($quotes_array, $entry);
@@ -917,7 +955,9 @@ Class IFLPartyMechanics {
         if ($wpdb->num_rows == 0) {
             return "No tokens found for user ID " . $user_id;
         } else {
-            return join(", ", array_map(function($token) {return $token->token_id;}, $result));
+            return join(", ", array_map(function ($token) {
+                return $token->token_id;
+            }, $result));
         }
     }
 
@@ -937,7 +977,7 @@ Class IFLPartyMechanics {
         if ($wpdb->num_rows != 0) {
             $user_id_already_registered = $result[0]->user_id;
             if ($user_id_already_registered != $user_id) {
-                return "Error - token ID " . $token_id . " is already registered to a different userID (". $user_id_already_registered . ")";
+                return "Error - token ID " . $token_id . " is already registered to a different userID (" . $user_id_already_registered . ")";
             }
             return "Token ID " . $token_id . " is already registered to that user ID (" . $user_id . ")";
         }
@@ -952,7 +992,7 @@ Class IFLPartyMechanics {
         if ($wpdb->num_rows != 0) {
             return "Token ID " . $token_id . " and user ID " . $user_id . " pairing added to the tokens table";
         } else {
-            return "Error adding token and user IDs to the tokens table";
+            return "Error adding token ID and user ID to the tokens table";
         }
     }
 
@@ -998,5 +1038,6 @@ Class IFLPartyMechanics {
                 )
             );
         }*/
-    }
+}
+
 ?>

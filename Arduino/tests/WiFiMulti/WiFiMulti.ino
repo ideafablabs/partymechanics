@@ -12,7 +12,7 @@ void setup() {
   Serial.begin(115200);
 
   WiFi.mode(WIFI_STA);
-  wifiMulti.addAP("ssid_from_AP_1", "your_password_for_AP_1");
+  wifiMulti.addAP("loadingdockap", "Ldock55AP$securityKEY*");
   wifiMulti.addAP("Idea Fab Labs", "vortexrings");
   wifiMulti.addAP("ssid_from_AP_3", "your_password_for_AP_3");
 
@@ -22,6 +22,7 @@ void setup() {
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
+    Serial.println(WiFi.SSID());
   }
 }
 
@@ -34,5 +35,6 @@ void loop() {
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
+    Serial.println(WiFi.SSID());
   }
 }
