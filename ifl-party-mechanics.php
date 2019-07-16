@@ -34,8 +34,16 @@ $tokens_db_version = "1.0";
 $IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
 
-Class IFLPartyMechanics
-{
+// See if the user has posted us some information
+// If they did, this hidden field will be set to 'Y'
+// variables for the field and option names
+$opt_name = 'mt_favorite_color';
+#global $hidden_field_name;
+$hidden_field_name = 'mt_submit_hidden';
+$data_field_name = 'mt_favorite_color';
+
+
+Class IFLPartyMechanics {
 
     // https://www.ibenic.com/creating-wordpress-menu-pages-oop/
 
@@ -75,11 +83,12 @@ Class IFLPartyMechanics
     public $menu_options = array();
 
 
+
     /*
      * Action hooks
      */
     public function run($options = array()) {
-
+        global $hidden_field_name;
         // for testing movie quotes functions
         // add_action( 'wp_footer', array( $this, 'test_user_pairings_stuff' )  );
         // add_action( 'wp_footer', array( $this, 'test_movie_quotes_stuff' )  );
@@ -172,9 +181,22 @@ Class IFLPartyMechanics
      * Build HTML for admin page.
      */
     public function admin_page_call() {
+        global $hidden_field_name;
+//        if (isset($_POST[ $hidden_field_name ])) { //} && $_POST[ $hidden_field_name ] == 'Y') {
+        if (isset($_POST[ "hidden" ]) && $_POST[ "hidden" ] == 'Y') {
+            $opt_val = $_POST[ 'current_event_title' ];
+            update_option('current_event_title', $opt_val);
+//// Read their posted value
+//    $opt_val = $_POST[$data_field_name];
+//
+//// Save the posted value in the database
+//    update_option($opt_name, $opt_val);
+
+        }
         // Echo the html here...
         echo "XING!</br>";
         $this->test_event_title_stuff();
+        $this->test_event_registration_form_stuff();
         $this->test_user_pairings_stuff();
         $this->test_movie_quotes_stuff();
         $this->test_tokens_stuff();
@@ -577,9 +599,42 @@ Class IFLPartyMechanics
     }
 
     public function test_event_title_stuff() {
+        // see https://codex.wordpress.org/Adding_Administration_Menus
+        global $hidden_field_name;
         // update_option('current_event_title', "Juicy Fruit");
-        echo"<label for='current_event_title'><br><b>Current event title:</b></label>
-        <input type='text' name='email' value='" . get_option('current_event_title') . "'/><br>";
+        echo "<form name='form1' method='post' action=''>
+        <input type='hidden' name='hidden' value='Y'>
+        <label for='current_event_title'><br><b>Current event title:</b></label>
+        <input type='text' name='current_event_title' value='" . get_option('current_event_title') . "'/>
+            <input type='submit' name='Submit' value='Change'/>
+        </form><br>";
+    }
+
+    public function change_event_title() {
+        echo "CHANGED<br>";
+    }
+
+    public function test_event_registration_form_stuff() {
+        $active_plugins = apply_filters('active_plugins', get_option('active_plugins'));
+        $gravityforms = false;
+        $gravityformsuserregistration = false;
+        foreach($active_plugins as $plugin){
+            if ($plugin == "gravityforms/gravityforms.php") {
+                $gravityforms = true;
+            } else if ($plugin == "gravityformsuserregistration/userregistration.php") {
+                $gravityformsuserregistration = true;
+            }
+        }
+        if ($gravityforms & $gravityformsuserregistration) {
+            echo "<br>Gravity Forms and Gravity Forms User Registration are installed and active<br>";
+            echo "<b>Active forms:</b><br>";
+            $forms = GFAPI::get_forms();
+            foreach($forms as $form) {
+                echo "Title: " . $form["title"] . ", ID: " . $form["id"] . "<br>";
+            }
+        } else {
+            echo "<br>Gravity Forms and Gravity Forms User Registration are <b>not</b> installed and active<br>";
+        }
     }
 
     public function test_movie_quotes_stuff() {
