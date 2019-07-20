@@ -11,6 +11,7 @@
  */
 
 include 'rest-api.php';
+include 'utilities.php';
 
 global $wpdb;
 global $movie_quotes_table_name;
