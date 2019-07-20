@@ -1,0 +1,9 @@
+Movie fortune 
+
+Speed up Textscroll - john done
+Run on single ESP  - john
+	code merge  -john
+push into Git hub - john & jordan done
+Finish the sockets - jordan 
+Improve socket ring animation john
+
