@@ -121,6 +121,8 @@ Class IFLPartyMechanics {
         add_action('wp_ajax_nopriv_ifl_admit_guest', array($this, 'ifl_admit_guest'));
         add_action('wp_ajax_ifl_admit_all', array($this, 'ifl_admit_all'));
         add_action('wp_ajax_nopriv_ifl_admit_all', array($this, 'ifl_admit_all'));
+        add_action('wp_ajax_iflpm_get_token_from_reader', array($this, 'iflpm_get_token_from_reader'));
+        add_action('wp_ajax_nopriv_iflpm_get_token', array($this, 'iflpm_get_token_from_reader'));
 
         // Menu Page Setup
         add_action('admin_menu', array($this, 'wpdocs_register_my_custom_menu_page'));
@@ -128,6 +130,8 @@ Class IFLPartyMechanics {
         add_shortcode('registrationform', array($this, 'ifl_display_registration_form'));
         add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));
         add_shortcode('guestlist', array($this, 'ifl_display_guest_list'));
+        add_shortcode('entry_processor', array($this, 'ifl_entry_processor'));
+        
 
 //        register_activation_hook( __FILE__, 'iflpm_install' );
 //        register_activation_hook( __FILE__, 'iflpm_install_data' );
@@ -146,7 +150,6 @@ Class IFLPartyMechanics {
      */
     public function enqueue_iflpm_scripts() {
         wp_enqueue_script('iflpm-script');
-
         wp_localize_script('iflpm-script', 'iflpm_ajax', array('ajax_url' => admin_url('admin-ajax.php'), 'check_nonce' => wp_create_nonce('iflpm-nonce')));
     }
 
@@ -500,27 +503,130 @@ Class IFLPartyMechanics {
 
     }
 
+    /**
+     * Shortcode wrapper for displaying the guest admissions list
+     * Ex: [entry_processor reader_id="1" event="Event Title Goes Here" ]
+     */
+    public function ifl_entry_processor($atts) {
+        extract(shortcode_atts(array(            
+            'event' => $this->menu_options['form_event_title']        
+        ), $atts));
 
-    /*
+        $reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
+        $user_email = (isset($_REQUEST['user_email'])) ? $_REQUEST['user_email'] : '';
+        $nfc = (isset($_REQUEST['nfc'])) ? $_REQUEST['nfc'] : '0';
 
-    Array
-    (
-        [0] => Array
-            (
-                [First Name] => Santa Cruz
-                [Last Name] => Santa Cruz
-            )
+        // Begin response html string.
+        $response = '';
 
-        [1] => Array
-            (
-                [First Name] => Or Such
-                [Last Name] => Or Such
-            )
+        // Pick Reader        
+        if ($reader_id == '') {            
+            
+            $available_reader_count = 4;
 
-    )
+            $response .= '<ul class="reader_list">';
+            for ($i = 1;$i<=$available_reader_count;$i++) {
+                $response .= '<li><a class="reader_choice_button" href="./?reader_id='.$i.'">Reader '.$i.'</a></li>';    
+            }            
+            $response .= '</ul>';
+            return $response;
+        }
 
-    /*
+        // Create new User
+        if (isset($_REQUEST['create'])) {
 
+            // Do GF create
+            
+            return $response;
+        }
+        
+        // See Entry List
+        if ($user_email == '') {
+            
+            // Get the users from the DB...
+            $users = get_users(array('orderby' => 'display_name','fields' => 'all_with_meta'));
+
+            /// Later on we will have a switch for form entries instead of members.
+
+            // Build search HTML.
+            $response .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">X</button></div>';
+
+            // Build list HTML
+            $response .= '<ul class="member_select_list">';
+
+            // Build links for each member...
+            foreach ($users as $key => $user) {
+
+                $formlink = './?user_email='.$user->user_email.'&membername='.urlencode($user->display_name).'&reader_id='.$reader_id;   
+
+                $response .= '<li data-sort="'.$user->display_name.'">
+                <a id="'.$user->ID.'" class="mm-button large '.$member_class.'" href="'.$formlink.'" '.$admin_guest_list_flag.'>
+                <span class="member-displayname">'.$user->display_name.'</span>'.
+                '<span class="attendance_count alignright">'.$attendance_count.'</span>'
+
+                .'
+                <br /><span class="member-email">'.$user->user_email.'</span></a>
+                </li>';     
+            } 
+
+            $response .= '</ul>';
+            return $response;
+        }
+        
+        // Associate token ID with user...        
+        if ($nfc == '0') { 
+            $response .= '<p>Scan medallion and click here:</p>';
+            $response .= '<p><div class="token_id"></div></p>';
+            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')">Get Medallion Code</button></p>';
+            $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&nfc='.$reader_id.'">Send It!</a></p>';
+
+            // if (token_id_exists_in_table($token_id)) {}
+
+            return $response;
+        }
+        
+        // Complete with Entry GForm and go back to Entry List or Create New User again.
+        if ($nfc) {
+
+            // Get user object by email.
+            $user = get_user_by( 'email', $user_email );
+
+            // Get the token from the reader memory slot.
+            $token_id = get_option('reader_'.$reader_id);
+            
+            // Add pair to the database or get an error.
+            $tokenadd = $this->add_token_id_and_user_id_to_tokens_table($nfcid,$user->ID);
+            
+            // if ($tokenadd == ) {
+                // Do form for Attendance of this particular event...    
+            // } else {
+                // Output the error message.
+                // $response .= $tokenadd;
+            // }
+            
+
+            // Or go back somewhere...
+            $response .= '<p>';
+            $response .= '<a class="button" href="./?reader_id='.$reader_id.'">Back to List</a><br />';
+            $response .= '<a class="button" href="./?reader_id='.$reader_id.'&create">Register New</a>';
+            $response .= '</p>';            
+
+            return $response;
+        }
+
+        // There was a problem somewhere along the way...
+        $response .= '<p>There was a problem somewhere along the way...</p>';
+        $response .= '<a class="button" href="./?reader_id='.$reader_id.'">Back to List</a><br />';
+        $response .= '<a class="button" href="./?reader_id='.$reader_id.'&create">Register New</a>';
+        return $response;
+    }
+
+    /**
+    * Reset all the attendee statuses for an event.
+    */
+    public function iflpm_get_token_from_reader($reader_id) {
+        return get_option('reader_'.$reader_id);
+    }
 
     /**
     * Reset all the attendee statuses for an event.
@@ -981,6 +1087,22 @@ Class IFLPartyMechanics {
         );
         $result = $wpdb->get_results("SELECT * FROM " . $user_pairings_table_name . " WHERE pairing = '" . $pairing_string . "'");
         return $result[0]->id;
+    }
+
+    public function token_id_exists_in_table($token_id) {
+        // if the token ID is in the tokens table, returns associated user ID as string,
+        // otherwise returns an error message
+        global $wpdb;
+        global $tokens_table_name;
+        if (!$this->does_table_exist_in_database($tokens_table_name)) {
+            return false;
+        }
+        $result = $wpdb->get_results("SELECT user_id FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
+        if ($wpdb->num_rows == 0) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public function get_user_id_from_token_id($token_id) {

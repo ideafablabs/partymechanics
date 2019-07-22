@@ -1,0 +1,164 @@
+
+#page-heading {
+	/*display: none;*/
+}
+
+/*@media screen and (max-width: 782px) {
+	html {
+	    margin-top: 0px !important;
+	}
+}*/
+.ifl-party-mechanics .entry {
+	border-radius:4px;
+	background:#FFF;
+	box-shadow: 0px 0px 2px #666;
+	padding:.4em .6em;
+	display: block;
+}
+.ifl-party-mechanics {
+
+}
+
+a.admit-button {
+	/*color:#1D8CB5;*/
+	color:white;
+	font-weight: bold;
+	padding:.8em;
+	margin-top:.5em;
+	border: 1px solid darkblue;
+	background:#1D8CB5;
+	border-radius:4px;
+	display: block;
+	font-size: 1.2em;
+	text-shadow: 0px 0px 1px #000;
+
+}
+a.admitting {
+	color:#aaa;
+	background:lightblue;
+}
+a.admitted {
+	color:#555;
+	background:#CCC;
+	text-shadow:0px 0px 0px #000;
+}
+.entry-email {
+	text-align: right;
+	color:#666;
+	font-size: 80%;
+}
+
+.admit-all {
+	float:right;
+	/*display: block;*/
+	/*background: lightblue;*/
+	/*color: black;*/
+	/*padding:3px 5px;*/
+	/*border-radius: 4px;*/
+	/*position: absolute;*/
+	/*top:1em;*/
+	/*right:1em;*/
+}
+
+.membership-terms {
+	overflow:scroll;
+	border:1px solid white;
+	height:150px;
+	font-size: 10px;
+	padding:10px;
+}
+
+.gform_wrapper .gfield_error .gfield_label {
+	color:red;
+}
+
+/*.nfc-wrapper*/
+
+/*//// OLD STYLES /////*/
+
+	/* Gallery Member Select Styles */
+	.member_select_search {
+		height: 5em;
+		display: block;
+		/*position: absolute;*/
+		/*top:10px;*/
+	}
+	.member_select_search #q {
+		font-size:2em;
+		margin-bottom:1.1em;
+		padding:10px;
+		height:2em;
+		width:80%;
+		float: left;
+	}
+	.member_select_search .clear-search {
+		font-size:2em;
+		width:18%;
+		margin-left:6px;
+		height: 2em;
+		float: left;
+		background: #1D8CB5;
+	}
+	ul.member_select_list {
+		list-style-type:none;
+		margin-left:0;
+	}
+	ul.member_select_list li {
+		margin-bottom:.8em;
+/*		height:2em;*/
+	}
+	ul.member_select_list li.hidden { 
+		display:none;
+	}
+	ul.member_select_list li a.mm-button {
+		font-size:1.9em;
+		width:100%;
+		overflow:hidden;
+	}
+	ul.member_select_list li a .member-displayname {}
+	ul.member_select_list li a .member-email {
+		color:#444;
+		font-size:.5em;
+/*		width:10em;	*/
+		white-space:nowrap;
+	}
+	a.mm-button.new-signup {
+		font-size:2em;
+/*		padding:10px 20px 0;*/
+/*		height:4em;*/
+		margin:0 .1em;
+		text-align:center;
+	}
+	a.mm-button.new-signup img {
+		-webkit-opacity:.7;
+		opacity:.7;
+		width:14%;
+		
+	}
+	a.mm-button.new-signup span{
+		margin-right:10px;
+	}
+	.green-text {
+		color:#009300;
+	}
+	.red-text {
+		color:#E10012;
+	}
+	.app-sidebar {
+		position: fixed !important; 
+		left:51%;
+		/*bottom:40px;*/
+	}
+
+
+
+
+@media only screen and (max-width: 850px) { 
+
+	.page-id-192 #gform_7 .button, #gform_submit_button_19 {
+		font-size: 2.2em;
+		padding:11px 20px;
+
+	}
+}
+
