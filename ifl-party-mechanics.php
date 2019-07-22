@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Plugin Name: IFL Admit Guests
+ * Plugin Name: IFL Party Mechanics
  * Plugin URI:
- * Description: This plugin allow you check in guests who've signed up through Gravity Forms
+ * Description: This plugin manages our party antics.
  * Version: 2.0.0
- * Author: Jordan Layman
- * Author URI: https://github.com/factor8/
+ * Author: Idea Fab Labs Teams
+ * Author URI: https://github.com/ideafablabs/
  * License: GPL3
  */
 
@@ -505,7 +505,7 @@ Class IFLPartyMechanics {
 
     /**
      * Shortcode wrapper for displaying the guest admissions list
-     * Ex: [entry_processor reader_id="1" event="Event Title Goes Here" ]
+     * Ex: [entry_processor event="Event Title Goes Here" ]
      */
     public function ifl_entry_processor($atts) {
         extract(shortcode_atts(array(            
