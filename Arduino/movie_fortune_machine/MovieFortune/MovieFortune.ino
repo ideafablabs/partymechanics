@@ -31,9 +31,112 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266mDNS.h>
 
-#define count(x)   (sizeof(x) / sizeof(x[0]))
+// LED Matrix driver
+#include <MaxMatrix.h>
+#include <avr/pgmspace.h>
 
-#define PIN 5
+
+const PROGMEM char CH[] = {
+3, 8, B00000000, B00000000, B00000000, B00000000, B00000000, // space
+1, 8, B01011111, B00000000, B00000000, B00000000, B00000000, // !
+3, 8, B00000011, B00000000, B00000011, B00000000, B00000000, // "
+5, 8, B00010100, B00111110, B00010100, B00111110, B00010100, // #
+4, 8, B00100100, B01101010, B00101011, B00010010, B00000000, // $
+5, 8, B01100011, B00010011, B00001000, B01100100, B01100011, // %
+5, 8, B00110110, B01001001, B01010110, B00100000, B01010000, // &
+1, 8, B00000011, B00000000, B00000000, B00000000, B00000000, // '
+3, 8, B00011100, B00100010, B01000001, B00000000, B00000000, // (
+3, 8, B01000001, B00100010, B00011100, B00000000, B00000000, // )
+5, 8, B00101000, B00011000, B00001110, B00011000, B00101000, // *
+5, 8, B00001000, B00001000, B00111110, B00001000, B00001000, // +
+2, 8, B10110000, B01110000, B00000000, B00000000, B00000000, // ,
+4, 8, B00001000, B00001000, B00001000, B00001000, B00000000, // -
+2, 8, B01100000, B01100000, B00000000, B00000000, B00000000, // .
+4, 8, B01100000, B00011000, B00000110, B00000001, B00000000, // /
+4, 8, B00111110, B01000001, B01000001, B00111110, B00000000, // 0
+3, 8, B01000010, B01111111, B01000000, B00000000, B00000000, // 1
+4, 8, B01100010, B01010001, B01001001, B01000110, B00000000, // 2
+4, 8, B00100010, B01000001, B01001001, B00110110, B00000000, // 3
+4, 8, B00011000, B00010100, B00010010, B01111111, B00000000, // 4
+4, 8, B00100111, B01000101, B01000101, B00111001, B00000000, // 5
+4, 8, B00111110, B01001001, B01001001, B00110000, B00000000, // 6
+4, 8, B01100001, B00010001, B00001001, B00000111, B00000000, // 7
+4, 8, B00110110, B01001001, B01001001, B00110110, B00000000, // 8
+4, 8, B00000110, B01001001, B01001001, B00111110, B00000000, // 9
+2, 8, B01010000, B00000000, B00000000, B00000000, B00000000, // :
+2, 8, B10000000, B01010000, B00000000, B00000000, B00000000, // ;
+3, 8, B00010000, B00101000, B01000100, B00000000, B00000000, // <
+3, 8, B00010100, B00010100, B00010100, B00000000, B00000000, // =
+3, 8, B01000100, B00101000, B00010000, B00000000, B00000000, // >
+4, 8, B00000010, B01011001, B00001001, B00000110, B00000000, // ?
+5, 8, B00111110, B01001001, B01010101, B01011101, B00001110, // @
+4, 8, B01111110, B00010001, B00010001, B01111110, B00000000, // A
+4, 8, B01111111, B01001001, B01001001, B00110110, B00000000, // B
+4, 8, B00111110, B01000001, B01000001, B00100010, B00000000, // C
+4, 8, B01111111, B01000001, B01000001, B00111110, B00000000, // D
+4, 8, B01111111, B01001001, B01001001, B01000001, B00000000, // E
+4, 8, B01111111, B00001001, B00001001, B00000001, B00000000, // F
+4, 8, B00111110, B01000001, B01001001, B01111010, B00000000, // G
+4, 8, B01111111, B00001000, B00001000, B01111111, B00000000, // H
+3, 8, B01000001, B01111111, B01000001, B00000000, B00000000, // I
+4, 8, B00110000, B01000000, B01000001, B00111111, B00000000, // J
+4, 8, B01111111, B00001000, B00010100, B01100011, B00000000, // K
+4, 8, B01111111, B01000000, B01000000, B01000000, B00000000, // L
+5, 8, B01111111, B00000010, B00001100, B00000010, B01111111, // M
+5, 8, B01111111, B00000100, B00001000, B00010000, B01111111, // N
+4, 8, B00111110, B01000001, B01000001, B00111110, B00000000, // O
+4, 8, B01111111, B00001001, B00001001, B00000110, B00000000, // P
+4, 8, B00111110, B01000001, B01000001, B10111110, B00000000, // Q
+4, 8, B01111111, B00001001, B00001001, B01110110, B00000000, // R
+4, 8, B01000110, B01001001, B01001001, B00110010, B00000000, // S
+5, 8, B00000001, B00000001, B01111111, B00000001, B00000001, // T
+4, 8, B00111111, B01000000, B01000000, B00111111, B00000000, // U
+5, 8, B00001111, B00110000, B01000000, B00110000, B00001111, // V
+5, 8, B00111111, B01000000, B00111000, B01000000, B00111111, // W
+5, 8, B01100011, B00010100, B00001000, B00010100, B01100011, // X
+5, 8, B00000111, B00001000, B01110000, B00001000, B00000111, // Y
+4, 8, B01100001, B01010001, B01001001, B01000111, B00000000, // Z
+2, 8, B01111111, B01000001, B00000000, B00000000, B00000000, // [
+4, 8, B00000001, B00000110, B00011000, B01100000, B00000000, // \ backslash
+2, 8, B01000001, B01111111, B00000000, B00000000, B00000000, // ]
+3, 8, B00000010, B00000001, B00000010, B00000000, B00000000, // hat
+4, 8, B01000000, B01000000, B01000000, B01000000, B00000000, // _
+2, 8, B00000001, B00000010, B00000000, B00000000, B00000000, // `
+4, 8, B00100000, B01010100, B01010100, B01111000, B00000000, // a
+4, 8, B01111111, B01000100, B01000100, B00111000, B00000000, // b
+4, 8, B00111000, B01000100, B01000100, B00101000, B00000000, // c
+4, 8, B00111000, B01000100, B01000100, B01111111, B00000000, // d
+4, 8, B00111000, B01010100, B01010100, B00011000, B00000000, // e
+3, 8, B00000100, B01111110, B00000101, B00000000, B00000000, // f
+4, 8, B10011000, B10100100, B10100100, B01111000, B00000000, // g
+4, 8, B01111111, B00000100, B00000100, B01111000, B00000000, // h
+3, 8, B01000100, B01111101, B01000000, B00000000, B00000000, // i
+4, 8, B01000000, B10000000, B10000100, B01111101, B00000000, // j
+4, 8, B01111111, B00010000, B00101000, B01000100, B00000000, // k
+3, 8, B01000001, B01111111, B01000000, B00000000, B00000000, // l
+5, 8, B01111100, B00000100, B01111100, B00000100, B01111000, // m
+4, 8, B01111100, B00000100, B00000100, B01111000, B00000000, // n
+4, 8, B00111000, B01000100, B01000100, B00111000, B00000000, // o
+4, 8, B11111100, B00100100, B00100100, B00011000, B00000000, // p
+4, 8, B00011000, B00100100, B00100100, B11111100, B00000000, // q
+4, 8, B01111100, B00001000, B00000100, B00000100, B00000000, // r
+4, 8, B01001000, B01010100, B01010100, B00100100, B00000000, // s
+3, 8, B00000100, B00111111, B01000100, B00000000, B00000000, // t
+4, 8, B00111100, B01000000, B01000000, B01111100, B00000000, // u
+5, 8, B00011100, B00100000, B01000000, B00100000, B00011100, // v
+5, 8, B00111100, B01000000, B00111100, B01000000, B00111100, // w
+5, 8, B01000100, B00101000, B00010000, B00101000, B01000100, // x
+4, 8, B10011100, B10100000, B10100000, B01111100, B00000000, // y
+3, 8, B01100100, B01010100, B01001100, B00000000, B00000000, // z
+3, 8, B00001000, B00110110, B01000001, B00000000, B00000000, // {
+1, 8, B01111111, B00000000, B00000000, B00000000, B00000000, // |
+3, 8, B01000001, B00110110, B00001000, B00000000, B00000000, // }
+4, 8, B00001000, B00000100, B00001000, B00000100, B00000000, // ~
+};
+
+
+
+#define count(x)   (sizeof(x) / sizeof(x[0]))
 
 #define PN532_SCK  14
 #define PN532_MOSI 13
@@ -41,9 +144,19 @@
 #define PN532_MISO 12
 #define PN532_SS2   16
 
+
+int data = 12;    // 8, DIN pin of MAX7219 module
+int load = 4;    // 9, CS pin of MAX7219 module
+int clk = 14;  // 10, CLK pin of MAX7219 module
+
+int maxInUse = 8;    //change this variable to set how many MAX7219's you'll use
+MaxMatrix m(data, load, clk, maxInUse); // define module
+byte buffer[10];
+
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 Adafruit_PN532 nfc2(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2);
 
+#define PIN 5
 #define NUM_LEDS 48
 #define BRIGHTNESS 50
 
@@ -59,17 +172,17 @@ WiFiClient client;
 HTTPClient http;
 
 // Replace with your network credentials
-const char* ssid = "Idea Fab Labs";
-const char* password = "vortexrings";
+//const char* ssid = "Idea Fab Labs";
+//const char* password = "vortexrings";
 
-//const char* ssid = "";
-//const char* password = "";
+const char* ssid = "Rainbow";
+const char* password = "Un1c0rn!";
 
 long now,lastBlink,lastRead =0;
 uint16_t ledPeriod = 300; // ms
 uint16_t cardreaderPeriod = 500; // ms
 
-//int LEDPin = LED_BUILTIN;
+int LEDPin = LED_BUILTIN;
 
 byte neopix_gamma[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -103,6 +216,9 @@ byte neopix_gamma[] = {
   uint8_t uid2Length;        // Length of the second UID (4 or 7 bytes depending on ISO14443A card type)
   boolean foundCard1, foundCard2 = false;
 
+   String postURL= "http://mint.ideafablabs.com/wp-json/mint/v1/quote_pair/";
+   String resetParams = "NFC1=00000000&NFC2=00000000";
+
   long id1, id2;
 
 //  uint32_t colors[] = { 0xFF0000, 0xFFFF00, 0x00FF00, 0x0000FF };
@@ -111,9 +227,13 @@ byte neopix_gamma[] = {
   uint8_t color= 100;  // number between 1-255
   uint8_t colorCase= 0;
 
-
+  const int SCROLL_SPEED = 25;
+  String currentQuote, oldQuote;
 
 void setupWiFi() {
+
+
+  
   //DO NOT TOUCH
     //  This is here to force the ESP32 to reset the WiFi and initialise correctly.
     Serial.print("WIFI status = ");
@@ -146,12 +266,18 @@ void setupWiFi() {
 
 
 void setup() {
+
+  delay(1000);
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("Hello!");
-  nfc.begin();
+
   
+  nfc.begin();
+  delay(500);
   uint32_t versiondata = nfc.getFirmwareVersion();
+
+  delay(500);
   if (! versiondata) {
     Serial.print("Didn't find PN53x board");
     while (1); // halt
@@ -160,11 +286,12 @@ void setup() {
   Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
   Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC); 
   Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
-
+  delay(1000);
 // BEGIN Board 2 setup
   nfc2.begin();
-  
+  delay(500);
    versiondata = nfc2.getFirmwareVersion();
+   delay(500);
   if (! versiondata) {
     Serial.print("Didn't find PN53x board 2");
     while (1); // halt
@@ -184,8 +311,33 @@ void setup() {
   nfc2.SAMConfig();
   Serial.println("Readers ready.  Waiting for an ISO14443A card...");
 
-  setupWiFi();
 
+    delay(500);
+    //init the display matrix
+    m.init(); // module initialize
+    m.setIntensity(0); // dot matix intensity 0-15
+    delay(500);
+
+    currentQuote= " RFID readers setup success.";
+    displayQuote(currentQuote, SCROLL_SPEED);
+
+    delay(500);
+
+    
+    setupWiFi();
+
+    currentQuote= "   WIFI setup success.";
+    displayQuote(currentQuote, SCROLL_SPEED);
+
+    delay(500);
+
+    // reset string with test params, 0,0
+    // " Find a Friend and Get Your Movie Fortune                "
+    currentQuote= testPost(0,0);
+    displayQuote(currentQuote, SCROLL_SPEED);
+
+    delay(500);
+    
   // End of trinket special code
   strip.setBrightness(BRIGHTNESS);
   strip.begin();
@@ -194,6 +346,13 @@ void setup() {
   // init machine state
   machineState = NO_FORTUNE;
   lastMachineState = NO_FORTUNE;
+
+
+
+  //currentQuote= fetchQuote();
+  
+  currentQuote= "this is a quote from John";
+  //displayQuote(currentQuote, SCROLL_SPEED);
 }
 
 int step =0;
@@ -203,8 +362,11 @@ void loop() {
   // do time
   // get time
    now = millis();
+
+  // displayQuote(currentQuote, SCROLL_SPEED);
   
-   // do LEDS
+   // do LEDS  ---
+  
   if (now >= lastBlink + ledPeriod) {
     if (foundCard1 && foundCard2) {
       // both cards on reader
@@ -257,6 +419,7 @@ void loop() {
       strip.setPixelColor(step % (NUM_LEDS/2), 0xFF00FF);
       strip.setPixelColor(step % (NUM_LEDS/2) + ringSize, 0xFF00FF);
     }
+   
 
     // Let the magic happen.
     strip.show();
@@ -267,7 +430,11 @@ void loop() {
     // update timer
     lastBlink = now;
   }
-  // do LEDs
+  // end do LEDs
+
+ 
+
+  
   // do card read
   if (now >= lastRead + cardreaderPeriod) {
     Serial.print(machineState);
@@ -335,13 +502,19 @@ void loop() {
   // do wifi
 }
 
-void testPost(long card1, long card2) {
+String testPost(long card1, long card2) {
  // https://apitester.com/ is handy for testing.
   Serial.println("Test Post");
+  
+
+  
   String nfc1Id = String(card1);
   String nfc2Id = String(card2);
   String requestQuotePair = "http://mint.ideafablabs.com/wp-json/mint/v1/quote_pair/";
+  
   String postParams = "NFC1=" + nfc1Id + "&NFC2=" + nfc2Id;
+  if ((card1 == 0) && (card2==0))
+    postParams = resetParams;
 //  Serial.println("calling webRequestPost: " + requestQuotePair + postParams); 
   // we're not rendering the response as a webpage, so send null string
   String responsePage = "";
@@ -349,7 +522,9 @@ void testPost(long card1, long card2) {
   response = webRequestPost(requestQuotePair, postParams, responsePage); 
   Serial.print("String for display: ");
   Serial.println(response);
-  delay(1000);
+  return response;
+  
+  //delay(1000);
 }
 
 String webRequestPost(String request, String params, String page) {
@@ -473,4 +648,40 @@ uint8_t green(uint32_t c) {
 }
 uint8_t blue(uint32_t c) {
   return (c);
+}
+
+
+
+void displayQuote(String quote, int scrollSpeed){   
+  
+  char responseBuffer[quote.length()+1];
+  quote.toCharArray(responseBuffer, quote.length()+1);
+  printStringWithShift(responseBuffer, scrollSpeed, quote.length());  
+
+}
+
+void printCharWithShift(char c, int shift_speed){
+  if (c < 32) return;
+  c -= 32;
+  memcpy_P(buffer, CH + 7*c, 7);
+  m.writeSprite(maxInUse*8, 0, buffer);
+  m.setColumn(maxInUse*8 + buffer[0], 0);
+  
+  for (int i=0; i<buffer[0]+1; i++) 
+  {
+    delay(shift_speed);
+    m.shiftLeft(false, false);
+  }
+}
+
+
+void printStringWithShift(char* s, int shift_speed, int charlength){
+  Serial.printf("Display string: %s\n", s);
+  s++; // remove first quote
+  int i=0;
+  while ((*s != 0) && (i < charlength-2)){   // charlength removes end quote, 
+    printCharWithShift(*s, shift_speed);
+    s++;
+    i++;
+  }
 }
