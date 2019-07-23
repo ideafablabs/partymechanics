@@ -417,7 +417,7 @@ Class IFLPartyMechanics {
         $admit_list_html .= '<div class="member-list ifl-admit-guest small-12 columns">';
         $admit_list_html .= '<h2>' . $event . '</h2>';
         $admit_list_html .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\'">X</button></div>';
-        $admit_list_html .= '<ul class="member_select_list">';
+        $admit_list_html .= '<ul class="member_select_list list-group">';
 
         $attendee_count = 0;
         $admitted_count = 0;
@@ -437,7 +437,7 @@ Class IFLPartyMechanics {
 
             // https://www.sitepoint.com/how-to-use-ajax-in-wordpress-a-real-world-example/
 
-            $admit_list_html .= '<li data-sort="' . $attendee_names[0]['First Name'] . '">
+            $admit_list_html .= '<li class="list-group-item" data-sort="' . $attendee_names[0]['First Name'] . '">
                 <div class="entry large '
                 . $attendee_class . '" ' . $admin_guest_list_flag . '>';
             // <a class="admit-all" data-entry="'.$entry['id'].'">Admit All</a>
@@ -501,9 +501,9 @@ Class IFLPartyMechanics {
             
             $available_reader_count = 4;
 
-            $response .= '<ul class="reader-list">';
+            $response .= '<ul class="reader_list list-group">';
             for ($i = 1;$i<=$available_reader_count;$i++) {
-                $response .= '<li><a class="reader_choice_button" href="./?reader_id='.$i.'">Reader '.$i.'</a></li>';    
+                $response .= '<li class="list-group-item list-group-item-action list-group-item-primary"><span class="glyphicon glyphicon-phone"></span><a class="reader_choice_button" href="./?reader_id='.$i.'">READER '.$i.'</a></li>';    
             }            
             $response .= '</ul>';
             return $response;
@@ -554,18 +554,19 @@ Class IFLPartyMechanics {
             $response .= $start_over_link;
 
             // Build search HTML.
-            $response .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">X</button></div>';
+            $response .= '<div class="member_select_search"><span class="glyphicon glyphicon-user"></span><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">X</button></div>';
 
             // Build list HTML
-            $response .= '<ul class="member_select_list">';
+            $response .= '<ul class="member_select_list list-group">';
 
             // Build links for each member...
             foreach ($users as $key => $user) {
 
                 $formlink = './?user_email='.$user->user_email.'&membername='.urlencode($user->display_name).'&reader_id='.$reader_id;   
 
-                $response .= '<li data-sort="'.$user->display_name.'">
-                <a id="'.$user->ID.'" class="mm-button large '.$member_class.'" href="'.$formlink.'" '.$admin_guest_list_flag.'>
+                $response .= '<li class="list-group-item list-group-item-action" data-sort="'.$user->display_name.'">
+                <span class="glyphicon glyphicon-user"></span>
+                <a id="'.$user->ID.'" class=" '.$member_class.'" href="'.$formlink.'" '.$admin_guest_list_flag.'>
                 <span class="member-displayname">'.$user->display_name.'</span>'.
                 '<span class="attendance_count alignright">'.$attendance_count.'</span>'
 
