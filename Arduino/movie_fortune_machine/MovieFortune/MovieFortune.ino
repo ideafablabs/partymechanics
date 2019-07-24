@@ -361,6 +361,13 @@ void loop() {
   // put your main code here, to run repeatedly:
   // do time
   // get time
+
+  
+  // Send a theater pixel chase in...
+  theaterChase(strip.Color(127, 127, 127), 50); // White
+  theaterChase(strip.Color(127, 0, 0), 50); // Red
+  theaterChase(strip.Color(0, 0, 127), 50); // Blue
+
    now = millis();
 
   // displayQuote(currentQuote, SCROLL_SPEED);
@@ -439,8 +446,8 @@ void loop() {
   if (now >= lastRead + cardreaderPeriod) {
     Serial.print(machineState);
 //    Serial.print(".");
-    foundCard1 = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength,100);
-    foundCard2 = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid2[0], &uid2Length,100);
+    //foundCard1 = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength,100);
+    //foundCard2 = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid2[0], &uid2Length,100);
 
     if (foundCard1 && foundCard2) {
       if (machineState != FORTUNE_COMPLETE) {
@@ -683,5 +690,24 @@ void printStringWithShift(char* s, int shift_speed, int charlength){
     printCharWithShift(*s, shift_speed);
     s++;
     i++;
+  }
+}
+
+
+//Theatre-style crawling lights.
+void theaterChase(uint32_t c, uint8_t wait) {
+  for (int j=0; j<10; j++) {  //do 10 cycles of chasing
+    for (int q=0; q < 3; q++) {
+      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
+        strip.setPixelColor(i+q, c);    //turn every third pixel on
+      }
+      strip.show();
+
+      delay(wait);
+
+      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
+        strip.setPixelColor(i+q, 0);        //turn every third pixel off
+      }
+    }
   }
 }

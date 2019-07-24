@@ -52,8 +52,11 @@ WiFiClient client;
 HTTPClient http;
 
 // Replace with your network credentials
-const char* ssid = "Idea Fab Labs";
-const char* password = "vortexrings";
+const char* ssid = "Rainbow";
+const char* password = "Un1c0rn!";
+
+//const char* ssid = "Idea Fab Labs";
+//const char* password = "vortexrings";
 
 //const char* ssid = "";
 //const char* password = "";
@@ -333,7 +336,7 @@ void testPost(long card1, long card2) {
   Serial.println("Test Post");
   String nfc1Id = String(card1);
   String nfc2Id = String(card2);
-  String requestQuotePair = "http://mint.ideafablabs.com/wp-json/mint/v1/quote_pair/";
+  String requestQuotePair = "https://mint.ideafablabs.com/wp-json/mint/v1/quote_pair/";
   String postParams = "NFC1=" + nfc1Id + "&NFC2=" + nfc2Id;
 //  Serial.println("calling webRequestPost: " + requestQuotePair + postParams); 
   // we're not rendering the response as a webpage, so send null string

@@ -113,12 +113,22 @@ const PROGMEM char CH[] = {
 4, 8, B00001000, B00000100, B00001000, B00000100, B00000000, // ~
 };
 
-//int data = 11;    // 8, DIN pin of MAX7219 module
-//int load = 10;    // 9, CS pin of MAX7219 module
-//int clock = 13;  // 10, CLK pin of MAX7219 module
-int data = 14;    // 8, DIN pin of MAX7219 module
-int load = 15;    // 9, CS pin of MAX7219 module
-int clk = 13;  // 10, CLK pin of MAX7219 module
+
+
+#define PN532_SCK  14
+#define PN532_MOSI 13
+#define PN532_SS   15
+#define PN532_MISO 12
+#define PN532_SS2   16
+
+// old SPI mappings
+//int data = 14;    // 8, DIN pin of MAX7219 module
+//int load = 15;    // 9, CS pin of MAX7219 module
+//int clk = 13;  // 10, CLK pin of MAX7219 module
+
+int data = 12;    // 8, DIN pin of MAX7219 module
+int load = 4;    // 9, CS pin of MAX7219 module
+int clk = 14;  // 10, CLK pin of MAX7219 module
 
 int maxInUse = 8;    //change this variable to set how many MAX7219's you'll use
 
@@ -136,11 +146,11 @@ int LEDPin = LED_BUILTIN;
 
 ESP8266WiFiMulti WiFiMulti;
 
-const char* ssid = "Idea Fab Labs";
-const char* password = "vortexrings";
+//const char* ssid = "Idea Fab Labs";
+//const char* password = "vortexrings";
 // Home test Wifi
-//const char* ssid = "";
-//const char* password = "";
+const char* ssid = "Rainbow";
+const char* password = "Un1c0rn!";
 
 const int SCROLL_SPEED = 25;
 
