@@ -333,17 +333,11 @@ Class IFLPartyMechanics {
             'method' => $method,
             'admin' => $admin
         );
-        // echo '<p>[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']</p>';
-
+        
         $content = "<p>";
         // Pass everything on to Gravity Forms
-
-        // gravity_form( $id_or_title, $display_title = true, $display_description = true, $display_inactive = false, $field_values = null, $ajax = false, $tabindex, $echo = true );
         $content .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
-        // echo do_shortcode('[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']' );
         $content .= "</p>";
-
-        // pr($this->menu_options);
 
         return $content;
     }
@@ -355,34 +349,23 @@ Class IFLPartyMechanics {
     public function ifl_display_registration_form($atts) {
         extract(shortcode_atts(array(
             'form' => $this->menu_options['form_id'],
-            // 'reader_id' => $this->menu_options['reader_id'],
-            // 'event' => $this->menu_options['form_event_title'],
-            // 'price' => $this->menu_options['form_price'],
-            'admin' => $this->menu_options['form_admin_mode'],
-            // 'method' => $this->menu_options['form_payment_method']
+            'event' => $this->menu_options['form_event_title'],
+            'admin' => $this->menu_options['form_admin_mode']
         ), $atts));
 
         $field_values = array(
-            // 'event' => $event,
+            'event' => $event,
             // 'price' => $price,
             // 'reader_id' => $reader_id,
             'admin' => $admin
         );
-        // echo '<p>[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']</p>';
-
-
+    
         $content = "<p>";
         // Pass everything on to Gravity Forms
-
-        // gravity_form( $id_or_title, $display_title = true, $display_description = true, $display_inactive = false, $field_values = null, $ajax = false, $tabindex, $echo = true );
         $content .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
-        // echo do_shortcode('[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']' );
         $content .= "</p>";
 
-        $content .= '<div class="nfc-wrapper"><button class="btn-block">Get NFC</button></div>';
-
-
-        // pr($this->menu_options);
+        // $content .= '<div class="nfc-wrapper"><button class="btn-block">Get NFC</button></div>';
 
         return $content;
     }
@@ -394,12 +377,10 @@ Class IFLPartyMechanics {
     public function ifl_display_guest_list($atts) {
         extract(shortcode_atts(array(
             'form_id' => $this->menu_options['form_id'],
-            'event' => $this->menu_options['form_event_title']
-            // 'admin' => $this->menu_options['form_admin_mode'],
+            'event' => $this->menu_options['form_event_title'],
+            'admin' => $this->menu_options['form_admin_mode'],
             // 'method' => $this->menu_options['form_payment_method']
         ), $atts));
-
-        // echo '<p>[gravityform id="'.$atts['form'].'" title="false" description="true" ajax="true" field_values=\'price=16.00&event='.$atts['event'].'\']</p>';
 
         ///TODO:
         //  Include members in listing.
@@ -438,8 +419,6 @@ Class IFLPartyMechanics {
         $admit_list_html .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\'">X</button></div>';
         $admit_list_html .= '<ul class="member_select_list">';
 
-        // pr($entries[3]);
-
         $attendee_count = 0;
         $admitted_count = 0;
 
@@ -457,9 +436,6 @@ Class IFLPartyMechanics {
             $attendee_names = unserialize($entry[$attendees_list_id]);
 
             // https://www.sitepoint.com/how-to-use-ajax-in-wordpress-a-real-world-example/
-
-            // $formlink = 'http://www.ideafablabs.com/confirm-admit?attendee_id='.$attendee_id.'&membername='.urlencode($attendee_name);
-            // pr($entry);
 
             $admit_list_html .= '<li data-sort="' . $attendee_names[0]['First Name'] . '">
                 <div class="entry large '
@@ -504,7 +480,7 @@ Class IFLPartyMechanics {
     }
 
     /**
-     * Shortcode wrapper for displaying the guest admissions list
+     * Shortcode wrapper for displaying the admission list w NFC. 
      * Ex: [entry_processor event="Event Title Goes Here" ]
      */
     public function ifl_entry_processor($atts) {
@@ -518,28 +494,52 @@ Class IFLPartyMechanics {
 
         // Begin response html string.
         $response = '';
+        $start_over_link = '<ul class="return-links">';
 
         // Pick Reader        
         if ($reader_id == '') {            
             
             $available_reader_count = 4;
 
-            $response .= '<ul class="reader_list">';
+            $response .= '<ul class="reader-list">';
             for ($i = 1;$i<=$available_reader_count;$i++) {
                 $response .= '<li><a class="reader_choice_button" href="./?reader_id='.$i.'">Reader '.$i.'</a></li>';    
             }            
             $response .= '</ul>';
             return $response;
+        } else {
+            // We have the reader ID so lets give a link to get back to just before that.
+            $start_over_link .= '<li><a class="return-link reader-choice" href="./">Back to Reader Choice</a></li>';
         }
 
         // Create new User
         if (isset($_REQUEST['create'])) {
 
-            // Do GF create
-            
+            // Do GF create user
+            if (is_plugin_active('gravityforms/gravityforms.php')) {
+                $field_values = array(
+                    'event' => $event,
+                    // 'price' => $price,
+                    'reader_id' => $reader_id,
+                    'admin' => $admin
+                );
+    
+                // Pass everything on to Gravity Forms
+                $response = "<p>";
+                $response .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
+                $response .= "</p>";
+
+            } else {
+                /// Error on form being active.
+                $response .= '<p class="error">Form is not active.</p>';
+            }
+
+            $start_over_link .= '</ul>';
+            $response .= $start_over_link;
+
             return $response;
         }
-        
+
         // See Entry List
         if ($user_email == '') {
             
@@ -547,6 +547,11 @@ Class IFLPartyMechanics {
             $users = get_users(array('orderby' => 'display_name','fields' => 'all_with_meta'));
 
             /// Later on we will have a switch for form entries instead of members.
+
+            $response .= '<div class="register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></div>';
+
+            $start_over_link .= '</ul>';
+            $response .= $start_over_link;
 
             // Build search HTML.
             $response .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">X</button></div>';
@@ -571,10 +576,16 @@ Class IFLPartyMechanics {
 
             $response .= '</ul>';
             return $response;
+        } else {
+            // We have the reader ID so lets give a link to get back to just after that.
+            $start_over_link .= '<li><a class="return-link list-choice" href="./?reader_id='.$reader_id.'">Back to Member List</a></li>';
         }
-        
+
         // Associate token ID with user...        
         if ($nfc == '0') { 
+            $user = get_user_by( 'email', $user_email );
+
+            $response .= '<h2>'.$user->display_name.'</h2>';
             $response .= '<p>Scan medallion and click here:</p>';
             $response .= '<p><div class="token_id"></div></p>';
             $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')">Get Medallion Code</button></p>';
@@ -582,7 +593,13 @@ Class IFLPartyMechanics {
 
             // if (token_id_exists_in_table($token_id)) {}
 
+            $start_over_link .= '</ul>';
+            $response .= $start_over_link;
+
             return $response;
+        } else {
+            // We have the user email so lets give a link to get back to just before that.
+            $start_over_link .= '<li><a class="return-link list-choice" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'">Back to Member Detail</a></li>';
         }
         
         // Complete with Entry GForm and go back to Entry List or Create New User again.
@@ -835,6 +852,20 @@ Class IFLPartyMechanics {
             $reader_value = get_option('reader_' . "1");
             echo "Reader " . $rstr . ": " . get_option('reader_' . $rstr) . "<br>";
         }
+    }
+
+    public function is_plugin_active($plugin_path) {
+        $active_plugins = apply_filters('active_plugins', get_option('active_plugins'));
+        
+        $case = false;
+        
+        foreach($active_plugins as $plugin){
+            if ($plugin == $plugin_path) {
+                $case = true;
+            }
+        }
+
+        return $case;
     }
 
     public function does_movie_quotes_table_exist_in_database() {
