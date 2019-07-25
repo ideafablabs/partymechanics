@@ -4,6 +4,19 @@
  * 02 - add post UID to mint server, caution: bug in readers present
  * colortest repurpose
  * 00 - JUST TEST
+ * 
+ * johnszy 7/24/2019
+ * using the beautiful code from doublemint_sign.ino
+ * as a template for the flower_garder art installation
+ * 
+ * 1) Three flower pots have RFID stickers attached to their bottoms and sit on 
+ *    individual RFID reader shelf
+ * 2) Arraging the flower pots on different shelves changes artwork LED animation
+ * 3) Ideally one RFID controls speed, and the other two control color and type of animation
+ * 4) There are 6 possible arangements of the pots on thet hree shelves.
+ *    so might just hard code 6 LED animations.  Maybe someone else can offer help here :-)
+ * 5) First goal is to get 3 RFID readers working and soldered up 
+ * 
  */
 
 #define FASTLED_ALLOW_INTERRUPTS 0

@@ -312,31 +312,31 @@ void setup() {
   Serial.println("Readers ready.  Waiting for an ISO14443A card...");
 
 
-    delay(500);
+    //delay(500);
     //init the display matrix
-    m.init(); // module initialize
-    m.setIntensity(0); // dot matix intensity 0-15
-    delay(500);
+   // m.init(); // module initialize
+   // m.setIntensity(0); // dot matix intensity 0-15
+    //delay(500);
 
-    currentQuote= " RFID readers setup success.";
-    displayQuote(currentQuote, SCROLL_SPEED);
+   // currentQuote= " RFID readers setup success.";
+    //displayQuote(currentQuote, SCROLL_SPEED);
 
-    delay(500);
+    //delay(500);
 
     
     setupWiFi();
 
-    currentQuote= "   WIFI setup success.";
-    displayQuote(currentQuote, SCROLL_SPEED);
+   // currentQuote= "   WIFI setup success.";
+    //displayQuote(currentQuote, SCROLL_SPEED);
 
-    delay(500);
+    //delay(500);
 
     // reset string with test params, 0,0
     // " Find a Friend and Get Your Movie Fortune                "
     currentQuote= testPost(0,0);
-    displayQuote(currentQuote, SCROLL_SPEED);
+    //displayQuote(currentQuote, SCROLL_SPEED);
 
-    delay(500);
+    //delay(500);
     
   // End of trinket special code
   strip.setBrightness(BRIGHTNESS);
@@ -351,7 +351,7 @@ void setup() {
 
   //currentQuote= fetchQuote();
   
-  currentQuote= "this is a quote from John";
+  //currentQuote= "this is a quote from John";
   //displayQuote(currentQuote, SCROLL_SPEED);
 }
 
@@ -364,13 +364,14 @@ void loop() {
 
   
   // Send a theater pixel chase in...
-  theaterChase(strip.Color(127, 127, 127), 50); // White
-  theaterChase(strip.Color(127, 0, 0), 50); // Red
-  theaterChase(strip.Color(0, 0, 127), 50); // Blue
-
+  //theaterChase(strip.Color(127, 127, 127), 50); // White
+  //theaterChase(strip.Color(127, 0, 0), 50); // Red
+ // theaterChase(strip.Color(0, 0, 127), 50); // Blue
+   
+   //displayQuote(currentQuote, SCROLL_SPEED);
    now = millis();
 
-  // displayQuote(currentQuote, SCROLL_SPEED);
+   
   
    // do LEDS  ---
   
@@ -446,8 +447,8 @@ void loop() {
   if (now >= lastRead + cardreaderPeriod) {
     Serial.print(machineState);
 //    Serial.print(".");
-    //foundCard1 = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength,100);
-    //foundCard2 = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid2[0], &uid2Length,100);
+    foundCard1 = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength,100);
+    foundCard2 = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid2[0], &uid2Length,100);
 
     if (foundCard1 && foundCard2) {
       if (machineState != FORTUNE_COMPLETE) {
