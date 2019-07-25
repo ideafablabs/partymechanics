@@ -30,17 +30,19 @@
 
 #define count(x)   (sizeof(x) / sizeof(x[0]))
 
-#define LED_DATA_PIN 5
+#define LED_DATA_PIN 5 //D1
 #define READER_ID 1
 
-#define PN532_SCK  14
-#define PN532_MOSI 13
-#define PN532_SS   15
-#define PN532_MISO 12
-#define PN532_SS2   16
+#define PN532_SCK  14  //D5
+#define PN532_MOSI 13  //D7
+#define PN532_SS   15  //D8
+#define PN532_MISO 12  //D6
+#define PN532_SS2  16  //D0
+#define PN532_SS3   4  //D2
 
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-
+Adafruit_PN532 nfc2(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2);
+Adafruit_PN532 nfc3(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS3);
 
 #define TESTING 0
 
@@ -158,12 +160,12 @@ void setup()
   uint32_t versiondata = nfc.getFirmwareVersion();
   if (!versiondata) 
   {
-    Serial.print("Didn't find PN53x board");
+    Serial.print("Didn't find PN53x #1");
     delay(1000); // wait a second and give it a go.
     ESP.restart();
   }
 
-  Serial.printf("PN53X %02x firmware version %d.%d\n", 
+  Serial.printf("#1 PN53X %02x firmware version %d.%d\n", 
       (versiondata>>24) & 0xFF, 
       (versiondata>>16) & 0xFF,
       (versiondata>>8) & 0xFF);
@@ -176,7 +178,59 @@ void setup()
   // configure board to read RFID tags
   nfc.SAMConfig();
 
-  Serial.printf("Ready and waiting for an ISO14443A card.\n");
+  Serial.printf("#1 Ready and waiting for an ISO14443A card.\n");
+
+
+
+  // nfc2 setup
+  nfc2.begin();
+  versiondata = nfc2.getFirmwareVersion();
+  if (!versiondata) 
+  {
+    Serial.print("Didn't find PN53x #2 board");
+    delay(1000); // wait a second and give it a go.
+    ESP.restart();
+  }
+
+  Serial.printf("#2 PN53X %02x firmware version %d.%d\n", 
+      (versiondata>>24) & 0xFF, 
+      (versiondata>>16) & 0xFF,
+      (versiondata>>8) & 0xFF);
+
+  // Set the max number of retry attempts to read from a card
+  // This prevents us from waiting forever for a card, which is
+  // the default behaviour of the PN532.
+  nfc2.setPassiveActivationRetries(0x01);
+
+  // configure board to read RFID tags
+  nfc2.SAMConfig();
+
+  Serial.printf("#2 Ready and waiting for an ISO14443A card.\n");
+
+  // nfc3 setup
+  nfc3.begin();
+  versiondata = nfc3.getFirmwareVersion();
+  if (!versiondata) 
+  {
+    Serial.print("Didn't find PN53x #3 board");
+    delay(1000); // wait a second and give it a go.
+    ESP.restart();
+  }
+
+  Serial.printf("#3 PN53X %02x firmware version %d.%d\n", 
+      (versiondata>>24) & 0xFF, 
+      (versiondata>>16) & 0xFF,
+      (versiondata>>8) & 0xFF);
+
+  // Set the max number of retry attempts to read from a card
+  // This prevents us from waiting forever for a card, which is
+  // the default behaviour of the PN532.
+  nfc3.setPassiveActivationRetries(0x01);
+
+  // configure board to read RFID tags
+  nfc3.SAMConfig();
+
+  Serial.printf("#3 Ready and waiting for an ISO14443A card.\n");
 
   // Light it up
   FastLED.setBrightness(BRIGHTNESS);
