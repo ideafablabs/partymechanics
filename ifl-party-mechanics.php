@@ -365,7 +365,7 @@ Class IFLPartyMechanics {
         $content .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
         $content .= "</p>";
 
-        // $content .= '<div class="nfc-wrapper"><button class="btn-block"><span class="ifl-svg2></span>Get NFC</button></div>';
+        // $content .= '<div class="nfc-wrapper"><button class="btn-block">Get NFC</button></div>';
 
         return $content;
     }
@@ -501,15 +501,15 @@ Class IFLPartyMechanics {
             
             $available_reader_count = 4;
 
-            $response .= '<ul class="reader_list list-group">';
+            $response .= '<ul class="reader-list">';
             for ($i = 1;$i<=$available_reader_count;$i++) {
-                $response .= '<li class="list-group-item list-group-item-action list-group-item-success"><span class="icon-ifl-svg"></span><a class="reader_choice_button" href="./?reader_id='.$i.'">READER '.$i.'</a></li>';    
+                $response .= '<li><a class="reader_choice_button" href="./?reader_id='.$i.'">Reader '.$i.'</a></li>';    
             }            
             $response .= '</ul>';
             return $response;
         } else {
             // We have the reader ID so lets give a link to get back to just before that.
-            $start_over_link .= '<li><button class="btn-info"><span class="ifl-svg2"></span><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button></li>';
+            $start_over_link .= '<li><a class="return-link reader-choice" href="./">Back to Reader Choice</a></li>';
         }
 
         // Create new User
@@ -548,7 +548,7 @@ Class IFLPartyMechanics {
 
             /// Later on we will have a switch for form entries instead of members.
 
-            $response .= '<button type="button" class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></button>';
+            $response .= '<div class="register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></div>';
 
             $start_over_link .= '</ul>';
             $response .= $start_over_link;
@@ -588,7 +588,7 @@ Class IFLPartyMechanics {
             $response .= '<h2>'.$user->display_name.'</h2>';
             $response .= '<p>Scan medallion and click here:</p>';
             $response .= '<p><div class="token_id"></div></p>';
-            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')"><span class="ifl-svg2></span>Get Medallion Code</button></p>';
+            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')">Get Medallion Code</button></p>';
             $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&nfc='.$reader_id.'">Send It!</a></p>';
 
             // if (token_id_exists_in_table($token_id)) {}
