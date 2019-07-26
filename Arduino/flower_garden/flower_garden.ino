@@ -43,15 +43,16 @@
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 Adafruit_PN532 nfc2(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2);
 Adafruit_PN532 nfc3(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS3);
-
+/*
 #define TESTING 0
 
-#if TESTING
+#if TETING
   #define LED_COUNT 24 // ring test
 #else
-  #define LED_COUNT 48 // big doublemint sign
+  #define LED_COUNT 150 // bflower_garder led count
 #endif
-
+*/
+ #define LED_COUNT 150
 #define BRIGHTNESS 100
 
 CRGB leds[LED_COUNT];
