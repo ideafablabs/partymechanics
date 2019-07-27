@@ -595,7 +595,7 @@ Class IFLPartyMechanics {
 
             /// Later on we will have a switch for form entries instead of members.
 
-            $response .= '<button type="button" class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></button><button class="list-group-item"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button>';
+            $response .= '<button type="button" class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></button><button><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button>';
 
             $start_over_link .= '</ul>';
             $response .= $start_over_link;
@@ -626,7 +626,7 @@ Class IFLPartyMechanics {
             return $response;
         } else {
             // We have the reader ID so lets give a link to get back to just after that.
-            $start_over_link .= '<li class="list-group-item"><a class="return-link list-choice" href="./?reader_id='.$reader_id.'">Back to Member List</a></li>';
+            $start_over_link .= '<li ><button><a class="return-link list-choice" href="./?reader_id='.$reader_id.'">Back to Member List</a></button></li>';
         }
 
         // Associate token ID with user...        
