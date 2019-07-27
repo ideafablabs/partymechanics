@@ -495,6 +495,7 @@ Class IFLPartyMechanics {
 
         $reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
         $user_email = (isset($_REQUEST['user_email'])) ? $_REQUEST['user_email'] : '';
+        
         $nfc = (isset($_REQUEST['nfc'])) ? $_REQUEST['nfc'] : '0';
         $submit = (isset($_REQUEST['submit'])) ? $_REQUEST['submit'] : '0';
 
@@ -529,7 +530,10 @@ Class IFLPartyMechanics {
                     $response .= $user->display_name.' was successfully admitted!';
                     $response .= '</p>';
 
-                    pr($result);
+                    // pr($result);
+
+                    $user_email = "";
+                    $create = "";
                 } else {
 
                 }
@@ -539,7 +543,7 @@ Class IFLPartyMechanics {
                 $response .= $tokenadd;
                 $response .= '</p>';
 
-                $nfc = 0;
+                
             }            
         }
 
@@ -667,7 +671,7 @@ Class IFLPartyMechanics {
     */
     public function iflpm_get_token_from_reader() {
         $reader_id = $_GET['reader_id'];        
-        echo $this->populate_fake_token_in_reader_memory($reader_id);
+        // echo $this->populate_fake_token_in_reader_memory($reader_id);
         echo get_option('reader_'.$reader_id);        
         die();
     }

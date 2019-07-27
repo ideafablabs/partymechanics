@@ -20,7 +20,7 @@
 
 #define count(x)   (sizeof(x) / sizeof(x[0]))
 
-#define PIN 5
+#define PIN 2
 #define READER_ID 1
 
 #define PN532_SCK  14
