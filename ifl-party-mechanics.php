@@ -556,7 +556,7 @@ Class IFLPartyMechanics {
             return $response;
         } else {
             // We have the reader ID so lets give a link to get back to just before that.
-            $start_over_link .= '<li class="list-group-item"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></li>';
+           // $start_over_link .= '<li class="list-group-item"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></li>';
         }
 
         // Create new User
@@ -595,7 +595,7 @@ Class IFLPartyMechanics {
 
             /// Later on we will have a switch for form entries instead of members.
 
-            $response .= '<button type="button" class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></button>';
+            $response .= '<button type="button" class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></button><button class="list-group-item"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button>';
 
             $start_over_link .= '</ul>';
             $response .= $start_over_link;
@@ -656,9 +656,9 @@ Class IFLPartyMechanics {
         }        
 
         // There was a problem somewhere along the way...
-        $response .= '<p>There was a problem somewhere along the way...</p>';
-        $response .= '<a class="button" href="./?reader_id='.$reader_id.'">Back to List</a><br />';
-        $response .= '<a class="button" href="./?reader_id='.$reader_id.'&create">Register New</a>';
+        $response .= '<div class="error">There was a problem somewhere along the way...</div>';
+        $response .= '<ul class="list-group"><li class="list-group-item"><a class="button" href="./?reader_id='.$reader_id.'">Back to List</a></li>';
+        $response .= '<li class="list-group-item"><a class="button" href="./?reader_id='.$reader_id.'&create">Register New</a></li></ul><div>';
         return $response;
     }
 
