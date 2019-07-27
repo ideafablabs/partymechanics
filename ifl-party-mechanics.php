@@ -572,9 +572,9 @@ Class IFLPartyMechanics {
                 );
     
                 // Pass everything on to Gravity Forms
-                $response = "<p>";
+                $response = '<div class="form-container"><p>';
                 $response .= gravity_form($regform, 0, 1, 0, $field_values, 1, 0, 0);
-                $response .= "</p>";
+                $response .= '</p></div';
 
             } else {
                 /// Error on form being active.
