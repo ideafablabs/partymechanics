@@ -292,3 +292,27 @@ function ajax_get_token_id_from_reader(reader_id) {
     });
             
 }
+
+function ajax_associate_medallion_with_user(reader_id,user_id) {
+            
+    console.log("Associating Token with user "+user_id+" with reader: ");                
+    //TODO Add loading graphic 
+    
+    $.ajax({
+        url : iflpm_ajax.ajax_url,            
+        type : 'get',
+        data : {
+            action : 'iflpm_associate_user_with_token_from_reader',
+            reader_id : reader_id,
+            user_id : user_id
+        },
+        
+        // security : iflpm_ajax.check_nonce,
+        success : function( response ) {
+            console.log("Success!");
+            console.log(response);
+            $('.token-response').html(response);
+        }
+    });
+            
+}

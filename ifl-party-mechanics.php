@@ -57,7 +57,7 @@ Class IFLPartyMechanics {
 
 
     public $defaultOptions = array(
-        'form_id' => '1',
+        'form_id' => '2',
         'email_id' => '9',
         'event_field_id' => '12',
         'attendees_list_id' => '7',
@@ -123,6 +123,9 @@ Class IFLPartyMechanics {
         add_action('wp_ajax_nopriv_ifl_admit_all', array($this, 'ifl_admit_all'));
         add_action('wp_ajax_iflpm_get_token_from_reader', array($this, 'iflpm_get_token_from_reader'));
         add_action('wp_ajax_nopriv_iflpm_get_token', array($this, 'iflpm_get_token_from_reader'));
+        
+        add_action('wp_ajax_iflpm_associate_user_with_token_from_reader', array($this, 'iflpm_associate_user_with_token_from_reader'));
+        add_action('wp_ajax_nopriv_iflpm_associate_user_with_token_from_reader', array($this, 'iflpm_associate_user_with_token_from_reader'));
 
         // Menu Page Setup
         add_action('admin_menu', array($this, 'wpdocs_register_my_custom_menu_page'));
@@ -481,20 +484,64 @@ Class IFLPartyMechanics {
 
     /**
      * Shortcode wrapper for displaying the admission list w NFC. 
-     * Ex: [entry_processor event="Event Title Goes Here" ]
+     * Ex: [entry_processor event="Event Title Goes Here" regform="1" ]
      */
     public function ifl_entry_processor($atts) {
         extract(shortcode_atts(array(            
-            'event' => $this->menu_options['form_event_title']        
+            'event' => $this->menu_options['form_event_title'],
+            'regform' => $this->menu_options['form_id'],
+            'attendanceform' => $this->menu_options['attendform_id']
         ), $atts));
 
         $reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
         $user_email = (isset($_REQUEST['user_email'])) ? $_REQUEST['user_email'] : '';
         $nfc = (isset($_REQUEST['nfc'])) ? $_REQUEST['nfc'] : '0';
+        $submit = (isset($_REQUEST['submit'])) ? $_REQUEST['submit'] : '0';
 
         // Begin response html string.
         $response = '';
         $start_over_link = '<ul class="return-links">';
+
+        // Complete with Entry GForm and go back to Entry List or Create New User again.
+        if ($submit) {
+
+            // Get user object by email.
+            $user = get_user_by( 'email', $user_email );
+
+            // Get the token from the reader memory slot.
+            $token_id = get_option('reader_'.$reader_id);
+            
+            // Add pair to the database or get an error.
+            $tokenadd = $this->add_token_id_and_user_id_to_tokens_table($token_id,$user->ID);
+            
+            //// IF            
+            if (strpos($tokenadd, 'added') !== false || strpos($tokenadd, 'already') !== false) {
+                // Do form for Attendance of this particular event...    
+                $input_values['input_1']  = $event; 
+                $input_values['input_2']  = $user->ID;
+                $input_values['input_3']  = $user->display_name;
+             
+                $result = GFAPI::submit_form( $attendanceform, $input_values );
+
+                if (strpos($result['confirmation_message'], 'Thanks') !== false) {
+
+                    $response .= '<p class="success">';
+                    $response .= $user->display_name.' was successfully admitted!';
+                    $response .= '</p>';
+
+                    pr($result);
+                } else {
+
+                }
+            } else {
+                // Output the error message.
+                $response .= '<p class="error">';
+                $response .= $tokenadd;
+                $response .= '</p>';
+
+                $nfc = 0;
+            }            
+        }
 
         // Pick Reader        
         if ($reader_id == '') {            
@@ -526,7 +573,7 @@ Class IFLPartyMechanics {
     
                 // Pass everything on to Gravity Forms
                 $response = "<p>";
-                $response .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
+                $response .= gravity_form($regform, 0, 1, 0, $field_values, 1, 0, 0);
                 $response .= "</p>";
 
             } else {
@@ -582,14 +629,17 @@ Class IFLPartyMechanics {
         }
 
         // Associate token ID with user...        
-        if ($nfc == '0') { 
+        if ($submit == '0') { 
             $user = get_user_by( 'email', $user_email );
 
             $response .= '<h2>'.$user->display_name.'</h2>';
             $response .= '<p>Scan medallion and click here:</p>';
             $response .= '<p><div class="token_id"></div></p>';
-            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')">Get Medallion Code</button></p>';
-            $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&nfc='.$reader_id.'">Send It!</a></p>';
+            $response .= '<p><div class="token-response"></div></p>';
+
+            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')">Check Medallion</button></p>';
+            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_associate_medallion_with_user('.$reader_id.','.$user->ID.')">Associate Medallion</button></p>';
+            $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&submit=1&nfc='.$reader_id.'">Send It!</a></p>';
 
             // if (token_id_exists_in_table($token_id)) {}
 
@@ -600,36 +650,7 @@ Class IFLPartyMechanics {
         } else {
             // We have the user email so lets give a link to get back to just before that.
             $start_over_link .= '<li><a class="return-link list-choice" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'">Back to Member Detail</a></li>';
-        }
-        
-        // Complete with Entry GForm and go back to Entry List or Create New User again.
-        if ($nfc) {
-
-            // Get user object by email.
-            $user = get_user_by( 'email', $user_email );
-
-            // Get the token from the reader memory slot.
-            $token_id = get_option('reader_'.$reader_id);
-            
-            // Add pair to the database or get an error.
-            $tokenadd = $this->add_token_id_and_user_id_to_tokens_table($nfcid,$user->ID);
-            
-            // if ($tokenadd == ) {
-                // Do form for Attendance of this particular event...    
-            // } else {
-                // Output the error message.
-                // $response .= $tokenadd;
-            // }
-            
-
-            // Or go back somewhere...
-            $response .= '<p>';
-            $response .= '<a class="button" href="./?reader_id='.$reader_id.'">Back to List</a><br />';
-            $response .= '<a class="button" href="./?reader_id='.$reader_id.'&create">Register New</a>';
-            $response .= '</p>';            
-
-            return $response;
-        }
+        }        
 
         // There was a problem somewhere along the way...
         $response .= '<p>There was a problem somewhere along the way...</p>';
@@ -639,10 +660,13 @@ Class IFLPartyMechanics {
     }
 
     /**
-    * Reset all the attendee statuses for an event.
+    * AJAX Get token from reader ID in memory.
     */
-    public function iflpm_get_token_from_reader($reader_id) {
-        return get_option('reader_'.$reader_id);
+    public function iflpm_get_token_from_reader() {
+        $reader_id = $_GET['reader_id'];        
+        echo $this->populate_fake_token_in_reader_memory($reader_id);
+        echo get_option('reader_'.$reader_id);        
+        die();
     }
 
     /**
@@ -1169,7 +1193,22 @@ Class IFLPartyMechanics {
             }, $result));
         }
     }
+    public function populate_fake_token_in_reader_memory($reader_id) {
+        $faketoken = rand(10000,20000);
+        update_option('reader_'.$reader_id,$faketoken);
+        return $faketoken;
+    }
 
+    // AJAX call.
+    public function iflpm_associate_user_with_token_from_reader() {
+        $user_id = $_GET['user_id'];
+        $reader_id = $_GET['reader_id'];
+        
+        $token_id = get_option('reader_'.$reader_id);
+        $response = $this->add_token_id_and_user_id_to_tokens_table($token_id,$user_id);
+        echo $response;
+        die();
+    }    
     public function add_token_id_and_user_id_to_tokens_table($token_id, $user_id) {
         global $wpdb;
         global $tokens_table_name;

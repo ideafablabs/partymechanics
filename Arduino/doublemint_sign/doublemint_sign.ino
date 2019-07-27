@@ -29,10 +29,10 @@
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 
 
-#define TESTING 0
+#define TESTING 1
 
 #if TESTING
-  #define LED_COUNT 24 // ring test
+  #define LED_COUNT 12 // ring test
 #else
   #define LED_COUNT 373 // big doublemint sign
 #endif
