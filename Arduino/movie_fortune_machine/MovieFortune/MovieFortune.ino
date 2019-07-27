@@ -446,8 +446,8 @@ void loop() {
   if (now >= lastRead + cardreaderPeriod) {
     Serial.print(machineState);
 //    Serial.print(".");
-    //foundCard1 = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength,100);
-    //foundCard2 = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid2[0], &uid2Length,100);
+    foundCard1 = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid[0], &uidLength,100);
+    foundCard2 = nfc2.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uid2[0], &uid2Length,100);
 
     if (foundCard1 && foundCard2) {
       if (machineState != FORTUNE_COMPLETE) {
