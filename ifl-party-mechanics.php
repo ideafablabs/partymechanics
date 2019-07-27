@@ -417,7 +417,7 @@ Class IFLPartyMechanics {
         $admit_list_html .= '<div class="member-list ifl-admit-guest small-12 columns">';
         $admit_list_html .= '<h2>' . $event . '</h2>';
         $admit_list_html .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\'">X</button></div>';
-        $admit_list_html .= '<ul class="member_select_list">';
+        $admit_list_html .= '<ul class="member_select_list list-group">';
 
         $attendee_count = 0;
         $admitted_count = 0;
@@ -437,7 +437,7 @@ Class IFLPartyMechanics {
 
             // https://www.sitepoint.com/how-to-use-ajax-in-wordpress-a-real-world-example/
 
-            $admit_list_html .= '<li data-sort="' . $attendee_names[0]['First Name'] . '">
+            $admit_list_html .= '<li class="list-group-item" data-sort="' . $attendee_names[0]['First Name'] . '">
                 <div class="entry large '
                 . $attendee_class . '" ' . $admin_guest_list_flag . '>';
             // <a class="admit-all" data-entry="'.$entry['id'].'">Admit All</a>
@@ -509,7 +509,7 @@ Class IFLPartyMechanics {
             return $response;
         } else {
             // We have the reader ID so lets give a link to get back to just before that.
-            $start_over_link .= '<li><button class="btn-info"><span class="ifl-svg2"></span><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button></li>';
+            $start_over_link .= '<li class="list-group-item"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></li>';
         }
 
         // Create new User
@@ -554,18 +554,19 @@ Class IFLPartyMechanics {
             $response .= $start_over_link;
 
             // Build search HTML.
-            $response .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">X</button></div>';
+            $response .= '<div class="member_select_search"><span class="glyphicon glyphicon-user"></span><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">X</button></div>';
 
             // Build list HTML
-            $response .= '<ul class="member_select_list">';
+            $response .= '<ul class="member_select_list list-group">';
 
             // Build links for each member...
             foreach ($users as $key => $user) {
 
                 $formlink = './?user_email='.$user->user_email.'&membername='.urlencode($user->display_name).'&reader_id='.$reader_id;   
 
-                $response .= '<li data-sort="'.$user->display_name.'">
-                <a id="'.$user->ID.'" class="mm-button large '.$member_class.'" href="'.$formlink.'" '.$admin_guest_list_flag.'>
+                $response .= '<li class="list-group-item list-group-item-action" data-sort="'.$user->display_name.'">
+                <span class="glyphicon glyphicon-user"></span>
+                <a id="'.$user->ID.'" class=" '.$member_class.'" href="'.$formlink.'" '.$admin_guest_list_flag.'>
                 <span class="member-displayname">'.$user->display_name.'</span>'.
                 '<span class="attendance_count alignright">'.$attendance_count.'</span>'
 
@@ -578,19 +579,19 @@ Class IFLPartyMechanics {
             return $response;
         } else {
             // We have the reader ID so lets give a link to get back to just after that.
-            $start_over_link .= '<li><a class="return-link list-choice" href="./?reader_id='.$reader_id.'">Back to Member List</a></li>';
+            $start_over_link .= '<li class="list-group-item"><a class="return-link list-choice" href="./?reader_id='.$reader_id.'">Back to Member List</a></li>';
         }
 
         // Associate token ID with user...        
         if ($nfc == '0') { 
             $user = get_user_by( 'email', $user_email );
-
+            $response .= '<div class="container">';
             $response .= '<h2>'.$user->display_name.'</h2>';
             $response .= '<p>Scan medallion and click here:</p>';
             $response .= '<p><div class="token_id"></div></p>';
             $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')"><span class="ifl-svg2></span>Get Medallion Code</button></p>';
             $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&nfc='.$reader_id.'">Send It!</a></p>';
-
+            $response .= '</div>';
             // if (token_id_exists_in_table($token_id)) {}
 
             $start_over_link .= '</ul>';
