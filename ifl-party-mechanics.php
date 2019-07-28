@@ -641,7 +641,7 @@ Class IFLPartyMechanics {
 
             $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')"><span class="ifl-svg2></span>Check Medallion</button></p>';
             $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_associate_medallion_with_user('.$reader_id.','.$user->ID.')">Associate Medallion</button></p>';
-            $response .= '<p><button><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&submit=1&nfc='.$reader_id.'">Send It!</a></button></p>';
+            $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&submit=1&nfc='.$reader_id.'">Send It!</a></p>';
 
             $response .= '</div>';
             // if (token_id_exists_in_table($token_id)) {}
