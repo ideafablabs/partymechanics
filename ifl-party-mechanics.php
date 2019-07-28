@@ -550,7 +550,7 @@ Class IFLPartyMechanics {
 
             $response .= '<ul class="reader_list list-group">';
             for ($i = 1;$i<=$available_reader_count;$i++) {
-                $response .= '<li class="list-group-item list-group-item-action list-group-item-success"><span class="icon-ifl-svg"></span><a class="reader_choice_button" href="./?reader_id='.$i.'">READER '.$i.'</a></li>';    
+                $response .= '<li class="list-group-item"><span class="icon-ifl-svg"></span><a class="reader_choice_button" href="./?reader_id='.$i.'">READER '.$i.'</a></li>';    
             }            
             $response .= '</ul>';
             return $response;
@@ -641,7 +641,7 @@ Class IFLPartyMechanics {
 
             $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')"><span class="ifl-svg2></span>Check Medallion</button></p>';
             $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_associate_medallion_with_user('.$reader_id.','.$user->ID.')">Associate Medallion</button></p>';
-            $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&submit=1&nfc='.$reader_id.'">Send It!</a></p>';
+            $response .= '<p><button><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&submit=1&nfc='.$reader_id.'">Send It!</a></button></p>';
 
             $response .= '</div>';
             // if (token_id_exists_in_table($token_id)) {}
