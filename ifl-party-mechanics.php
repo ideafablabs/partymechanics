@@ -17,10 +17,21 @@ global $wpdb;
 global $movie_quotes_table_name;
 global $movie_quotes_db_version;
 global $quotes_csv_file;
+
 global $user_pairings_table_name;
 global $user_pairings_db_version;
+
 global $tokens_table_name;
 global $tokens_db_version;
+
+global $events_table_name;
+global $events_db_version;
+
+global $attendance_table_name;
+global $attendance_db_version;
+
+global $special_guests_table_name;
+global $special_guests_db_version;
 
 $movie_quotes_table_name = $wpdb->prefix . "movie_quotes";
 $movie_quotes_db_version = "1.0";
@@ -31,6 +42,15 @@ $user_pairings_db_version = "1.0";
 
 $tokens_table_name = $wpdb->prefix . "rf_tokens";
 $tokens_db_version = "1.0";
+
+$events_table_name = $wpdb->prefix . "events";
+$events_db_version = "1.0";
+
+$attendance_table_name = $wpdb->prefix . "attendance";
+$attendance_db_version = "1.0";
+
+$special_guests_table_name = $wpdb->prefix . "special_guests";
+$special_guests_db_version = "1.0";
 
 $IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
@@ -203,10 +223,14 @@ Class IFLPartyMechanics {
         // Echo the html here...
         echo "XING!</br>";
         $this->test_event_title_stuff();
+        $this->test_user_dropdown();
         $this->test_event_registration_form_stuff();
         $this->test_user_pairings_stuff();
         $this->test_movie_quotes_stuff();
         $this->test_tokens_stuff();
+        $this->test_events_table_stuff();
+        $this->test_attendance_table_stuff();
+        $this->test_special_guests_table_stuff();
         $this->test_option_stuff();
     }
 
@@ -752,17 +776,12 @@ Class IFLPartyMechanics {
     public function test_event_title_stuff() {
         // see https://codex.wordpress.org/Adding_Administration_Menus
         global $hidden_field_name;
-        // update_option('current_event_title', "Juicy Fruit");
         echo "<form name='form1' method='post' action=''>
         <input type='hidden' name='hidden' value='Y'>
         <label for='current_event_title'><br><b>Current event title:</b></label>
         <input type='text' name='current_event_title' value='" . get_option('current_event_title') . "'/>
             <input type='submit' name='Submit' value='Change'/>
         </form><br>";
-    }
-
-    public function change_event_title() {
-        echo "CHANGED<br>";
     }
 
     public function test_event_registration_form_stuff() {
@@ -786,6 +805,15 @@ Class IFLPartyMechanics {
         } else {
             echo "<br>Gravity Forms and Gravity Forms User Registration are <b>not</b> installed and active<br>";
         }
+    }
+
+    public function test_user_dropdown() {
+        global $wpdb;
+        $users = get_users("orderby=display_name");
+//        foreach ($users as $key => $user) {
+//
+//            echo $user->display_name . "<br>";
+//        }
     }
 
     public function test_movie_quotes_stuff() {
@@ -870,6 +898,45 @@ Class IFLPartyMechanics {
 //        echo $this->get_token_ids_by_user_id("0") . "<br>";
 //        echo $this->get_user_id_from_token_id("5") . "<br>";
 //        echo $this->add_token_id_and_user_id_to_tokens_table("7", "0") . "<br>";
+    }
+
+    public function test_events_table_stuff() {
+        global $events_table_name;
+        global $wpdb;
+        echo "<br>";
+        if ($this->does_table_exist_in_database($events_table_name)) {
+            echo "Events table exists<br>";
+        } else {
+            echo "Events table does not exist, creating Events table<br>";
+            $this->create_events_table();
+        }
+
+    }
+
+    public function test_attendance_table_stuff() {
+        global $attendance_table_name;
+        global $wpdb;
+        echo "<br>";
+        if ($this->does_table_exist_in_database($attendance_table_name)) {
+            echo "Attendance table exists<br>";
+        } else {
+            echo "Attendance table does not exist, creating Attendance table<br>";
+            $this->create_attendance_table();
+        }
+
+    }
+
+    public function test_special_guests_table_stuff() {
+        global $special_guests_table_name;
+        global $wpdb;
+        echo "<br>";
+        if ($this->does_table_exist_in_database($special_guests_table_name)) {
+            echo "Special Guests table exists<br>";
+        } else {
+            echo "Special Guests table does not exist, creating Special Guests table<br>";
+            $this->create_special_guests_table();
+        }
+
     }
 
     public function test_option_stuff() {
@@ -1007,6 +1074,70 @@ Class IFLPartyMechanics {
         dbDelta($sql);
 
         add_option('tokens_db_version', $tokens_db_version);
+    }
+
+    public function create_events_table() {
+        global $wpdb;
+        global $events_table_name;
+        global $events_db_version;
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE $events_table_name (
+              event_id mediumint(9) NOT NULL AUTO_INCREMENT,
+              title tinytext NOT NULL,
+              date date NOT NULL,
+              PRIMARY KEY  (event_id)
+            ) $charset_collate;";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+
+        add_option('events_db_version', $events_db_version);
+    }
+
+    public function create_attendance_table() {
+        global $wpdb;
+        global $attendance_table_name;
+        global $attendance_db_version;
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE " . $attendance_table_name . " (
+              record_id mediumint(9) NOT NULL AUTO_INCREMENT,
+              user_id bigint(20) unsigned NOT NULL,
+              event_id mediumint(9) NOT NULL,
+              PRIMARY KEY  (record_id),
+              FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
+              FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
+            ) " . $charset_collate . ";";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+
+        add_option('attendance_db_version', $attendance_db_version);
+    }
+
+    public function create_special_guests_table() {
+        global $wpdb;
+        global $special_guests_table_name;
+        global $special_guests_db_version;
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE " . $special_guests_table_name . " (
+              record_id mediumint(9) NOT NULL AUTO_INCREMENT,
+              user_id bigint(20) unsigned NOT NULL,
+              event_id mediumint(9) NOT NULL,
+              PRIMARY KEY  (record_id),
+              FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
+              FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
+            ) " . $charset_collate . ";";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+
+        add_option('special_guests_db_version', $special_guests_db_version);
     }
 
     public function delete_all_quotes_from_movie_quotes_table() {
