@@ -22,3 +22,10 @@ Google Doc is the place to collaborate on more extensive documentation.
 Right now the Arduino folder contains the ESP example sketch WiFiMulti, illustrating configuring your WeMos D1 R1
 board to connect to whichever one of one or more predefined wifi networks is available, and many in-process
 sketches from just before last March's Doublemint party.
+
+Right now loading the "Exhibition RSVPs" custom menu from the wp-admin dashboard creates some of
+the tables for this project if they didn't already exist. With the wp-attendance and
+wp-special-guests tables, because they use the wp-users table's ID field as a foreign key,
+the wp-users table needs to be using the InnoDB storage engine rather than the MyISAM storage
+engine, because the latter doesn't support foreign keys. See
+https://kinsta.com/knowledgebase/convert-myisam-to-innodb/
