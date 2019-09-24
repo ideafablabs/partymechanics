@@ -12,18 +12,9 @@
 
 include 'rest-api.php';
 include 'utilities.php';
+include 'movie-quotes.php';
 
 global $wpdb;
-global $movie_quotes_table_name;
-global $movie_quotes_db_version;
-global $quotes_csv_file;
-
-global $user_pairings_table_name;
-global $user_pairings_db_version;
-
-global $tokens_table_name;
-global $tokens_db_version;
-
 global $events_table_name;
 global $events_db_version;
 
@@ -32,16 +23,6 @@ global $attendance_db_version;
 
 global $special_guests_table_name;
 global $special_guests_db_version;
-
-$movie_quotes_table_name = $wpdb->prefix . "movie_quotes";
-$movie_quotes_db_version = "1.0";
-$quotes_csv_file = 'wp-content/plugins/ifl-party-mechanics/quotes.csv';
-
-$user_pairings_table_name = $wpdb->prefix . "user_pairings";
-$user_pairings_db_version = "1.0";
-
-$tokens_table_name = $wpdb->prefix . "rf_tokens";
-$tokens_db_version = "1.0";
 
 $events_table_name = $wpdb->prefix . "events";
 $events_db_version = "1.0";
@@ -111,9 +92,9 @@ Class IFLPartyMechanics {
     public function run($options = array()) {
         global $hidden_field_name;
         // for testing movie quotes functions
-        // add_action( 'wp_footer', array( $this, 'test_user_pairings_stuff' )  );
-        // add_action( 'wp_footer', array( $this, 'test_movie_quotes_stuff' )  );
-        // add_action( 'wp_footer', array( $this, 'test_tokens_stuff' )  );
+        // add_action( 'wp_footer', 'MovieQuotes::test_user_pairings_stuff');
+        // add_action( 'wp_footer', 'MovieQuotes::test_movie_quotes_stuff');
+        // add_action( 'wp_footer', 'MovieQuotes::test_tokens_stuff');
 
 
         $this->menu_options = array_merge($this->defaultOptions, $options);
@@ -225,9 +206,9 @@ Class IFLPartyMechanics {
         $this->test_event_title_stuff();
         $this->test_user_dropdown();
         $this->test_event_registration_form_stuff();
-        $this->test_user_pairings_stuff();
-        $this->test_movie_quotes_stuff();
-        $this->test_tokens_stuff();
+        MovieQuotes::test_user_pairings_stuff();
+        MovieQuotes::test_movie_quotes_stuff();
+        MovieQuotes::test_tokens_stuff();
         $this->test_events_table_stuff();
         $this->test_attendance_table_stuff();
         $this->test_special_guests_table_stuff();
@@ -820,89 +801,7 @@ Class IFLPartyMechanics {
 //        }
     }
 
-    public function test_movie_quotes_stuff() {
-        // for testing movie quotes functions
 
-        // $this->drop_movie_quotes_table();
-
-        global $movie_quotes_table_name;
-        global $wpdb;
-        echo "<br>";
-        if ($this->does_table_exist_in_database($movie_quotes_table_name)) {
-            echo "Movie quotes table exists<br>";
-        } else {
-            echo "Movie quotes table does not exist, creating movie quotes table<br>";
-            $this->create_movie_quotes_table();
-        }
-
-        // $this->delete_all_quotes_from_movie_quotes_table();
-
-        if ($this->is_table_empty($movie_quotes_table_name)) {
-            echo "Movie quotes table is empty<br>";
-            if ($this->does_quotes_csv_file_exist()) {
-                $this->import_movie_quotes_to_database();
-            }
-        } else {
-//            echo "Movie quotes table is not empty<br>";
-            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $movie_quotes_table_name);
-            echo "Movie quotes table contains " . $rows[0]->num_rows . " records.<br>";
-        }
-
-        echo "Movie quote #1: " . $this->get_movie_quote_by_id(1) . "<BR>";
-    }
-
-    public function test_user_pairings_stuff() {
-        // for testing user pairings functions
-        // $this->delete_all_pairings_from_user_pairings_table();
-        global $user_pairings_table_name;
-        global $wpdb;
-
-        echo "<br>";
-        if ($this->does_table_exist_in_database($user_pairings_table_name)) {
-            echo "User pairings table exists<br>";
-        } else {
-            echo "User pairings table does not exist, creating user pairings table<br>";
-            $this->create_user_pairings_table();
-        }
-
-        if ($this->is_table_empty($user_pairings_table_name)) {
-            echo "User pairings table is empty<br>";
-        } else {
-//            echo "User pairings table is not empty<br>";
-            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $user_pairings_table_name);
-            echo "User pairings table contains " . $rows[0]->num_rows . " records.<br>";
-        }
-
-        echo "Movie quote for pairing of users 1 and 3: " . $this->get_movie_quote_by_pairing(1, 3) . "<br>";
-    }
-
-    public function test_tokens_stuff() {
-        // for testing tokens functions
-
-        // $this->drop_tokens_table();
-
-        global $tokens_table_name;
-        global $wpdb;
-        echo "<br>";
-        if ($this->does_table_exist_in_database($tokens_table_name)) {
-            echo "Tokens table exists<br>";
-        } else {
-            echo "Tokens table does not exist, creating Tokens table<br>";
-            $this->create_tokens_table();
-        }
-
-        if ($this->is_table_empty($tokens_table_name)) {
-            echo "Tokens table is empty<br>";
-        } else {
-//            echo "Tokens table is not empty<br>";
-            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $tokens_table_name);
-            echo "Tokens table contains " . $rows[0]->num_rows . " records.<br>";
-        }
-
-//        echo $this->get_token_ids_by_user_id("0") . "<br>";
-//        echo $this->get_user_id_from_token_id("5") . "<br>";
-//        echo $this->add_token_id_and_user_id_to_tokens_table("7", "0") . "<br>";
-    }
 
     public function test_events_table_stuff() {
         global $events_table_name;
@@ -966,24 +865,6 @@ Class IFLPartyMechanics {
         return $case;
     }
 
-    public function does_movie_quotes_table_exist_in_database() {
-        global $wpdb;
-        global $movie_quotes_table_name;
-        return $this->does_table_exist_in_database($movie_quotes_table_name);
-    }
-
-    public function does_user_pairings_table_exist_in_database() {
-        global $wpdb;
-        global $user_pairings_table_name;
-        return $this->does_table_exist_in_database($user_pairings_table_name);
-    }
-
-    public function does_tokens_table_exist_in_database() {
-        global $wpdb;
-        global $tokens_table_name;
-        return $this->does_table_exist_in_database($tokens_table_name);
-    }
-
     public function does_table_exist_in_database($table_name) {
         global $wpdb;
         $mytables = $wpdb->get_results("SHOW TABLES");
@@ -998,86 +879,10 @@ Class IFLPartyMechanics {
         return false;
     }
 
-    public function is_movie_quotes_table_empty() {
-        global $movie_quotes_table_name;
-        return $this->is_table_empty($movie_quotes_table_name);
-    }
-
-    public function is_user_pairings_table_empty() {
-        global $user_pairings_table_name;
-        return $this->is_table_empty($user_pairings_table_name);
-    }
-
-    public function is_tokens_table_empty() {
-        global $tokens_table_name;
-        return $this->is_table_empty($tokens_table_name);
-    }
-
     public function is_table_empty($table_name) {
         global $wpdb;
         $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $table_name);
         return $rows[0]->num_rows == 0;
-    }
-
-    public function create_movie_quotes_table() {
-        global $wpdb;
-        global $movie_quotes_table_name;
-        global $movie_quotes_db_version;
-
-        $charset_collate = $wpdb->get_charset_collate();
-
-        $sql = "CREATE TABLE $movie_quotes_table_name (
-              id mediumint(9) NOT NULL AUTO_INCREMENT,
-              quote tinytext NOT NULL,
-              movie_name tinytext NOT NULL,
-              PRIMARY KEY  (id)
-            ) $charset_collate;";
-
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
-
-        add_option('movie_quotes_db_version', $movie_quotes_db_version);
-    }
-
-    public function create_user_pairings_table() {
-        global $wpdb;
-        global $user_pairings_table_name;
-        global $user_pairings_db_version;
-
-        $charset_collate = $wpdb->get_charset_collate();
-
-        $sql = "CREATE TABLE $user_pairings_table_name (
-              id mediumint(9) NOT NULL AUTO_INCREMENT,
-              pairing tinytext NOT NULL,
-              PRIMARY KEY  (id)
-            ) $charset_collate;";
-
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
-
-        add_option('user_pairings_db_version', $user_pairings_db_version);
-    }
-
-    public function create_tokens_table() {
-        global $wpdb;
-        global $tokens_table_name;
-        global $tokens_db_version;
-
-        $charset_collate = $wpdb->get_charset_collate();
-
-        // I had wanted to use token_id as the primary key but the table was not getting created,
-        // even when I switched from tinytext to varchar(10)
-        $sql = "CREATE TABLE $tokens_table_name (
-              id mediumint(9) NOT NULL AUTO_INCREMENT,
-              token_id tinytext NOT NULL,
-              user_id tinytext NOT NULL,
-              PRIMARY KEY  (id)
-            ) $charset_collate;";
-
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
-
-        add_option('tokens_db_version', $tokens_db_version);
     }
 
     public function create_events_table() {
@@ -1144,42 +949,9 @@ Class IFLPartyMechanics {
         add_option('special_guests_db_version', $special_guests_db_version);
     }
 
-    public function delete_all_quotes_from_movie_quotes_table() {
-        global $wpdb;
-        global $movie_quotes_table_name;
-        $this->delete_all_rows_from_table($movie_quotes_table_name);
-    }
-
-    public function delete_all_pairings_from_user_pairings_table() {
-        global $wpdb;
-        global $user_pairings_table_name;
-        $this->delete_all_rows_from_table($user_pairings_table_name);
-    }
-
-    public function delete_all_tokens_from_tokens_table() {
-        global $wpdb;
-        global $tokens_table_name;
-        $this->delete_all_rows_from_table($tokens_table_name);
-    }
-
     public function delete_all_rows_from_table($table_name) {
         global $wpdb;
         $result = $wpdb->query("TRUNCATE TABLE " . $table_name);
-    }
-
-    public function drop_movie_quotes_table() {
-        global $movie_quotes_table_name;
-        $this->drop_table($movie_quotes_table_name);
-    }
-
-    public function drop_user_pairings_table() {
-        global $user_pairings_table_name;
-        $this->drop_table($user_pairings_table_name);
-    }
-
-    public function drop_tokens_table() {
-        global $tokens_table_name;
-        $this->drop_table($tokens_table_name);
     }
 
     public function drop_table($table_name) {
@@ -1187,150 +959,25 @@ Class IFLPartyMechanics {
         $result = $wpdb->query("DROP TABLE IF EXISTS " . $table_name);
     }
 
-    public function does_quotes_csv_file_exist() {
-        global $quotes_csv_file;
-        return file_exists($quotes_csv_file);
-    }
-
-    public function import_movie_quotes_to_database() {
-        global $wpdb;
-        global $movie_quotes_table_name;
-        global $quotes_csv_file;
-        $file = fopen($quotes_csv_file, "r");
-        $quotes_array = [];
-        // read all quotes into an array
-        while (!feof($file)) {
-            $entry = fgetcsv($file);
-            if ($entry[0] != "") {
-                array_push($quotes_array, $entry);
-            }
-        }
-        fclose($file);
-
-        // then shuffle them and write them to the quotes database
-        shuffle($quotes_array);
-        foreach ($quotes_array as $entry) {
-            $quote = $entry[0];
-            $movie_name = $entry[1];
-            echo $quote . " - " . $movie_name . "<br>";
-            $wpdb->insert(
-                $movie_quotes_table_name,
-                array(
-                    'quote' => $quote,
-                    'movie_name' => $movie_name,
-                )
-            );
-        }
-
-    }
-
-    public function get_movie_quote_by_id($id) {
-        global $wpdb;
-        global $movie_quotes_table_name;
-        if (!$this->does_table_exist_in_database($movie_quotes_table_name) || $this->is_movie_quotes_table_empty()) {
-            return null;
-        } else {
-            $result = $wpdb->get_results("SELECT * FROM " . $movie_quotes_table_name . " WHERE id = " . $id);
-            if ($wpdb->num_rows == 0) {
-                return null;
-            }
-            $quote = $result[0]->quote;
-            $movie_name = $result[0]->movie_name;
-            return $quote . " - " . $movie_name;
-        }
-    }
-
+    // rest-api.php calls this
     public function get_movie_quote_by_pairing($user_id_1, $user_id_2) {
-        // special case by request of John for a display loop between users
-        if (($user_id_1 == 0 && $user_id_2 == 0) || ($user_id_1 == "00000000" && $user_id_2 == "00000000")) {
-            return " Find a Friend and Get Your Movie Fortune                ";
-        }
-        global $wpdb;
-        global $user_pairings_table_name;
-        $users = [$user_id_1, $user_id_2];
-        sort($users);
-        $pairing_string = "{$users[0]}-{$users[1]}";
-        if (!$this->does_table_exist_in_database($user_pairings_table_name)) {
-            return null;
-        }
-        $id = $this->get_id_by_pairing($pairing_string);
-        return $this->get_movie_quote_by_id($id);
+        return MovieQuotes::get_movie_quote_by_pairing($user_id_1, $user_id_2);
     }
 
-    public function get_id_by_pairing($pairing_string) {
-        global $wpdb;
-        global $user_pairings_table_name;
-        $result = $wpdb->get_results("SELECT * FROM " . $user_pairings_table_name . " WHERE pairing = '" . $pairing_string . "'");
-        if ($wpdb->num_rows == 0) {
-            $id = $this->add_pairing_to_user_pairings_table($pairing_string);
-        } else {
-            $id = $result[0]->id;
-        }
-        return $id;
-    }
-
-    public function add_pairing_to_user_pairings_table($pairing_string) {
-        global $wpdb;
-        global $user_pairings_table_name;
-        $wpdb->insert(
-            $user_pairings_table_name,
-            array(
-                'pairing' => $pairing_string,
-            )
-        );
-        $result = $wpdb->get_results("SELECT * FROM " . $user_pairings_table_name . " WHERE pairing = '" . $pairing_string . "'");
-        return $result[0]->id;
-    }
-
-    public function token_id_exists_in_table($token_id) {
-        // if the token ID is in the tokens table, returns associated user ID as string,
-        // otherwise returns an error message
-        global $wpdb;
-        global $tokens_table_name;
-        if (!$this->does_table_exist_in_database($tokens_table_name)) {
-            return false;
-        }
-        $result = $wpdb->get_results("SELECT user_id FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
-        if ($wpdb->num_rows == 0) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
+    // rest-api.php calls this
     public function get_user_id_from_token_id($token_id) {
         // if the token ID is in the tokens table, returns associated user ID as string,
         // otherwise returns an error message
-        global $wpdb;
-        global $tokens_table_name;
-        if (!$this->does_table_exist_in_database($tokens_table_name)) {
-            return "Tokens table does not exist in database";
-        }
-        $result = $wpdb->get_results("SELECT user_id FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
-        if ($wpdb->num_rows == 0) {
-            return "Token id " . $token_id . " not found in database, you need to register it with a user ID";
-        } else {
-            return $result[0]->user_id;
-        }
+        return MovieQuotes::get_user_id_from_token_id($token_id);
     }
 
+    // rest-api.php calls this
     public function get_token_ids_by_user_id($user_id) {
         // if the user ID is in the tokens table, returns associated token ID(s) as ", "-separated string,
         // otherwise returns an error message
-        global $wpdb;
-        global $tokens_table_name;
-        if (!$this->does_table_exist_in_database($tokens_table_name)) {
-            return "Tokens table does not exist in database";
-        }
-        $result = $wpdb->get_results("SELECT token_id FROM " . $tokens_table_name . " WHERE user_id = '" . $user_id . "'");
-        if ($wpdb->num_rows == 0) {
-            return "No tokens found for user ID " . $user_id;
-        } else {
-            return join(", ", array_map(function ($token) {
-                return $token->token_id;
-            }, $result));
-        }
+        return MovieQuotes::get_token_ids_by_user_id($user_id);
     }
+
     public function populate_fake_token_in_reader_memory($reader_id) {
         $faketoken = rand(10000,20000);
         update_option('reader_'.$reader_id,$faketoken);
@@ -1346,40 +993,11 @@ Class IFLPartyMechanics {
         $response = $this->add_token_id_and_user_id_to_tokens_table($token_id,$user_id);
         echo $response;
         die();
-    }    
+    }
+
+    // rest-api.php calls this
     public function add_token_id_and_user_id_to_tokens_table($token_id, $user_id) {
-        global $wpdb;
-        global $tokens_table_name;
-        if (!$this->does_table_exist_in_database($tokens_table_name)) {
-            return "Tokens table does not exist in database";
-        }
-        if ($token_id == "") {
-            return "Error - empty token ID";
-        }
-        if ($user_id == "") {
-            return "Error - empty user ID";
-        }
-        $result = $wpdb->get_results("SELECT * FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
-        if ($wpdb->num_rows != 0) {
-            $user_id_already_registered = $result[0]->user_id;
-            if ($user_id_already_registered != $user_id) {
-                return "Error - token ID " . $token_id . " is already registered to a different userID (" . $user_id_already_registered . ")";
-            }
-            return "Token ID " . $token_id . " is already registered to that user ID (" . $user_id . ")";
-        }
-        $wpdb->insert(
-            $tokens_table_name,
-            array(
-                'token_id' => $token_id,
-                'user_id' => $user_id,
-            )
-        );
-        $result = $wpdb->get_results("SELECT * FROM " . $tokens_table_name . " WHERE token_id = '" . $token_id . "'");
-        if ($wpdb->num_rows != 0) {
-            return "Token ID " . $token_id . " and user ID " . $user_id . " pairing added to the tokens table";
-        } else {
-            return "Error adding token ID and user ID to the tokens table";
-        }
+        return MovieQuotes::add_token_id_and_user_id_to_tokens_table($token_id, $user_id);
     }
 
     /*
