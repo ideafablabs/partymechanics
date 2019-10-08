@@ -378,7 +378,7 @@ Class MovieQuotes {
     public static function add_token_id_and_user_id_to_tokens_table($token_id, $user_id) {
         global $wpdb;
         if (!self::does_table_exist_in_database(TOKENS_TABLE_NAME)) {
-            return "Tokens table does not exist in database";
+            return "Error - tokens table does not exist in database";
         }
         if ($token_id == "") {
             return "Error - empty token ID";

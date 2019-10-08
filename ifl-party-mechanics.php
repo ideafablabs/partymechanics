@@ -11,7 +11,6 @@
  */
 
 include 'rest-api.php';
-include 'utilities.php';
 include 'movie-quotes.php';
 
 global $wpdb;
@@ -169,7 +168,9 @@ Class IFLPartyMechanics {
      */
     public function wpdocs_register_my_custom_menu_page() {
 
-        if ($admin_page_call == '') {
+        // Originally this if statement only had the second part of the or condition, with $admin_page_call
+        // as an unknown variable, so I got rid of that error as below, but if anything else needs to be done, ???
+        if (!isset($admin_page_call) || $admin_page_call == '') {
             $admin_page_call = array($this, 'admin_page_call');
         }
 
@@ -327,24 +328,24 @@ Class IFLPartyMechanics {
      * Ex: [ticketform form="44" event="Event Title Goes Here" price="16.00"]
      */
     public function ifl_display_purchase_form($atts) {
-        extract(shortcode_atts(array(
+        $args = shortcode_atts(array(
             'form' => $this->menu_options['form_id'],
             'event' => $this->menu_options['form_event_title'],
             'price' => $this->menu_options['form_price'],
             'admin' => $this->menu_options['form_admin_mode'],
             'method' => $this->menu_options['form_payment_method']
-        ), $atts));
+        ), $atts);
 
         $field_values = array(
-            'event' => $event,
-            'price' => $price,
-            'method' => $method,
-            'admin' => $admin
+            'event' => $args['event'],
+            'price' => $args['price'],
+            'method' => $args['method'],
+            'admin' => $args['admin']
         );
         
         $content = "<p>";
         // Pass everything on to Gravity Forms
-        $content .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
+        $content .= gravity_form($args['form'], 0, 1, 0, $field_values, 1, 0, 0);
         $content .= "</p>";
 
         return $content;
@@ -355,22 +356,22 @@ Class IFLPartyMechanics {
      * Ex: [registrationform form="1" event="Event Title Goes Here" price="16.00"]
      */
     public function ifl_display_registration_form($atts) {
-        extract(shortcode_atts(array(
+        $args = shortcode_atts(array(
             'form' => $this->menu_options['form_id'],
             'event' => $this->menu_options['form_event_title'],
             'admin' => $this->menu_options['form_admin_mode']
-        ), $atts));
+        ), $atts);
 
         $field_values = array(
-            'event' => $event,
-            // 'price' => $price,
-            // 'reader_id' => $reader_id,
-            'admin' => $admin
+            'event' => $args['$event'],
+            // 'price' => $args['price'],
+            // 'reader_id' => $args['reader_id'],
+            'admin' => $args['admin']
         );
     
         $content = "<p>";
         // Pass everything on to Gravity Forms
-        $content .= gravity_form($form, 0, 1, 0, $field_values, 1, 0, 0);
+        $content .= gravity_form($args['form'], 0, 1, 0, $field_values, 1, 0, 0);
         $content .= "</p>";
 
         // $content .= '<div class="nfc-wrapper"><button class="btn-block"><span class="ifl-svg2></span>Get NFC</button></div>';
@@ -383,12 +384,12 @@ Class IFLPartyMechanics {
      * Ex: [guestlist form="44" event="Event Title Goes Here" ]
      */
     public function ifl_display_guest_list($atts) {
-        extract(shortcode_atts(array(
+        $args = shortcode_atts(array(
             'form_id' => $this->menu_options['form_id'],
             'event' => $this->menu_options['form_event_title'],
             'admin' => $this->menu_options['form_admin_mode'],
             // 'method' => $this->menu_options['form_payment_method']
-        ), $atts));
+        ), $atts);
 
         ///TODO:
         //  Include members in listing.
@@ -399,16 +400,16 @@ Class IFLPartyMechanics {
 
         $nonce = wp_create_nonce("guestlistadd_nonce");
 
-        $email_id = $this->menu_options['email_id'];
-        $event_field_id = $this->menu_options['event_field_id'];
-        $attendees_list_id = $this->menu_options['attendees_list_id'];
-        $attended_list_id = $this->menu_options['attended_list_id'];
+        $email_id = $args['email_id'];
+        $event_field_id = $args['event_field_id'];
+        $attendees_list_id = $args['attendees_list_id'];
+        $attended_list_id = $args['attended_list_id'];
 
         // This adds an offset so the id number will always be way beyond the other expected form field IDs.
         $attended_id_offset = 100;
 
         // Get all the entries where the "event" field is the event "title"
-        $search_criteria['field_filters'][] = array('key' => $event_field_id, 'value' => $event);
+        $search_criteria['field_filters'][] = array('key' => $event_field_id, 'value' => $args['event']);
 
         /// I think we are sorting via JS now...
         // $sorting = array( 'key' => $sort_field, 'direction' => 'ASC', 'is_numeric' => true );
@@ -416,11 +417,12 @@ Class IFLPartyMechanics {
         // $search_criteria = array();
         $sorting = array();
         $paging = array('offset' => 0, 'page_size' => 600);
-        $entries = GFAPI::get_entries($form_id, $search_criteria, $sorting, $paging);
+        $entries = GFAPI::get_entries($args['form_id'], $search_criteria, $sorting, $paging);
+        $event = get_option('current_event_title');
 
         // pr($entries);
 
-        $admit_list_html .= '<h2>' . $event_name . '</h2>';
+        $admit_list_html = '<h2>' . $event . '</h2>';
         $admit_list_html .= '<div class="row">';
         $admit_list_html .= '<div class="member-list ifl-admit-guest small-12 columns">';
         $admit_list_html .= '<h2>' . $event . '</h2>';
@@ -492,25 +494,30 @@ Class IFLPartyMechanics {
      * Ex: [entry_processor event="Event Title Goes Here" regform="1" ]
      */
     public function ifl_entry_processor($atts) {
-        extract(shortcode_atts(array(            
+        $args = shortcode_atts(array(
             'event' => $this->menu_options['form_event_title'],
             'regform' => $this->menu_options['form_id'],
-            'attendanceform' => $this->menu_options['attendform_id']
-        ), $atts));
+            'attendanceform' => $this->menu_options['attendform_id'],
+            'event_field_id' => $this->menu_options['event_field_id']
+        ), $atts);
+
+        $event = $args['event'];
 
         $reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
         $user_email = (isset($_REQUEST['user_email'])) ? $_REQUEST['user_email'] : '';
         
         $nfc = (isset($_REQUEST['nfc'])) ? $_REQUEST['nfc'] : '0';
         $submit = (isset($_REQUEST['submit'])) ? $_REQUEST['submit'] : '0';
+        echo "SUBMIT = " . $submit;
 
         // Begin response html string.
         $response = '';
         $start_over_link = '<ul class="return-links">';
 
         // Complete with Entry GForm and go back to Entry List or Create New User again.
+        echo "BEFORE SUBMIT!!!";
         if ($submit) {
-
+            echo "IN IF SUBMIT!!!";
             // Get user object by email.
             $user = get_user_by( 'email', $user_email );
 
@@ -521,8 +528,9 @@ Class IFLPartyMechanics {
             $tokenadd = $this->add_token_id_and_user_id_to_tokens_table($token_id,$user->ID);
             
             //// IF            
-            if (strpos($tokenadd, 'added') !== false || strpos($tokenadd, 'already') !== false) {
-                // Do form for Attendance of this particular event...    
+            // if (strpos($tokenadd, 'added') !== false || strpos($tokenadd, 'already') !== false) {
+             if (!startsWith($tokenadd, "Error")) {
+                // Do form for Attendance of this particular event...
                 $input_values['input_1']  = $event; 
                 $input_values['input_2']  = $user->ID;
                 $input_values['input_3']  = $user->display_name;
@@ -573,13 +581,18 @@ Class IFLPartyMechanics {
 
             // Do GF create user
             if (is_plugin_active('gravityforms/gravityforms.php')) {
+//                $field_values = array(
+//                    'event' => $event,
+//                    // 'price' => $price,
+//                    'reader_id' => $reader_id,
+//                    'admin' => $admin
+//                );
                 $field_values = array(
                     'event' => $event,
                     // 'price' => $price,
-                    'reader_id' => $reader_id,
-                    'admin' => $admin
+                    'reader_id' => $reader_id
                 );
-    
+
                 // Pass everything on to Gravity Forms
                 $response = '<div class="form-container"><p>';
                 $response .= gravity_form($regform, 0, 1, 0, $field_values, 1, 0, 0);
@@ -686,7 +699,7 @@ Class IFLPartyMechanics {
     */
     public function reset_attendees($event_name) {
 
-        $search_criteria['field_filters'][] = array('key' => $event_field_id, 'value' => $event_name);
+        $search_criteria['field_filters'][] = array('key' => $this->menu_options['event_field_id'], 'value' => $event_name);
         $sorting = array();
         $paging = array('offset' => 0, 'page_size' => 900);
         $entries = GFAPI::get_entries($this->form_id, $search_criteria, $sorting, $paging);
