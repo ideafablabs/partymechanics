@@ -212,7 +212,6 @@ Class IFLPartyMechanics
         // Echo the html here...
         echo "XING!</br>";
         $this->test_event_title_stuff();
-        $this->test_user_dropdown();
         $this->test_event_registration_form_stuff();
         MovieQuotes::test_user_pairings_stuff();
         MovieQuotes::test_movie_quotes_stuff();
@@ -221,6 +220,9 @@ Class IFLPartyMechanics
         $this->test_attendance_table_stuff();
         $this->test_special_guests_table_stuff();
         $this->test_option_stuff();
+        //$this->test_user_dropdown();
+        //$this->test_insert_some_attendees();
+        $this->list_attendees_for_selected_event();
     }
 
     function add_new_event_page_call() {
@@ -832,6 +834,39 @@ Class IFLPartyMechanics
         );
     }
 
+    public function insert_attendee($user, $event) {
+        echo $user->ID . " ";
+        echo $event->event_id . "<br>";
+        global $wpdb;
+        $wpdb->insert(
+            ATTENDANCE_TABLE_NAME,
+            array(
+                'user_id' => $user->ID,
+                'event_id' => $event->event_id,
+            )
+        );
+    }
+
+    public function test_insert_some_attendees() {
+        global $wpdb;
+        $events = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME);
+        $users = get_users("orderby=display_name");
+        for ($i = 0; $i < sizeof($events); $i++) {
+            for ($j = 0; $j < sizeof($events); $j++) {
+                $this->insert_attendee($users[$i * sizeof($events) + $j], $events[$i]);
+            }
+        }
+    }
+
+    public function list_attendees_for_selected_event() {
+        global $wpdb;
+        $selected_event_id = get_option('selected_event_id');
+        $attendees_for_selected_event = $wpdb->get_results("SELECT * FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = " . $selected_event_id);
+        foreach ($attendees_for_selected_event as $attendee) {
+            echo get_user_by("ID", $attendee->user_id)->display_name . "<br>";
+        }
+    }
+
     public function test_event_registration_form_stuff() {
         $active_plugins = apply_filters('active_plugins', get_option('active_plugins'));
         $gravityforms = false;
@@ -858,10 +893,10 @@ Class IFLPartyMechanics
     public function test_user_dropdown() {
         global $wpdb;
         $users = get_users("orderby=display_name");
-//        foreach ($users as $key => $user) {
-//
-//            echo $user->display_name . "<br>";
-//        }
+        foreach ($users as $key => $user) {
+
+            echo $user->display_name . "<br>";
+        }
     }
 
 
