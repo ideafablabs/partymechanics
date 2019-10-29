@@ -36,6 +36,7 @@ $IFLPartyMechanics->run();
 //$data_field_name = 'mt_favorite_color';
 
 
+
 Class IFLPartyMechanics
 {
 
@@ -91,9 +92,9 @@ Class IFLPartyMechanics
         $this->menu_options = array_merge($this->defaultOptions, $options);
 
         // Enqueue plugin styles and scripts
-        add_action('plugins_loaded', array($this, 'register_iflpm_scripts'));
-        add_action('plugins_loaded', array($this, 'enqueue_iflpm_scripts'));
-        add_action('plugins_loaded', array($this, 'enqueue_iflpm_styles'));
+        add_action('wp_enqueue_script', array($this, 'register_iflpm_scripts'));
+        add_action('wp_enqueue_script', array($this, 'enqueue_iflpm_scripts'));
+        add_action('wp_enqueue_style', array($this, 'enqueue_iflpm_styles'));
         add_action('plugins_loaded', array($this, 'register_rest_api'));
 
         // Register REST API Controllers
