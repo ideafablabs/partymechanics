@@ -98,17 +98,14 @@ Class MovieQuotes {
     }
 
     public static function does_movie_quotes_table_exist_in_database() {
-        global $wpdb;
         return self::does_table_exist_in_database(MOVIE_QUOTES_TABLE_NAME);
     }
 
     public static function does_user_pairings_table_exist_in_database() {
-        global $wpdb;
         return self::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME);
     }
 
     public static function does_tokens_table_exist_in_database() {
-        global $wpdb;
         return self::does_table_exist_in_database(TOKENS_TABLE_NAME);
     }
 
@@ -200,17 +197,14 @@ Class MovieQuotes {
     }
 
     public static function delete_all_quotes_from_movie_quotes_table() {
-        global $wpdb;
         self::delete_all_rows_from_table(MOVIE_QUOTES_TABLE_NAME);
     }
 
     public static function delete_all_pairings_from_user_pairings_table() {
-        global $wpdb;
         self::delete_all_rows_from_table(USER_PAIRINGS_TABLE_NAME);
     }
 
     public static function delete_all_tokens_from_tokens_table() {
-        global $wpdb;
         self::delete_all_rows_from_table(TOKENS_TABLE_NAME);
     }
 
@@ -294,7 +288,6 @@ Class MovieQuotes {
         if (($user_id_1 == 0 && $user_id_2 == 0) || ($user_id_1 == "00000000" && $user_id_2 == "00000000")) {
             return " Find a Friend and Get Your Movie Fortune                ";
         }
-        global $wpdb;
         $users = [$user_id_1, $user_id_2];
         sort($users);
         $pairing_string = "{$users[0]}-{$users[1]}";

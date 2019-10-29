@@ -14,23 +14,15 @@ include 'rest-api.php';
 include 'movie-quotes.php';
 
 global $wpdb;
-global $events_table_name;
-global $events_db_version;
 
-global $attendance_table_name;
-global $attendance_db_version;
+define("EVENTS_TABLE_NAME", $wpdb->prefix . "events");
+define("EVENTS_DB_VERSION", "1.0");
 
-global $special_guests_table_name;
-global $special_guests_db_version;
+define("ATTENDANCE_TABLE_NAME", $wpdb->prefix . "attendance");
+define("ATTENDANCE_DB_VERSION", "1.0");
 
-$events_table_name = $wpdb->prefix . "events";
-$events_db_version = "1.0";
-
-$attendance_table_name = $wpdb->prefix . "attendance";
-$attendance_db_version = "1.0";
-
-$special_guests_table_name = $wpdb->prefix . "special_guests";
-$special_guests_db_version = "1.0";
+define("SPECIAL_GUESTS_TABLE_NAME", $wpdb->prefix . "special_guests");
+define("SPECIAL_GUESTS_DB_VERSION", "1.0");
 
 $IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
@@ -38,13 +30,14 @@ $IFLPartyMechanics->run();
 // See if the user has posted us some information
 // If they did, this hidden field will be set to 'Y'
 // variables for the field and option names
-$opt_name = 'mt_favorite_color';
-#global $hidden_field_name;
-$hidden_field_name = 'mt_submit_hidden';
-$data_field_name = 'mt_favorite_color';
+//$opt_name = 'mt_favorite_color';
+//#global $hidden_field_name;
+//$hidden_field_name = 'mt_submit_hidden';
+//$data_field_name = 'mt_favorite_color';
 
 
-Class IFLPartyMechanics {
+Class IFLPartyMechanics
+{
 
     // https://www.ibenic.com/creating-wordpress-menu-pages-oop/
 
@@ -82,7 +75,6 @@ Class IFLPartyMechanics {
 
     );
     public $menu_options = array();
-
 
 
     /*
@@ -123,7 +115,7 @@ Class IFLPartyMechanics {
         add_action('wp_ajax_nopriv_ifl_admit_all', array($this, 'ifl_admit_all'));
         add_action('wp_ajax_iflpm_get_token_from_reader', array($this, 'iflpm_get_token_from_reader'));
         add_action('wp_ajax_nopriv_iflpm_get_token', array($this, 'iflpm_get_token_from_reader'));
-        
+
         add_action('wp_ajax_iflpm_associate_user_with_token_from_reader', array($this, 'iflpm_associate_user_with_token_from_reader'));
         add_action('wp_ajax_nopriv_iflpm_associate_user_with_token_from_reader', array($this, 'iflpm_associate_user_with_token_from_reader'));
 
@@ -134,7 +126,7 @@ Class IFLPartyMechanics {
         add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));
         add_shortcode('guestlist', array($this, 'ifl_display_guest_list'));
         add_shortcode('entry_processor', array($this, 'ifl_entry_processor'));
-        
+
 
 //        register_activation_hook( __FILE__, 'iflpm_install' );
 //        register_activation_hook( __FILE__, 'iflpm_install_data' );
@@ -184,24 +176,38 @@ Class IFLPartyMechanics {
             plugins_url('myplugin/images/icon.png'),  // Icon URL
             6
         );
+
+        add_submenu_page('my_custom_menu_page',
+            "Add New Event",
+            "Add New Event",
+            'manage_options',
+            "add_new_event_page",
+            array($this, 'add_new_event_page_call'));
+
     }
 
     /**
      * Build HTML for admin page.
      */
     public function admin_page_call() {
-        global $hidden_field_name;
-//        if (isset($_POST[ $hidden_field_name ])) { //} && $_POST[ $hidden_field_name ] == 'Y') {
-        if (isset($_POST[ "hidden" ]) && $_POST[ "hidden" ] == 'Y') {
-            $opt_val = $_POST[ 'current_event_title' ];
-            update_option('current_event_title', $opt_val);
-//// Read their posted value
-//    $opt_val = $_POST[$data_field_name];
+//        global $hidden_field_name;
+////        if (isset($_POST[ $hidden_field_name ])) { //} && $_POST[ $hidden_field_name ] == 'Y') {
+//        if (isset($_POST[ "hidden" ]) && $_POST[ "hidden" ] == 'Y') {
+//            $opt_val = $_POST[ 'current_event_title' ];
+//            update_option('current_event_title', $opt_val);
+////// Read their posted value
+////    $opt_val = $_POST[$data_field_name];
+////
+////// Save the posted value in the database
+////    update_option($opt_name, $opt_val);
 //
-//// Save the posted value in the database
-//    update_option($opt_name, $opt_val);
+//        }
 
+        if (isset($_POST['submit'])) {
+            $selected_event_id = $_POST['selected_event_id'];  // Storing Selected Value In Variable
+            update_option('selected_event_id', $selected_event_id);
         }
+
         // Echo the html here...
         echo "XING!</br>";
         $this->test_event_title_stuff();
@@ -214,6 +220,30 @@ Class IFLPartyMechanics {
         $this->test_attendance_table_stuff();
         $this->test_special_guests_table_stuff();
         $this->test_option_stuff();
+    }
+
+    function add_new_event_page_call() {
+        if (isset($_POST['submit_new_event'])) {
+            $title = trim($_POST['new_event_title']);
+            $date = $_POST['new_event_date'];
+            if ($title == "") {
+                echo "<p style='color: red; font-weight: bold'>Please enter a title for the new event</p>";
+            } else if ($date == "") {
+                echo "<p style='color: red; font-weight: bold'>Please select the date for the new event</p>";
+            } else {
+                $this->insert_event($title, $date);
+                echo "<script>window.location = 'admin.php?page=my_custom_menu_page'</script>";
+            }
+        }
+
+        echo "<h1>Add New Event</h1><form name='form1' method='post' action=''>
+        <input type='hidden' name='hidden' value='Y'>
+        <label for='new_event_title'><br><b>New event title:</b></label>
+        <input type='text' name='new_event_title'/><br>
+        <label for='new_event_date'><br><b>New event date:</b></label>
+        <input type='date' name='new_event_date'/><br><br>
+        <input type='submit' name='submit_new_event' value='Submit New Event'/>
+        </form><br>";
     }
 
     /**
@@ -327,29 +357,29 @@ Class IFLPartyMechanics {
      * Shortcode wrapper for displaying the ticket purchase gravity form.
      * Ex: [ticketform form="44" event="Event Title Goes Here" price="16.00"]
      */
-    public function ifl_display_purchase_form($atts) {
-        $args = shortcode_atts(array(
-            'form' => $this->menu_options['form_id'],
-            'event' => $this->menu_options['form_event_title'],
-            'price' => $this->menu_options['form_price'],
-            'admin' => $this->menu_options['form_admin_mode'],
-            'method' => $this->menu_options['form_payment_method']
-        ), $atts);
-
-        $field_values = array(
-            'event' => $args['event'],
-            'price' => $args['price'],
-            'method' => $args['method'],
-            'admin' => $args['admin']
-        );
-        
-        $content = "<p>";
-        // Pass everything on to Gravity Forms
-        $content .= gravity_form($args['form'], 0, 1, 0, $field_values, 1, 0, 0);
-        $content .= "</p>";
-
-        return $content;
-    }
+//    public function ifl_display_purchase_form($atts) {
+//        $args = shortcode_atts(array(
+//            'form' => $this->menu_options['form_id'],
+//            'event' => $this->menu_options['form_event_title'],
+//            'price' => $this->menu_options['form_price'],
+//            'admin' => $this->menu_options['form_admin_mode'],
+//            'method' => $this->menu_options['form_payment_method']
+//        ), $atts);
+//
+//        $field_values = array(
+//            'event' => $args['event'],
+//            'price' => $args['price'],
+//            'method' => $args['method'],
+//            'admin' => $args['admin']
+//        );
+//
+//        $content = "<p>";
+//        // Pass everything on to Gravity Forms
+//        $content .= gravity_form($args['form'], 0, 1, 0, $field_values, 1, 0, 0);
+//        $content .= "</p>";
+//
+//        return $content;
+//    }
 
     /**
      * Shortcode wrapper for displaying the registration gravity form.
@@ -368,7 +398,7 @@ Class IFLPartyMechanics {
             // 'reader_id' => $args['reader_id'],
             'admin' => $args['admin']
         );
-    
+
         $content = "<p>";
         // Pass everything on to Gravity Forms
         $content .= gravity_form($args['form'], 0, 1, 0, $field_values, 1, 0, 0);
@@ -490,7 +520,7 @@ Class IFLPartyMechanics {
     }
 
     /**
-     * Shortcode wrapper for displaying the admission list w NFC. 
+     * Shortcode wrapper for displaying the admission list w NFC.
      * Ex: [entry_processor event="Event Title Goes Here" regform="1" ]
      */
     public function ifl_entry_processor($atts) {
@@ -502,45 +532,44 @@ Class IFLPartyMechanics {
         ), $atts);
 
         $event = $args['event'];
+        $attendanceform = $args['attendanceform'];
 
         $reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
         $user_email = (isset($_REQUEST['user_email'])) ? $_REQUEST['user_email'] : '';
-        
+
         $nfc = (isset($_REQUEST['nfc'])) ? $_REQUEST['nfc'] : '0';
         $submit = (isset($_REQUEST['submit'])) ? $_REQUEST['submit'] : '0';
-        echo "SUBMIT = " . $submit;
+        echo "SUBMIT = " . $submit . "\n";
 
         // Begin response html string.
         $response = '';
         $start_over_link = '<ul class="return-links">';
 
         // Complete with Entry GForm and go back to Entry List or Create New User again.
-        echo "BEFORE SUBMIT!!!";
         if ($submit) {
-            echo "IN IF SUBMIT!!!";
             // Get user object by email.
-            $user = get_user_by( 'email', $user_email );
+            $user = get_user_by('email', $user_email);
 
             // Get the token from the reader memory slot.
-            $token_id = get_option('reader_'.$reader_id);
-            
+            $token_id = get_option('reader_' . $reader_id);
+
             // Add pair to the database or get an error.
-            $tokenadd = $this->add_token_id_and_user_id_to_tokens_table($token_id,$user->ID);
-            
+            $tokenadd = $this->add_token_id_and_user_id_to_tokens_table($token_id, $user->ID);
+
             //// IF            
             // if (strpos($tokenadd, 'added') !== false || strpos($tokenadd, 'already') !== false) {
-             if (!startsWith($tokenadd, "Error")) {
+            if (!(substr($tokenadd, 0, 5) == "Error")) {
                 // Do form for Attendance of this particular event...
-                $input_values['input_1']  = $event; 
-                $input_values['input_2']  = $user->ID;
-                $input_values['input_3']  = $user->display_name;
-             
-                $result = GFAPI::submit_form( $attendanceform, $input_values );
+                $input_values['input_1'] = $event;
+                $input_values['input_2'] = $user->ID;
+                $input_values['input_3'] = $user->display_name;
+
+                $result = GFAPI::submit_form($attendanceform, $input_values);
 
                 if (strpos($result['confirmation_message'], 'Thanks') !== false) {
 
                     $response .= '<p class="success">';
-                    $response .= $user->display_name.' was successfully admitted!';
+                    $response .= $user->display_name . ' was successfully admitted!';
                     $response .= '</p>';
 
                     // pr($result);
@@ -556,24 +585,24 @@ Class IFLPartyMechanics {
                 $response .= $tokenadd;
                 $response .= '</p>';
 
-                
-            }            
+
+            }
         }
 
         // Pick Reader        
-        if ($reader_id == '') {            
-            
+        if ($reader_id == '') {
+            echo "READER ID == ''\n";
             $available_reader_count = 4;
 
             $response .= '<ul class="reader_list list-group">';
-            for ($i = 1;$i<=$available_reader_count;$i++) {
-                $response .= '<li class="list-group-item"><span class="icon-ifl-svg"></span><a class="reader_choice_button" href="./?reader_id='.$i.'">READER '.$i.'</a></li>';    
-            }            
+            for ($i = 1; $i <= $available_reader_count; $i++) {
+                $response .= '<li class="list-group-item"><span class="icon-ifl-svg"></span><a class="reader_choice_button" href="./?reader_id=' . $i . '">READER ' . $i . '</a></li>';
+            }
             $response .= '</ul>';
             return $response;
         } else {
             // We have the reader ID so lets give a link to get back to just before that.
-           // $start_over_link .= '<li class="list-group-item"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></li>';
+            // $start_over_link .= '<li class="list-group-item"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></li>';
         }
 
         // Create new User
@@ -611,13 +640,13 @@ Class IFLPartyMechanics {
 
         // See Entry List
         if ($user_email == '') {
-            
+
             // Get the users from the DB...
-            $users = get_users(array('orderby' => 'display_name','fields' => 'all_with_meta'));
+            $users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
 
             /// Later on we will have a switch for form entries instead of members.
 
-            $response .= '<button class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id='.$reader_id.'&create=1">Add New Member</a></button><button class="btn-info"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button>';
+            $response .= '<button class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id=' . $reader_id . '&create=1">Add New Member</a></button><button class="btn-info"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button>';
 
             $start_over_link .= '</ul>';
             $response .= $start_over_link;
@@ -631,39 +660,39 @@ Class IFLPartyMechanics {
             // Build links for each member...
             foreach ($users as $key => $user) {
 
-                $formlink = './?user_email='.$user->user_email.'&membername='.urlencode($user->display_name).'&reader_id='.$reader_id;   
+                $formlink = './?user_email=' . $user->user_email . '&membername=' . urlencode($user->display_name) . '&reader_id=' . $reader_id;
 
-                $response .= '<li class="list-group-item list-group-item-action" data-sort="'.$user->display_name.'">
+                $response .= '<li class="list-group-item list-group-item-action" data-sort="' . $user->display_name . '">
                 <span class="glyphicon glyphicon-user"></span>
-                <a id="'.$user->ID.'" class=" '.$member_class.'" href="'.$formlink.'" '.$admin_guest_list_flag.'>
-                <span class="member-displayname">'.$user->display_name.'</span>'.
-                '<span class="attendance_count alignright">'.$attendance_count.'</span>'
+                <a id="' . $user->ID . '" class=" ' . $member_class . '" href="' . $formlink . '" ' . $admin_guest_list_flag . '>
+                <span class="member-displayname">' . $user->display_name . '</span>' .
+                    '<span class="attendance_count alignright">' . $attendance_count . '</span>'
 
-                .'
-                <br /><span class="member-email">'.$user->user_email.'</span></a>
-                </li>';     
-            } 
+                    . '
+                <br /><span class="member-email">' . $user->user_email . '</span></a>
+                </li>';
+            }
 
             $response .= '</ul>';
             return $response;
         } else {
             // We have the reader ID so lets give a link to get back to just after that.
-            $start_over_link .= '<li ><button><a class="return-link list-choice" href="./?reader_id='.$reader_id.'">Back to Member List</a></button></li>';
+            $start_over_link .= '<li ><button><a class="return-link list-choice" href="./?reader_id=' . $reader_id . '">Back to Member List</a></button></li>';
         }
 
         // Associate token ID with user...        
-        if ($submit == '0') { 
-            $user = get_user_by( 'email', $user_email );
+        if ($submit == '0') {
+            $user = get_user_by('email', $user_email);
             $response .= '<div class="container">';
-            $response .= '<h2>'.$user->display_name.'</h2>';
+            $response .= '<h2>' . $user->display_name . '</h2>';
             $response .= '<p>Scan medallion and click here:</p>';
             $response .= '<p><div class="token_id"></div></p>';
 
             $response .= '<p><div class="token-response"></div></p>';
 
-            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_get_token_id_from_reader('.$reader_id.')"><span class="ifl-svg2></span>Check Medallion</button></p>';
-            $response .= '<p><button data-reader_id="'.$reader_id.'" class="nfc_button" onClick="ajax_associate_medallion_with_user('.$reader_id.','.$user->ID.')">Associate Medallion</button></p>';
-            $response .= '<p><a class="nfcsubmit button" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'&submit=1&nfc='.$reader_id.'">Send It!</a></p>';
+            $response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button" onClick="ajax_get_token_id_from_reader(' . $reader_id . ')"><span class="ifl-svg2></span>Check Medallion</button></p>';
+            $response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button" onClick="ajax_associate_medallion_with_user(' . $reader_id . ',' . $user->ID . ')">Associate Medallion</button></p>';
+            $response .= '<p><a class="nfcsubmit button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1&nfc=' . $reader_id . '">Send It!</a></p>';
 
             $response .= '</div>';
             // if (token_id_exists_in_table($token_id)) {}
@@ -674,29 +703,29 @@ Class IFLPartyMechanics {
             return $response;
         } else {
             // We have the user email so lets give a link to get back to just before that.
-            $start_over_link .= '<li><a class="return-link list-choice" href="./?reader_id='.$reader_id.'&user_email='.$user_email.'">Back to Member Detail</a></li>';
-        }        
+            $start_over_link .= '<li><a class="return-link list-choice" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '">Back to Member Detail</a></li>';
+        }
 
         // There was a problem somewhere along the way...
         $response .= '<div class="error">There was a problem somewhere along the way...</div>';
-        $response .= '<ul class="list-group"><li class="list-group-item"><a class="button" href="./?reader_id='.$reader_id.'">Back to List</a></li>';
-        $response .= '<li class="list-group-item"><a class="button" href="./?reader_id='.$reader_id.'&create">Register New</a></li></ul><div>';
+        $response .= '<ul class="list-group"><li class="list-group-item"><a class="button" href="./?reader_id=' . $reader_id . '">Back to List</a></li>';
+        $response .= '<li class="list-group-item"><a class="button" href="./?reader_id=' . $reader_id . '&create">Register New</a></li></ul><div>';
         return $response;
     }
 
     /**
-    * AJAX Get token from reader ID in memory.
-    */
+     * AJAX Get token from reader ID in memory.
+     */
     public function iflpm_get_token_from_reader() {
-        $reader_id = $_GET['reader_id'];        
+        $reader_id = $_GET['reader_id'];
         // echo $this->populate_fake_token_in_reader_memory($reader_id);
-        echo get_option('reader_'.$reader_id);        
+        echo get_option('reader_' . $reader_id);
         die();
     }
 
     /**
-    * Reset all the attendee statuses for an event.
-    */
+     * Reset all the attendee statuses for an event.
+     */
     public function reset_attendees($event_name) {
 
         $search_criteria['field_filters'][] = array('key' => $this->menu_options['event_field_id'], 'value' => $event_name);
@@ -773,20 +802,40 @@ Class IFLPartyMechanics {
 
     public function test_event_title_stuff() {
         // see https://codex.wordpress.org/Adding_Administration_Menus
-        global $hidden_field_name;
-        echo "<form name='form1' method='post' action=''>
-        <input type='hidden' name='hidden' value='Y'>
-        <label for='current_event_title'><br><b>Current event title:</b></label>
-        <input type='text' name='current_event_title' value='" . get_option('current_event_title') . "'/>
-            <input type='submit' name='Submit' value='Change'/>
-        </form><br>";
+        global $hidden_field_name, $wpdb;
+        $selected_event_id = get_option('selected_event_id');
+
+        $result = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME);
+        echo "<table><tr><td style='vertical-align: top;'><h1 style='padding-right: 20px;'>Events</h1></td>";
+        echo "<td style='vertical-align: center; padding-top: 10px'><a href='admin.php?page=add_new_event_page' class='button'>Add New Event</a></td></tr></table>";
+
+        echo "<form name='select_event' method='post' action='#'>
+        <b>Select event: </b> 
+            <select id='selected_event_id' name='selected_event_id'>";
+        for ($i = 0; $i < sizeof($result); $i++) {
+            $id = strval($result[$i]->event_id);
+            $selected = ($id == $selected_event_id) ? "selected" : "";
+            echo "<option value='" . strval($result[$i]->event_id) . "' " . $selected . ">" . $result[$i]->title . " - " . $result[$i]->date . "</option>";
+        }
+        echo "<input type='submit' name='submit' value='Submit Selection Change' /></form>";
+    }
+
+    public function insert_event($title, $date) {
+        global $wpdb;
+        $wpdb->insert(
+            EVENTS_TABLE_NAME,
+            array(
+                'title' => $title,
+                'date' => $date,
+            )
+        );
     }
 
     public function test_event_registration_form_stuff() {
         $active_plugins = apply_filters('active_plugins', get_option('active_plugins'));
         $gravityforms = false;
         $gravityformsuserregistration = false;
-        foreach($active_plugins as $plugin){
+        foreach ($active_plugins as $plugin) {
             if ($plugin == "gravityforms/gravityforms.php") {
                 $gravityforms = true;
             } else if ($plugin == "gravityformsuserregistration/userregistration.php") {
@@ -794,10 +843,10 @@ Class IFLPartyMechanics {
             }
         }
         if ($gravityforms & $gravityformsuserregistration) {
-            echo "<br>Gravity Forms and Gravity Forms User Registration are installed and active<br>";
+            echo "<br><br>Gravity Forms and Gravity Forms User Registration are installed and active<br>";
             echo "<b>Active forms:</b><br>";
             $forms = GFAPI::get_forms();
-            foreach($forms as $form) {
+            foreach ($forms as $form) {
                 echo "Title: " . $form["title"] . ", ID: " . $form["id"] . "<br>";
             }
         } else {
@@ -815,13 +864,14 @@ Class IFLPartyMechanics {
     }
 
 
-
     public function test_events_table_stuff() {
-        global $events_table_name;
         global $wpdb;
         echo "<br>";
-        if ($this->does_table_exist_in_database($events_table_name)) {
+        if ($this->does_table_exist_in_database(EVENTS_TABLE_NAME)) {
             echo "Events table exists<br>";
+            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . EVENTS_TABLE_NAME);
+            echo "Events table contains " . $rows[0]->num_rows . " records.<br>";
+            //$this->insert_event("Doublemint", "2019-03-30");
         } else {
             echo "Events table does not exist, creating Events table<br>";
             $this->create_events_table();
@@ -830,11 +880,12 @@ Class IFLPartyMechanics {
     }
 
     public function test_attendance_table_stuff() {
-        global $attendance_table_name;
         global $wpdb;
         echo "<br>";
-        if ($this->does_table_exist_in_database($attendance_table_name)) {
+        if ($this->does_table_exist_in_database(ATTENDANCE_TABLE_NAME)) {
             echo "Attendance table exists<br>";
+            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . ATTENDANCE_TABLE_NAME);
+            echo "Attendance table contains " . $rows[0]->num_rows . " records.<br>";
         } else {
             echo "Attendance table does not exist, creating Attendance table<br>";
             $this->create_attendance_table();
@@ -843,11 +894,12 @@ Class IFLPartyMechanics {
     }
 
     public function test_special_guests_table_stuff() {
-        global $special_guests_table_name;
         global $wpdb;
         echo "<br>";
-        if ($this->does_table_exist_in_database($special_guests_table_name)) {
+        if ($this->does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
             echo "Special Guests table exists<br>";
+            $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . SPECIAL_GUESTS_TABLE_NAME);
+            echo "Special Guests table contains " . $rows[0]->num_rows . " records.<br>";
         } else {
             echo "Special Guests table does not exist, creating Special Guests table<br>";
             $this->create_special_guests_table();
@@ -866,10 +918,10 @@ Class IFLPartyMechanics {
 
     public function is_plugin_active($plugin_path) {
         $active_plugins = apply_filters('active_plugins', get_option('active_plugins'));
-        
+
         $case = false;
-        
-        foreach($active_plugins as $plugin){
+
+        foreach ($active_plugins as $plugin) {
             if ($plugin == $plugin_path) {
                 $case = true;
             }
@@ -900,12 +952,11 @@ Class IFLPartyMechanics {
 
     public function create_events_table() {
         global $wpdb;
-        global $events_table_name;
         global $events_db_version;
 
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $events_table_name (
+        $sql = "CREATE TABLE EVENTS_TABLE_NAME (
               event_id mediumint(9) NOT NULL AUTO_INCREMENT,
               title tinytext NOT NULL,
               date date NOT NULL,
@@ -920,12 +971,10 @@ Class IFLPartyMechanics {
 
     public function create_attendance_table() {
         global $wpdb;
-        global $attendance_table_name;
-        global $attendance_db_version;
 
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE " . $attendance_table_name . " (
+        $sql = "CREATE TABLE " . ATTENDANCE_TABLE_NAME . " (
               record_id mediumint(9) NOT NULL AUTO_INCREMENT,
               user_id bigint(20) unsigned NOT NULL,
               event_id mediumint(9) NOT NULL,
@@ -937,17 +986,15 @@ Class IFLPartyMechanics {
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
 
-        add_option('attendance_db_version', $attendance_db_version);
+        add_option('attendance_db_version', ATTENDANCE_DB_VERSION);
     }
 
     public function create_special_guests_table() {
         global $wpdb;
-        global $special_guests_table_name;
-        global $special_guests_db_version;
 
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE " . $special_guests_table_name . " (
+        $sql = "CREATE TABLE " . SPECIAL_GUESTS_TABLE_NAME . " (
               record_id mediumint(9) NOT NULL AUTO_INCREMENT,
               user_id bigint(20) unsigned NOT NULL,
               event_id mediumint(9) NOT NULL,
@@ -959,7 +1006,7 @@ Class IFLPartyMechanics {
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
 
-        add_option('special_guests_db_version', $special_guests_db_version);
+        add_option('special_guests_db_version', SPECIAL_GUESTS_DB_VERSION);
     }
 
     public function delete_all_rows_from_table($table_name) {
@@ -992,8 +1039,8 @@ Class IFLPartyMechanics {
     }
 
     public function populate_fake_token_in_reader_memory($reader_id) {
-        $faketoken = rand(10000,20000);
-        update_option('reader_'.$reader_id,$faketoken);
+        $faketoken = rand(10000, 20000);
+        update_option('reader_' . $reader_id, $faketoken);
         return $faketoken;
     }
 
@@ -1001,9 +1048,9 @@ Class IFLPartyMechanics {
     public function iflpm_associate_user_with_token_from_reader() {
         $user_id = $_GET['user_id'];
         $reader_id = $_GET['reader_id'];
-        
-        $token_id = get_option('reader_'.$reader_id);
-        $response = $this->add_token_id_and_user_id_to_tokens_table($token_id,$user_id);
+
+        $token_id = get_option('reader_' . $reader_id);
+        $response = $this->add_token_id_and_user_id_to_tokens_table($token_id, $user_id);
         echo $response;
         die();
     }
