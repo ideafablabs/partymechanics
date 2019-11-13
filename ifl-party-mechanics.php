@@ -27,15 +27,6 @@ define("SPECIAL_GUESTS_DB_VERSION", "1.0");
 $IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
 
-// See if the user has posted us some information
-// If they did, this hidden field will be set to 'Y'
-// variables for the field and option names
-//$opt_name = 'mt_favorite_color';
-//#global $hidden_field_name;
-//$hidden_field_name = 'mt_submit_hidden';
-//$data_field_name = 'mt_favorite_color';
-
-
 
 Class IFLPartyMechanics
 {
@@ -191,19 +182,6 @@ Class IFLPartyMechanics
      * Build HTML for admin page.
      */
     public function admin_page_call() {
-//        global $hidden_field_name;
-////        if (isset($_POST[ $hidden_field_name ])) { //} && $_POST[ $hidden_field_name ] == 'Y') {
-//        if (isset($_POST[ "hidden" ]) && $_POST[ "hidden" ] == 'Y') {
-//            $opt_val = $_POST[ 'current_event_title' ];
-//            update_option('current_event_title', $opt_val);
-////// Read their posted value
-////    $opt_val = $_POST[$data_field_name];
-////
-////// Save the posted value in the database
-////    update_option($opt_name, $opt_val);
-//
-//        }
-
         if (isset($_POST['submit'])) {
             $selected_event_id = $_POST['selected_event_id'];  // Storing Selected Value In Variable
             update_option('selected_event_id', $selected_event_id);
@@ -230,7 +208,7 @@ Class IFLPartyMechanics
             $title = trim($_POST['new_event_title']);
             $date = $_POST['new_event_date'];
             if ($title == "") {
-                echo "<p style='color: red; font-weight: bold'>Please enter a title for the new event</p>";
+                echo "<p style='color: red; font-weight: bold'>Please enter the title for the new event</p>";
             } else if ($date == "") {
                 echo "<p style='color: red; font-weight: bold'>Please select the date for the new event</p>";
             } else {
@@ -396,7 +374,7 @@ Class IFLPartyMechanics
         ), $atts);
 
         $field_values = array(
-            'event' => $args['$event'],
+            'event' => $args['event'],
             // 'price' => $args['price'],
             // 'reader_id' => $args['reader_id'],
             'admin' => $args['admin']
@@ -818,7 +796,7 @@ Class IFLPartyMechanics
         for ($i = 0; $i < sizeof($result); $i++) {
             $id = strval($result[$i]->event_id);
             $selected = ($id == $selected_event_id) ? "selected" : "";
-            echo "<option value='" . strval($result[$i]->event_id) . "' " . $selected . ">" . $result[$i]->title . " - " . $result[$i]->date . "</option>";
+            echo "<option value='" . strval($result[$i]->event_id) . "' " . $selected . ">" . $result[$i]->title . " - " . date_format(date_create($result[$i]->date),"F j, Y") . "</option>";
         }
         echo "<input type='submit' name='submit' value='Submit Selection Change' /></form>";
     }
@@ -862,6 +840,7 @@ Class IFLPartyMechanics
         global $wpdb;
         $selected_event_id = get_option('selected_event_id');
         $attendees_for_selected_event = $wpdb->get_results("SELECT * FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = " . $selected_event_id);
+        echo "<p><b>People in the attendance table who attended the selected event:</b></p>";
         foreach ($attendees_for_selected_event as $attendee) {
             echo get_user_by("ID", $attendee->user_id)->display_name . "<br>";
         }
