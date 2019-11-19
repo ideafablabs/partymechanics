@@ -33,3 +33,7 @@ wp-special-guests tables, because they use the wp-users table's ID field as a fo
 the wp-users table needs to be using the InnoDB storage engine rather than the MyISAM storage
 engine, because the latter doesn't support foreign keys. See
 https://kinsta.com/knowledgebase/convert-myisam-to-innodb/
+
+[/zone-plus-one](https://github.com/ideafablabs/partymechanics/tree/master/zone-plus-one) contains files for the Plus
+One Zones WordPress plugin-in-progress: Functions for creating and working with tables for zones, zone tokens, and 
+plus-ones registered by touching a zone token to a particular zone's RFID-reader microcontroller installation. 
