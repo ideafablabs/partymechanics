@@ -50,6 +50,15 @@ Class ZonePlusOne
             plugins_url('myplugin/images/icon.png'),  // Icon URL
             6
         );
+
+        add_submenu_page('my_custom_plus_one_zones_menu_page',
+            "Manage Zone Names",
+            "Manage Zone Names",
+            'manage_options',
+            "manage_zone_names_page",
+            array($this, 'manage_zone_names_page_call'));
+
+
     }
 
     public function admin_page_call() {
@@ -66,6 +75,46 @@ Class ZonePlusOne
         echo "</br>" . $this->add_zone_token_to_zone_tokens_table("1", "3") . "</br>";
 
         echo "</br>" . $this->add_zone_to_zones_table("Electronics zone") . "</br>";
+
+    }
+
+    public function manage_zone_names_page_call() {
+        $emptyNameEntered = false;
+        $newZoneAdded = false;
+        if (isset($_POST['submit_new_zone_name'])) {
+            $newZoneName = trim($_POST['new_zone_name']);
+            if ($newZoneName == "") {
+                $emptyNameEntered = true;
+            } else {
+                $this->add_zone_to_zones_table($newZoneName);
+                echo "<p><b><i>Your new zone '" . $newZoneName . "' was added</i></b></p>";
+            }
+        }
+
+        global $wpdb;
+        $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME);
+
+        echo "<script>
+            function updateTextBox() {
+                document.getElementById('edited_zone_name').value='new value here';
+            }</script>";
+        echo "<h1>Add a new Idea Fab Labs zone, or change the name of an existing zone</h1>";
+        echo "<br><h2>To add a new zone, enter its name below, and click 'Add Zone'</h2><form name='form1' method='post' action=''>";
+        if ($emptyNameEntered) {
+            echo "<p style='color: red; font-weight: bold'>Please enter the name for the new zone</p>";
+        }
+        echo "<input type='hidden' name='hidden' value='Y'>
+        <input type='text' name='new_zone_name'/>
+        <input type='submit' name='submit_new_zone_name' value='Add Zone'/>
+        <br><br><br><h2>To change the name of an existing zone, select it in the dropdown below, edit its name in the textbox, and click 'Save Name Change'</h2><form name='form1' method='post' action=''>
+            <select id='selected_zone_id' name='selected_zone_id' onchange='updateTextBox()'>";
+        for ($i = 0; $i < sizeof($result); $i++) {
+            $id = strval($result[$i]->record_id);
+            echo "<option value='" . strval($result[$i]->record_id) . "'>" . $result[$i]->zone_name . "</option>";
+        }
+        echo "<input type='text' name='edited_zone_name' value='" . $result[0]->zone_name . "'/>
+        <input type='submit' name='submit_edited_zone_name' value='Save Name Change'/>
+        </form><br>";
 
     }
 
@@ -245,11 +294,13 @@ Class ZonePlusOne
     public function add_zone_to_zones_table($zone_name) {
         global $wpdb;
         $zone_name = trim($zone_name);
-        if (!self::does_table_exist_in_database(ZONES_TABLE_NAME)) {
-            return "Error - zones table does not exist in database";
-        }
         if ($zone_name == "") {
             return "Error - empty zone name";
+        }
+        // TODO figure out a good way to handle not letting people enter multiple versions of existing zone names --
+        // I guess zone names should be managed via a subpage, bot API calls
+        if (!self::does_table_exist_in_database(ZONES_TABLE_NAME)) {
+            return "Error - zones table does not exist in database";
         }
 
         $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " WHERE zone_name = '" . $zone_name . "'");
