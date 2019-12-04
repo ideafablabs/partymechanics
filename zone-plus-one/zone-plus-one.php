@@ -82,12 +82,23 @@ Class ZonePlusOne
         $emptyNameEntered = false;
         $newZoneAdded = false;
         if (isset($_POST['submit_new_zone_name'])) {
+            // If we're adding a new zone
             $newZoneName = trim($_POST['new_zone_name']);
             if ($newZoneName == "") {
                 $emptyNameEntered = true;
             } else {
                 $this->add_zone_to_zones_table($newZoneName);
-                echo "<p><b><i>Your new zone '" . $newZoneName . "' was added</i></b></p>";
+                echo "<p style='color:Blue'><b><i>Your new zone '" . $newZoneName . "' was added</i></b></p>";
+            }
+        } else if (isset($_POST['submit_edited_zone_name'])) {
+            // Or if we're changing the name of an existing zone
+            $selectedZoneId = trim($_POST['selected_zone_id']);
+            $editedZoneName = trim($_POST['edited_zone_name']);
+            if ($editedZoneName == "") {
+                echo "<p style='color:Blue'><b><i>Error - a zone name can't be blank</i></b></p>";
+            } else {
+                $result = $this->edit_zone_name_in_zones_table($selectedZoneId, $editedZoneName);
+                echo "<p style='color:Blue'><b><i>" . $result . "</i></b></p>";
             }
         }
 
@@ -95,10 +106,10 @@ Class ZonePlusOne
         $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME);
 
         echo "<script>
-            function updateTextBox() {
-                document.getElementById('edited_zone_name').value='new value here';
+            function updateTextBox(selection) {
+                document.getElementById('edited_zone_name').value=selection.options[selection.selectedIndex].text;
             }</script>";
-        echo "<h1>Add a new Idea Fab Labs zone, or change the name of an existing zone</h1>";
+        echo "<h1>Manage Idea Fab Labs zone names</h1>";
         echo "<br><h2>To add a new zone, enter its name below, and click 'Add Zone'</h2><form name='form1' method='post' action=''>";
         if ($emptyNameEntered) {
             echo "<p style='color: red; font-weight: bold'>Please enter the name for the new zone</p>";
@@ -107,12 +118,12 @@ Class ZonePlusOne
         <input type='text' name='new_zone_name'/>
         <input type='submit' name='submit_new_zone_name' value='Add Zone'/>
         <br><br><br><h2>To change the name of an existing zone, select it in the dropdown below, edit its name in the textbox, and click 'Save Name Change'</h2><form name='form1' method='post' action=''>
-            <select id='selected_zone_id' name='selected_zone_id' onchange='updateTextBox()'>";
+            <select id='selected_zone_id' name='selected_zone_id' onchange='updateTextBox(this)'>";
         for ($i = 0; $i < sizeof($result); $i++) {
             $id = strval($result[$i]->record_id);
             echo "<option value='" . strval($result[$i]->record_id) . "'>" . $result[$i]->zone_name . "</option>";
         }
-        echo "<input type='text' name='edited_zone_name' value='" . $result[0]->zone_name . "'/>
+        echo "<input type='text' name='edited_zone_name' id='edited_zone_name' value='" . $result[0]->zone_name . "'/>
         <input type='submit' name='submit_edited_zone_name' value='Save Name Change'/>
         </form><br>";
 
@@ -321,6 +332,39 @@ Class ZonePlusOne
         }
     }
 
+    public function edit_zone_name_in_zones_table($zone_id, $edited_zone_name) {
+        global $wpdb;
+        $new_zone_name = trim($edited_zone_name);
+        if ($edited_zone_name == "") {
+            return "Error - empty zone name";
+        }
+        // TODO figure out a good way to handle not letting people enter multiple versions of existing zone names --
+        // I guess zone names should be managed via a subpage, bot API calls
+        if (!self::does_table_exist_in_database(ZONES_TABLE_NAME)) {
+            return "Error - zones table does not exist in database";
+        }
+        $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " WHERE zone_name = '" . $edited_zone_name . "' COLLATE utf8mb4_bin");
+        if ($wpdb->num_rows != 0) {
+            return "Error - a zone with the name " . $edited_zone_name . " already exists in the zones table";
+        }
+        $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " WHERE record_id = '" . $zone_id . "'");
+        if ($wpdb->num_rows == 0) {
+            return "Error - zone ID " . $zone_id . " does not exist in the zones table";
+        }
+        $result = $wpdb->update(
+            ZONES_TABLE_NAME,
+            array(
+                'zone_name' => $edited_zone_name
+            ),
+            array( 'record_id' => $zone_id )
+        );
+        if ($result === false) {
+            return "Error updating zone name";
+        } else {
+            return "Zone name successfully updated to " . $edited_zone_name;
+        }
+    }
+
     public function is_user_id_in_database($user_id) {
         return get_user_by("ID", $user_id) != null;
     }
@@ -403,11 +447,24 @@ Class ZonePlusOne
             echo "Plus one zones table exists<br>";
             $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . PLUS_ONE_ZONES_TABLE_NAME);
             echo "Plus one zones table contains " . $rows[0]->num_rows . " records.<br>";
+            echo "Plus one total for zone 1: " . $this->get_plus_one_count_by_zone_id(1) . "<br>";
+            echo "Plus one total for zone 8: " . $this->get_plus_one_count_by_zone_id(8) . "<br>";
         } else {
             echo "Plus one zones table does not exist, creating plus one zones table<br>";
             $this->create_plus_one_zones_table();
         }
     }
+
+    public function get_plus_one_count_by_zone_id($zone_id) {
+        global $wpdb;
+        $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " WHERE record_id = '" . $zone_id . "'");
+        if ($wpdb->num_rows == 0) {
+            return "Error - zone ID " . $zone_id . " does not exist in the zones table";
+        }
+
+        $result = $wpdb->get_results("SELECT * FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id = '" . $zone_id . "'");
+        return $wpdb->num_rows;
+     }
 
 }
 

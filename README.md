@@ -35,5 +35,6 @@ engine, because the latter doesn't support foreign keys. See
 https://kinsta.com/knowledgebase/convert-myisam-to-innodb/
 
 [/zone-plus-one](https://github.com/ideafablabs/partymechanics/tree/master/zone-plus-one) contains files for the Plus
-One Zones WordPress plugin-in-progress: Functions for creating and working with tables for zones, zone tokens, and 
-plus-ones registered by touching a zone token to a particular zone's RFID-reader microcontroller installation. 
+One Zones WordPress plugin-in-progress: 
+* Functions for creating and working with tables for zones, zone tokens, and plus-ones registered by touching a zone token to a particular zone's RFID-reader microcontroller installation. 
+* A custom Plus One Zones admin menu page which just contains testing stuff at the moment, and a custom Manage Zone Names submenu page that lets you add new zones and edit the names of existing zones.
