@@ -174,6 +174,7 @@ Class ZonePlusOne
               record_id mediumint(9) NOT NULL AUTO_INCREMENT,
               user_id bigint(20) unsigned NOT NULL,
               zone_id mediumint(9) NOT NULL,
+              date date NOT NULL,
               PRIMARY KEY  (record_id),
               FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
               FOREIGN KEY  (zone_id) REFERENCES " . ZONES_TABLE_NAME . "(record_id)
@@ -332,6 +333,50 @@ Class ZonePlusOne
         }
     }
 
+    public function add_plus_one_to_plus_one_zones_table($zone_id, $token_id) {
+        global $wpdb;
+        if (!self::does_table_exist_in_database(ZONES_TABLE_NAME)) {
+            return "Error - zones table does not exist in database";
+        }
+
+        if (!self::does_table_exist_in_database(ZONE_TOKENS_TABLE_NAME)) {
+            return "Error - zone tokens table does not exist in database";
+        }
+
+        if (!self::does_table_exist_in_database(PLUS_ONE_ZONES_TABLE_NAME)) {
+            return "Error - plus one zones table does not exist in database";
+        }
+
+        $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " WHERE record_id = '" . $zone_id . "'");
+        if ($wpdb->num_rows == 0) {
+            return "Error - zone ID " . $zone_id . " does not exist in the zones table";
+        }
+
+        $user_id = $this->get_user_id_from_zone_token_id($token_id);
+        if (substr($user_id, 0, 5) === "Error"){
+            return $user_id;
+        }
+
+        // TODO get local time instead of forcing California time
+        date_default_timezone_set("America/Los_Angeles");
+        $date = date("Y-m-d H:i:s");
+
+        $wpdb->insert(
+            PLUS_ONE_ZONES_TABLE_NAME,
+            array(
+                'user_id' => $user_id,
+                'zone_id' => $zone_id,
+                'date' => $date,
+            )
+        );
+        $result = $wpdb->get_results("SELECT * FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE user_id = '" . $user_id . "' AND zone_id = '" . $zone_id . "'");
+        if ($wpdb->num_rows != 0) {
+            return $this->get_zone_name_from_zone_id($zone_id) . " plus one for user " . $this->get_user_name_from_user_id($user_id) . " successfully added to the plus one zones table";
+        } else {
+            return "Error adding plus one to the plus one zones table";
+        }
+    }
+
     public function edit_zone_name_in_zones_table($zone_id, $edited_zone_name) {
         global $wpdb;
         $new_zone_name = trim($edited_zone_name);
@@ -374,14 +419,32 @@ Class ZonePlusOne
         // otherwise returns an error message
         global $wpdb;
         if (!$this->does_table_exist_in_database(ZONE_TOKENS_TABLE_NAME)) {
-            return "Zone tokens table does not exist in database";
+            return "Error - zone tokens table does not exist in database";
         }
         $result = $wpdb->get_results("SELECT user_id FROM " . ZONE_TOKENS_TABLE_NAME . " WHERE token_id = '" . $token_id . "'");
         if ($wpdb->num_rows == 0) {
-            return "Zone token id " . $token_id . " not found in database, you need to register it to a user ID";
+            return "Error - zone token id " . $token_id . " not found in database, you need to register it to a user ID";
         } else {
             return $result[0]->user_id;
         }
+    }
+
+    public function get_user_name_from_user_id($user_id) {
+        global $wpdb;
+        if (!self::is_user_id_in_database($user_id)) {
+            return "Error - user ID " . $user_id . " is not a registered user";
+        }
+        $user = get_userdata($user_id);
+        return $user->display_name;
+    }
+
+    public function get_zone_name_from_zone_id($zone_id) {
+        global $wpdb;
+        $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " WHERE record_id = '" . $zone_id . "'");
+        if ($wpdb->num_rows == 0) {
+            return "Error - zone id " . $zone_id . " doesn't exist in the zones table";
+        }
+        return $result[0]->zone_name;
     }
 
     public function get_zone_token_ids_by_user_id($user_id) {
@@ -434,6 +497,7 @@ Class ZonePlusOne
             echo "Zones table exists<br>";
             $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . ZONES_TABLE_NAME);
             echo "Zones table contains " . $rows[0]->num_rows . " records.<br>";
+            $this->get_zone_plus_ones_array_for_dashboard();
         } else {
             echo "Zones table does not exist, creating zones table<br>";
             $this->create_zones_table();
@@ -443,27 +507,42 @@ Class ZonePlusOne
     public function test_plus_one_zones_table_stuff() {
         global $wpdb;
         echo "<br>";
+        // $this->drop_plus_one_zones_table();
         if ($this->does_table_exist_in_database(PLUS_ONE_ZONES_TABLE_NAME)) {
             echo "Plus one zones table exists<br>";
             $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . PLUS_ONE_ZONES_TABLE_NAME);
             echo "Plus one zones table contains " . $rows[0]->num_rows . " records.<br>";
-            echo "Plus one total for zone 1: " . $this->get_plus_one_count_by_zone_id(1) . "<br>";
-            echo "Plus one total for zone 8: " . $this->get_plus_one_count_by_zone_id(8) . "<br>";
+            echo "Plus one total for zone 1: " . $this->get_total_plus_one_count_by_zone_id(1) . "<br>";
+            echo "Plus one total for zone 8: " . $this->get_total_plus_one_count_by_zone_id(8) . "<br>";
         } else {
             echo "Plus one zones table does not exist, creating plus one zones table<br>";
             $this->create_plus_one_zones_table();
         }
+        echo $this->add_plus_one_to_plus_one_zones_table(1, 1) . "<br>";
     }
 
-    public function get_plus_one_count_by_zone_id($zone_id) {
+    public function get_total_plus_one_count_by_zone_id($zone_id) {
         global $wpdb;
-        $result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " WHERE record_id = '" . $zone_id . "'");
-        if ($wpdb->num_rows == 0) {
-            return "Error - zone ID " . $zone_id . " does not exist in the zones table";
-        }
-
-        $result = $wpdb->get_results("SELECT * FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id = '" . $zone_id . "'");
+        $wpdb->get_results("SELECT * FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id = '" . $zone_id . "'");
         return $wpdb->num_rows;
+     }
+
+     public function get_zone_plus_ones_array_for_dashboard() {
+        $zones_plus_one_array = array();
+        global $wpdb;
+        if (self::does_table_exist_in_database(ZONES_TABLE_NAME) && self::does_table_exist_in_database(PLUS_ONE_ZONES_TABLE_NAME)) {
+            $zone_names_result = $wpdb->get_results("SELECT * FROM " . ZONES_TABLE_NAME . " ORDER BY zone_name");
+            foreach ($zone_names_result as $key => $zone) {
+                $zone_row = array();
+                $zone_row["zone_name"] = $zone->zone_name;
+                $id = $zone->record_id;
+                $total_zone_plus_ones_count = $wpdb->get_results("SELECT COUNT(*) FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id=" . $id);
+                $zone_row["total_plus_one_count"] = $total_zone_plus_ones_count;
+                array_push($zones_plus_one_array, $zone_row);
+            }
+        }
+        return $zones_plus_one_array;
+
      }
 
 }
