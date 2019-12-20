@@ -34,8 +34,6 @@ Class ZonePlusOne
     }
 
     public function wpdocs_register_my_custom_menu_page() {
-        // Originally this if statement only had the second part of the or condition, with $admin_page_call
-        // as an unknown variable, so I got rid of that error as below, but if anything else needs to be done, ???
         if (!isset($admin_page_call) || $admin_page_call == '') {
             $admin_page_call = array($this, 'admin_page_call');
         }
@@ -203,7 +201,6 @@ Class ZonePlusOne
         $mytables = $wpdb->get_results("SHOW TABLES");
         foreach ($mytables as $mytable) {
             foreach ($mytable as $t) {
-                //echo "table name: " . $t . "<br>";
                 if ($t == $table_name) {
                     return true;
                 }
@@ -269,9 +266,11 @@ Class ZonePlusOne
         if (!self::does_table_exist_in_database(ZONE_TOKENS_TABLE_NAME)) {
             return "Error - zone tokens table does not exist in database";
         }
+        $token_id = trim($token_id);
         if ($token_id == "") {
             return "Error - empty zone token ID";
         }
+        $user_id = trim($user_id);
         if ($user_id == "") {
             return "Error - empty user ID";
         }
@@ -304,13 +303,13 @@ Class ZonePlusOne
     }
 
     public function add_zone_to_zones_table($zone_name) {
+        // This function is used by the Manage Zone Names submenu page, and should probably not be used by an API
         global $wpdb;
         $zone_name = trim($zone_name);
         if ($zone_name == "") {
             return "Error - empty zone name";
         }
         // TODO figure out a good way to handle not letting people enter multiple versions of existing zone names --
-        // I guess zone names should be managed via a subpage, bot API calls
         if (!self::does_table_exist_in_database(ZONES_TABLE_NAME)) {
             return "Error - zones table does not exist in database";
         }
@@ -353,13 +352,15 @@ Class ZonePlusOne
         }
 
         $user_id = $this->get_user_id_from_zone_token_id($token_id);
-        if (substr($user_id, 0, 5) === "Error"){
+        if (substr($user_id, 0, 5) === "Error") {
             return $user_id;
         }
 
         // TODO get local time instead of forcing California time
         date_default_timezone_set("America/Los_Angeles");
         $date = date("Y-m-d H:i:s");
+        // Or enter a date like this for testing with total vs current month
+        // $date = "2019-11-02";
 
         $wpdb->insert(
             PLUS_ONE_ZONES_TABLE_NAME,
@@ -378,13 +379,13 @@ Class ZonePlusOne
     }
 
     public function edit_zone_name_in_zones_table($zone_id, $edited_zone_name) {
+        // This function is used by the Manage Zone Names submenu page, and should probably not be used by an API
         global $wpdb;
-        $new_zone_name = trim($edited_zone_name);
+        $edited_zone_name = trim($edited_zone_name);
         if ($edited_zone_name == "") {
             return "Error - empty zone name";
         }
         // TODO figure out a good way to handle not letting people enter multiple versions of existing zone names --
-        // I guess zone names should be managed via a subpage, bot API calls
         if (!self::does_table_exist_in_database(ZONES_TABLE_NAME)) {
             return "Error - zones table does not exist in database";
         }
@@ -401,7 +402,7 @@ Class ZonePlusOne
             array(
                 'zone_name' => $edited_zone_name
             ),
-            array( 'record_id' => $zone_id )
+            array('record_id' => $zone_id)
         );
         if ($result === false) {
             return "Error updating zone name";
@@ -456,12 +457,12 @@ Class ZonePlusOne
         }
 
         if (!self::does_table_exist_in_database(ZONE_TOKENS_TABLE_NAME)) {
-            return "Tokens table does not exist in database";
+            return "Error - tokens table does not exist in database";
         }
 
         $result = $wpdb->get_results("SELECT token_id FROM " . ZONE_TOKENS_TABLE_NAME . " WHERE user_id = '" . $user_id . "'");
         if ($wpdb->num_rows == 0) {
-            return "No zone tokens found for user ID " . $user_id;
+            return "Error - no zone tokens found for user ID " . $user_id;
         } else {
             return join(", ", array_map(function ($token) {
                 return $token->token_id;
@@ -469,13 +470,13 @@ Class ZonePlusOne
         }
     }
 
-    public function list_users_with_ids() {
-        $users = get_users("orderby=ID");
-        foreach ($users as $key => $user) {
-
-            echo "User ID " . $user->ID . " " . $user->display_name . "<br>";
-        }
-    }
+//    public function list_users_with_ids() {
+//        $users = get_users("orderby=ID");
+//        foreach ($users as $key => $user) {
+//
+//            echo "User ID " . $user->ID . " " . $user->display_name . "<br>";
+//        }
+//    }
 
     public function test_zone_tokens_table_stuff() {
         global $wpdb;
@@ -497,7 +498,6 @@ Class ZonePlusOne
             echo "Zones table exists<br>";
             $rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . ZONES_TABLE_NAME);
             echo "Zones table contains " . $rows[0]->num_rows . " records.<br>";
-            $this->get_zone_plus_ones_array_for_dashboard();
         } else {
             echo "Zones table does not exist, creating zones table<br>";
             $this->create_zones_table();
@@ -514,20 +514,34 @@ Class ZonePlusOne
             echo "Plus one zones table contains " . $rows[0]->num_rows . " records.<br>";
             echo "Plus one total for zone 1: " . $this->get_total_plus_one_count_by_zone_id(1) . "<br>";
             echo "Plus one total for zone 8: " . $this->get_total_plus_one_count_by_zone_id(8) . "<br>";
+            $zpo_array = $this->get_zone_plus_ones_array_for_dashboard();
+            echo "<br>Zones plus one dashboard array length " . sizeof($zpo_array) . "<br>";
+            foreach ($zpo_array as $entry) {
+                echo $entry["zone_name"] . " total plus-ones count: " . $entry["total_plus_one_count"] . " plus-ones count for this month: " . $entry["this_month_plus_one_count"] . "<br>";
+            }
         } else {
             echo "Plus one zones table does not exist, creating plus one zones table<br>";
             $this->create_plus_one_zones_table();
         }
-        echo $this->add_plus_one_to_plus_one_zones_table(1, 1) . "<br>";
+        // Add a plus-one
+        // echo $this->add_plus_one_to_plus_one_zones_table(1, 1) . "<br>";
     }
 
     public function get_total_plus_one_count_by_zone_id($zone_id) {
         global $wpdb;
         $wpdb->get_results("SELECT * FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id = '" . $zone_id . "'");
         return $wpdb->num_rows;
-     }
+    }
 
-     public function get_zone_plus_ones_array_for_dashboard() {
+    public function get_this_months_plus_one_count_by_zone_id($zone_id) {
+        global $wpdb;
+        $results = $wpdb->get_results("SELECT * FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id = '" . $zone_id . "' AND date >=  DATE_FORMAT(NOW() ,'%Y-%m-01')");
+        return $wpdb->num_rows;
+    }
+
+    public function get_zone_plus_ones_array_for_dashboard() {
+        // This returna an array for the dashboard to use -- a row for each zone, ordered by zone name,
+        // with the fields "zone_name", "total_plus_one_count", and "this_month_plus_one_count"
         $zones_plus_one_array = array();
         global $wpdb;
         if (self::does_table_exist_in_database(ZONES_TABLE_NAME) && self::does_table_exist_in_database(PLUS_ONE_ZONES_TABLE_NAME)) {
@@ -536,14 +550,14 @@ Class ZonePlusOne
                 $zone_row = array();
                 $zone_row["zone_name"] = $zone->zone_name;
                 $id = $zone->record_id;
-                $total_zone_plus_ones_count = $wpdb->get_results("SELECT COUNT(*) FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id=" . $id);
-                $zone_row["total_plus_one_count"] = $total_zone_plus_ones_count;
+                $zone_row["total_plus_one_count"] = $this->get_total_plus_one_count_by_zone_id($id);
+                $zone_row["this_month_plus_one_count"] = $this->get_this_months_plus_one_count_by_zone_id($id);
                 array_push($zones_plus_one_array, $zone_row);
             }
         }
         return $zones_plus_one_array;
 
-     }
+    }
 
 }
 
