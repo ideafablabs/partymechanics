@@ -356,6 +356,10 @@ Class ZonePlusOne
             return $user_id;
         }
 
+        if ($this->user_already_plus_oned_this_zone_today($user_id, $zone_id)) {
+            return "Error - user " . $this->get_user_name_from_user_id($user_id) . " already plus-one'd the " . $this->get_zone_name_from_zone_id($zone_id) . " today";
+        }
+
         // TODO get local time instead of forcing California time
         date_default_timezone_set("America/Los_Angeles");
         $date = date("Y-m-d H:i:s");
@@ -517,14 +521,15 @@ Class ZonePlusOne
             $zpo_array = $this->get_zone_plus_ones_array_for_dashboard();
             echo "<br>Zones plus one dashboard array length " . sizeof($zpo_array) . "<br>";
             foreach ($zpo_array as $entry) {
-                echo $entry["zone_name"] . " total plus-ones count: " . $entry["total_plus_one_count"] . " plus-ones count for this month: " . $entry["this_month_plus_one_count"] . "<br>";
+                echo $entry["zone_name"] . " total plus-ones count: " . $entry["total_plus_one_count"] . ", and plus-ones count for this month: " . $entry["this_month_plus_one_count"] . "<br>";
             }
+            echo "Or for the JSON version, " . json_encode($zpo_array) . "<br>";
         } else {
             echo "Plus one zones table does not exist, creating plus one zones table<br>";
             $this->create_plus_one_zones_table();
         }
-        // Add a plus-one
-        // echo $this->add_plus_one_to_plus_one_zones_table(1, 1) . "<br>";
+        //Add a plus-one
+        echo $this->add_plus_one_to_plus_one_zones_table(3, 1) . "<br>";
     }
 
     public function get_total_plus_one_count_by_zone_id($zone_id) {
@@ -541,7 +546,8 @@ Class ZonePlusOne
 
     public function get_zone_plus_ones_array_for_dashboard() {
         // This returna an array for the dashboard to use -- a row for each zone, ordered by zone name,
-        // with the fields "zone_name", "total_plus_one_count", and "this_month_plus_one_count"
+        // with the fields "zone_name", "total_plus_one_count", and "this_month_plus_one_count".
+        // The API function calling this should use json_encode() to send the array as a JSOB string
         $zones_plus_one_array = array();
         global $wpdb;
         if (self::does_table_exist_in_database(ZONES_TABLE_NAME) && self::does_table_exist_in_database(PLUS_ONE_ZONES_TABLE_NAME)) {
@@ -557,6 +563,12 @@ Class ZonePlusOne
         }
         return $zones_plus_one_array;
 
+    }
+
+    public function user_already_plus_oned_this_zone_today($user_id, $zone_id) {
+        global $wpdb;
+        $results = $wpdb->get_results("SELECT * FROM " . PLUS_ONE_ZONES_TABLE_NAME . " WHERE zone_id = '" . $zone_id. "' AND user_id = '" . $user_id . "' AND date =  DATE_FORMAT(NOW() ,'%Y-%m-%d')");
+        return $wpdb->num_rows != 0;
     }
 
 }
