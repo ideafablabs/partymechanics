@@ -8,7 +8,7 @@
 	    margin-top: 0px !important;
 	}
 }*/
-.ifl-party-mechanics .entry {
+/*.ifl-party-mechanics .entry {
 	border-radius:4px;
 	background:#FFF;
 	box-shadow: 0px 0px 2px #666;
@@ -18,7 +18,7 @@
 .ifl-party-mechanics {
 
 }
-
+*/
 a.admit-button {
 	/*color:#1D8CB5;*/
 	color:white;
@@ -151,14 +151,4 @@ a.admitted {
 	}
 
 
-
-
-@media only screen and (max-width: 850px) { 
-
-	.page-id-192 #gform_7 .button, #gform_submit_button_19 {
-		font-size: 2.2em;
-		padding:11px 20px;
-
-	}
-}
 

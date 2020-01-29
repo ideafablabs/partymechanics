@@ -1,13 +1,13 @@
 <?php
 
 global $wpdb;
-define("MOVIE_QUOTES_TABLE_NAME", $wpdb->prefix . "movie_quotes");
+define("MOVIE_QUOTES_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "movie_quotes");
 define("MOVIE_QUOTES_DB_VERSION", "1.0");
 // get rid of the "../" if you're not running it from an admin page
 define("QUOTES_CSV_FILE", "../wp-content/plugins/ifl-party-mechanics/quotes.csv");
-define("USER_PAIRINGS_TABLE_NAME", $wpdb->prefix . "user_pairings");
+define("USER_PAIRINGS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "user_pairings");
 define("USER_PAIRINGS_DB_VERSION", "1.0");
-define("TOKENS_TABLE_NAME", $wpdb->prefix . "rf_tokens");
+define("TOKENS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "rf_tokens");
 define("TOKENS_DB_VERSION", "1.0");
 
 Class MovieQuotes {
