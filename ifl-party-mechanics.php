@@ -29,7 +29,6 @@ define("SPECIAL_GUESTS_DB_VERSION", "1.0");
 $IFLPartyMechanics = new IFLPartyMechanics;
 $IFLPartyMechanics->run();
 
-
 Class IFLPartyMechanics
 {
     // https://www.ibenic.com/creating-wordpress-menu-pages-oop/
@@ -102,8 +101,8 @@ Class IFLPartyMechanics
         });
 
         // Setup Ajax action hook
-        add_action('wp_ajax_async_controller', array($this, 'async_controller'));
-        add_action('wp_ajax_nopriv_async_controller', array($this, 'async_controller'));
+        add_action('wp_ajax_iflpm_async_controller', array($this, 'iflpm_async_controller'));
+        add_action('wp_ajax_nopriv_iflpm_async_controller', array($this, 'iflpm_async_controller'));
 
         // Menu Page Setup
         add_action('admin_menu', array($this, 'wpdocs_register_my_custom_menu_page'));
@@ -348,7 +347,7 @@ Class IFLPartyMechanics
 
     // Async Controller
     // Easiest Overview of AJAX Setup for WP: https://stackoverflow.com/questions/17982078/returning-json-data-with-ajax-in-wordpress
-    public function async_controller() { 
+    public function iflpm_async_controller() { 
 
         // Switch on 'request' post var
         $request = (!empty($_POST['request'])) ? $_POST['request'] : false;
@@ -458,7 +457,7 @@ Class IFLPartyMechanics
             'manage_options',                           // Required Capability
             'my_custom_menu_page',                      // Menu Slug
             $admin_page_call,                           // Function
-            plugins_url('myplugin/images/icon.png'),  // Icon URL
+            'dashicons-groups',  // Icon URL
             6
         );
 

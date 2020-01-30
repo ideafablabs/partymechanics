@@ -336,7 +336,7 @@ function iflpm_ajax_request(package) {
 		url : iflpm_ajax.ajaxurl,
 		type : 'post',
 		data : {
-			action : 'async_controller',                
+			action : 'iflpm_async_controller',                
 			security : iflpm_ajax.check_nonce, 
 			request : package.request,
 			package : package.data
