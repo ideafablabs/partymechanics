@@ -151,17 +151,35 @@ Class IFLPartyMechanics
                 
             	$event_id = get_option('selected_event_id');
             	
-            	if (IFLPMEventsManager::add_attendee_to_event_attendance_table($user,$event_id)) {
-            		$response .= '<p class="success">';
-                    $response .= $user->display_name . ' was successfully admitted!';
-                    $response .= '</p>';
+            	try  {
 
-                    // Reset and send us to attendee list.
-                    $user_email = "";
-                    $create = "";
-            	} else {
+            		if (IFLPMEventsManager::add_attendee_to_event_attendance_table($user,$event_id)) {
 
-            		// event add failed...?
+            			$response .= '<p class="success">';
+	                    $response .= $user->display_name . ' was successfully admitted!';
+	                    $response .= '</p>';
+
+	                    // Reset and send us to attendee list.
+	                    $user_email = "";
+	                    $create = "";	
+            		} else {
+
+            			// event add failed...?
+	            		// Output the error message.
+	                	$response .= '<p class="error">';
+	                	$response .= "User is already attended.";
+	                	$response .= '</p>';
+            		}
+
+            		
+            	} catch (Exception $e) {
+            			
+            		
+            		// Output the error message.
+                	$response .= '<p class="error">';
+                	$response .= $e->getMessage();
+                	$response .= '</p>';
+
             	}
 
             } else {

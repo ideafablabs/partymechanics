@@ -34,12 +34,24 @@ Class IFLPMEventsManager {
         echo "<input type='submit' name='submit' value='Submit Selection Change' /></form>";
     }
 
+    public static function test_insert_some_attendees() {
+        global $wpdb;
+        $events = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME);
+        $users = get_users("orderby=display_name");
+        for ($i = 0; $i < sizeof($events); $i++) {
+            for ($j = 0; $j < sizeof($events); $j++) {
+                self::insert_attendee($users[$i * sizeof($events) + $j], $events[$i]);
+            }
+        }
+    }
 
-	public function add_attendee_to_event_attendance_table($user,$event_id) {
+	public static function add_attendee_to_event_attendance_table($user,$event_id) {
     	/// Checks:
     	/// Bad data in
-    	/// User is already attended...
     	
+    	// User is already in attendance...
+    	if (self::user_attended_event($user,$event_id)) return false;
+
     	global $wpdb;
         $wpdb->insert(
             ATTENDANCE_TABLE_NAME,
@@ -50,6 +62,25 @@ Class IFLPMEventsManager {
         );	
 
         return true;
+    }
+
+    // if the user ID is in the events table, returns true otherwise returns an error message.
+    public static function user_attended_event($user,$event_id) {
+    	
+		global $wpdb;
+		
+		if (!IFLPMDBManager::does_table_exist_in_database(ATTENDANCE_TABLE_NAME)) {
+			throw new Exception("Attendance table does not exist in database", 1);			
+			// return false;
+		}
+		
+		$result = $wpdb->get_results("SELECT * FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = '" . $event_id . "' AND user_id = '".$user->ID."'");		
+		
+		if ($wpdb->num_rows == 0) {
+			return false;
+		} else {
+			return true;
+		}
     }
 
     public static function insert_event($title, $date) {
@@ -76,17 +107,7 @@ Class IFLPMEventsManager {
         );
     }
 
-    public static function test_insert_some_attendees() {
-        global $wpdb;
-        $events = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME);
-        $users = get_users("orderby=display_name");
-        for ($i = 0; $i < sizeof($events); $i++) {
-            for ($j = 0; $j < sizeof($events); $j++) {
-                self::insert_attendee($users[$i * sizeof($events) + $j], $events[$i]);
-            }
-        }
-    }
-
+    
     public static function list_attendees_for_selected_event() {
         global $wpdb;
         $selected_event_id = get_option('selected_event_id');
