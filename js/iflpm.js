@@ -5,73 +5,26 @@ $(document).ready( function(){
 	// $('.nfc-wrapper').insertAfter($(('#input_1_14')));
 	console.log("Booting Up");
 
-	$(".nfc_button").on('click', function(e) {
+	$(".nfc_button").on('click', iflpm_ajax_get_token_id_from_reader);
+
+	if ($(".nfc_button").length) {
+	// if (0) {	
 		
-		e.preventDefault();
-		var target = e.target;
-
-		// Get the relevant data.
-		var reader_id = jQuery(this).data( 'reader_id' );        
-		console.log("Reader: "+reader_id);
-		
-		// Bundle the package.
-		package = {
-			request : 'get_token',
-			data : {
-				reader_id : reader_id
-			}
-		}
-
-		// Forsee outcomes.
-		package.success = function(response) {
-			
-			// Actual success.
-			if (response.success == true) {                
-				var usermessage = '<p class="ajax-success">'+response.message+'</p>';                
-									
-				/// Gotta change this if we change the code. Find a new way!
-				// var new_token = '<li>'+response.token_id+' <a class="remove-token icon" data-tid="'+response.token_id+'">x</a></li>';
-				// $('tr.user-'+uid+' .user-tokens ul').append(new_token);
-
-				// $(target).parent('tr').children('.user-tokens ul')
-
-			// Or failure.
-			} else {                
-				var usermessage = '<p class="ajax-error">'+response.message+'</p>';                
-			}
-
-			// Give some sort of affirmation...
-			$(".ajax-message").html(usermessage);
-			console.log(response.message);
-		}
-
-		// Send the package ==>
-		ajaxRequest(package);
-		
-	});
-
-	function ajaxRequest(package) {
-
-		$.ajax({
-			url : iflpm_ajax.ajaxurl,
-			type : 'post',
-			data : {
-				action : 'async_controller',                
-				security : iflpm_ajax.check_nonce, 
-				request : package.request,
-				package : package.data
-			},
-			success : function( json ) {                
-				console.log(json);
-				var response = JSON.parse(json);
-				package.success(response);
-			},
-			error : function(jqXHR, textStatus, errorThrown) {
-				console.log(jqXHR + " :: " + textStatus + " :: " + errorThrown);
-			}
+		$('.submit-button').click(function(event){
+    		event.preventDefault();
 		});
-	}
 
+
+		reader_id = $(".nfc_button").attr('data-reader_id');		
+		
+		// var tokenCheckIntervalID = setInterval(function(){
+			// iflpm_ajax_get_token_id_from_reader(reader_id);
+		// }, 5000);
+
+		// if new token, wipe checker? Maybe not in case they change their mind.
+		// clearInterval(tokenCheckIntervalID);
+	}
+	
 	
 	/* REGISTRATION FORM */
 	$('button.get_token_id').click(function(){
@@ -321,34 +274,82 @@ $(document).ready( function(){
 		$(".member_select_search #q").focus();          
 	},0);
 
-	// if ($(".nfc_button").length) {
-	// 	reader_id = $(".nfc_button").attr('data-reader_id');        
-	// 	setTimeout(ajax_get_token_id_from_reader(reader_id),3000);
-	// }
 
 });
 
-function ajax_get_token_id_from_reader(reader_id) {
+function iflpm_ajax_get_token_id_from_reader(reader_id) {
 			
-	console.log("Getting Token from reader "+reader_id);                
+	
 	//TODO Add loading graphic 
 	
-	$.ajax({
-		url : iflpm_ajax.ajax_url,            
-		type : 'get',
+	// Get the relevant data.
+	// var reader_id = jQuery(target).data( 'reader_id' );        
+	var reader_id = $(".nfc_button").data( 'reader_id' );
+	console.log("Getting Token from reader "+reader_id);
+	
+	// Bundle the package.
+	package = {
+		request : 'get_token',
 		data : {
-			action : 'iflpm_get_token_from_reader',
 			reader_id : reader_id
-		},
+		}
+	}
+
+	// Forsee outcomes.
+	package.success = function(response) {
 		
-		// security : iflpm_ajax.check_nonce,
-		success : function( response ) {
-			console.log("Success!");
-			console.log(response);
-			$('.token_id').html(response);            
+		// Actual success.
+		if (response.success == true) {                
+			if (response.message) {
+				var usermessage = '<p class="ajax-success">'+response.message+'</p>';
+			}
+			// response.token_id;
+			var usermessage = '<p class="ajax-success">'+response.token_id+'</p>';
+			
+			$(".submit-button").addClass('active');
+			$('.submit-button.active').unbind('click');
+
+			/// Gotta change this if we change the code. Find a new way!
+			// var new_token = '<li>'+response.token_id+' <a class="remove-token icon" data-tid="'+response.token_id+'">x</a></li>';
+			// $('tr.user-'+uid+' .user-tokens ul').append(new_token);
+
+			// $(target).parent('tr').children('.user-tokens ul')
+
+		// Or failure.
+		} else {                
+			var usermessage = '<p class="ajax-error">'+response.message+'</p>';                
+		}
+
+		// Give some sort of affirmation...
+		$(".ajax-message").html(usermessage);
+		console.log(response.message);
+	}
+
+	// Send the package ==>
+	iflpm_ajax_request(package);
+			
+}
+
+function iflpm_ajax_request(package) {
+
+	$.ajax({
+		url : iflpm_ajax.ajaxurl,
+		type : 'post',
+		data : {
+			action : 'async_controller',                
+			security : iflpm_ajax.check_nonce, 
+			request : package.request,
+			package : package.data
+		},
+		success : function( json ) {                
+			console.log(json);
+			var response = JSON.parse(json);
+			package.success(response);
+		},
+		error : function(jqXHR, textStatus, errorThrown) {
+			console.log(jqXHR + " :: " + textStatus + " :: " + errorThrown);
 		}
 	});
-			
 }
 
 function ajax_associate_medallion_with_user(reader_id,user_id) {

@@ -90,7 +90,8 @@ Class IFLPartyMechanics
         add_action('admin_enqueue_scripts', array($this, 'register_iflpm_scripts'));
         
         // Register REST API Controllers
-        add_action('plugins_loaded', array($this, 'register_rest_api'));
+        // add_action('plugins_loaded', array($this, 'register_rest_api'));
+        
         add_action('rest_api_init', function () {
             $movie_quotes_controller = new Movie_Quotes_Controller();
             $movie_quotes_controller->register_routes();
@@ -107,10 +108,10 @@ Class IFLPartyMechanics
         // Menu Page Setup
         add_action('admin_menu', array($this, 'wpdocs_register_my_custom_menu_page'));
 
-        add_shortcode('registrationform', array($this, 'ifl_display_registration_form'));
-        add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));
-        add_shortcode('guestlist', array($this, 'ifl_display_guest_list'));
         add_shortcode('entry_processor', array($this, 'ifl_entry_processor'));
+        add_shortcode('registrationform', array($this, 'ifl_display_registration_form'));
+        add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));        
+        
 
 //        register_activation_hook( __FILE__, 'iflpm_install' );
 //        register_activation_hook( __FILE__, 'iflpm_install_data' );
@@ -166,7 +167,7 @@ Class IFLPartyMechanics
         $attendee_count = "";
         $attendance_count = "";
         
-        echo "SUBMIT = " . $submit . "\n"; ///
+        // echo "SUBMIT = " . $submit . "\n"; ///
 
         // Begin response html string.
         $response = '<div class="ajax-message"></div>';
@@ -174,53 +175,52 @@ Class IFLPartyMechanics
 
         // Complete with Entry GForm and go back to Entry List or Create New User again.
         if ($submit) {
+            
             // Get user object by email.
             $user = get_user_by('email', $user_email);
 
             // Get the token from the reader memory slot.
             $token_id = get_option('reader_' . $reader_id);
 
+
             // Add pair to the database or get an error.
             $tokenadd = $this->add_token_id_and_user_id_to_tokens_table($token_id, $user->ID);
 
             //// This probably should become if WP_error
             // if (strpos($tokenadd, 'added') !== false || strpos($tokenadd, 'already') !== false) {
+            
             if (!(substr($tokenadd, 0, 5) == "Error")) {
-                // Do form for Attendance of this particular event...
-                $input_values['input_1'] = $event;
-                $input_values['input_2'] = $user->ID;
-                $input_values['input_3'] = $user->display_name;
-
-                /// This is going to be a DB call now.
-                $result = GFAPI::submit_form($attendanceform, $input_values);
-
-                if (strpos($result['confirmation_message'], 'Thanks') !== false) {
-
-                    $response .= '<p class="success">';
+                
+            	$event_id = get_option('selected_event_id');
+            	
+            	if ($this->add_attendee_to_event_attendance_table($user,$event_id)) {
+            		$response .= '<p class="success">';
                     $response .= $user->display_name . ' was successfully admitted!';
                     $response .= '</p>';
-
-                    // pr($result);
 
                     // Reset and send us to attendee list.
                     $user_email = "";
                     $create = "";
-                } else {
+            	} else {
 
-                }
+            		// event add failed...?
+            	}
+
             } else {
+                // Adding token failed
+                
                 // Output the error message.
                 $response .= '<p class="error">';
                 $response .= $tokenadd;
                 $response .= '</p>';
-
-
             }
+
+            $submit = 0;
         }
 
         // Pick Reader        
         if ($reader_id == '') {
-            echo "READER ID == ''\n"; ///
+            // echo "READER ID == ''\n"; ///
             $available_reader_count = 4; /// magic numbers
 
             $response .= '<ul class="reader_list list-group">';
@@ -253,8 +253,8 @@ Class IFLPartyMechanics
 
                 // Pass everything on to Gravity Forms
                 $response = '<div class="form-container"><p>';
-                $response .= gravity_form($regform, 0, 1, 0, $field_values, 1, 0, 0);
-                $response .= '</p></div';
+                $response .= gravity_form($args['regform'], 0, 1, 0, $field_values, 1, 0, 0);
+                $response .= '</p></div';                
 
             } else {
                 /// Error on form being active.
@@ -323,9 +323,9 @@ Class IFLPartyMechanics
 
             $response .= '<p><div class="token-response"></div></p>';
 
-            $response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button"><span class="ifl-svg2></span>Check Medallion</button></p>';
-            $response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button">Associate Medallion</button></p>';
-            $response .= '<p><a class="nfcsubmit button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1"><button>Admit Guest</button></a></p>';
+            $response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button"><span class="ifl-svg2"></span>Check Medallion</button></p>';
+            // $response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button">Associate Medallion</button></p>';
+            $response .= '<p><a class="submit-button button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1"><button>Admit Guest</button></a></p>';
 
             $response .= '</div>';
             // if (token_id_exists_in_table($token_id)) {}
@@ -372,22 +372,26 @@ Class IFLPartyMechanics
                     break;
                 } 
 
+                //// remove me when ready
+                $this->populate_fake_token_in_reader_memory($reader_id);///
+
                 // Get the latest stored token from WP options table..
                 $token_id = get_option('reader_'.$reader_id);
-
-                /// Check for no token ID in reader.
-                // $token_id = rand(10000,90000); ///            
-
-                // Did we fail?
                 if (!$token_id) {
-                // if (is_wp_error($response)) {
                     $return['message'] = "No token ID found.";
+                    break;
+                }
+
+                if (MovieQuotes::token_id_exists_in_table($token_id)) {
+                	$return['token_id'] = 0;
+                	$return['message'] = "Token already in system.";
+
                 } else {
                     $return['success'] = true;
                     $return['token_id'] = $token_id;
-                    $return['message'] = $response;
+                    $return['message'] = "New token found.";
                 }
-
+                
                 break;
             case 'add_token':
                 
@@ -421,31 +425,6 @@ Class IFLPartyMechanics
 
                 break;
             case 'remove_token':
-                // Get the Token ID from the AJAX request.
-                $token_id = (!empty($package['tid'])) ? $package['tid'] : false;
-                
-                // If not there, fail.
-                if ($token_id === false) {
-                    $return['message'] = "No Token ID Found";
-                    break;
-                } 
-                
-                // Get user ID because its currently necessary for deleting a zone token, /// kind of as a safeguard.
-                $user_id = $this->get_user_id_from_zone_token_id($token_id);
-
-                // Try and add to token table.
-                /// this should be a try{}...
-                $response = $this->delete_zone_token($token_id,$user_id);
-                // $response = "";///
-
-                // Did we fail?
-                if (is_wp_error($response)) {
-                    $return['message'] = $response->get_error_message();
-                } else {
-                    $return['success'] = true;
-                    $return['token_id'] = $token_id;
-                    $return['message'] = $response;
-                }
 
                 break;
             default:
@@ -705,128 +684,6 @@ Class IFLPartyMechanics
     }
 
     /**
-     * Shortcode wrapper for displaying the guest admissions list
-     * Ex: [guestlist form="44" event="Event Title Goes Here" ]
-     */
-    public function ifl_display_guest_list($atts) {
-        $args = shortcode_atts(array(
-            'form_id' => $this->menu_options['form_id'],
-            'event' => $this->menu_options['form_event_title'],
-            'admin' => $this->menu_options['form_admin_mode'],
-            // 'method' => $this->menu_options['form_payment_method']
-        ), $atts);
-
-        ///TODO:
-        //  Include members in listing.
-        //  Include entry ID for confirmation.
-        //  Sorting list. Either first or during search.
-        //  Exclude trashed entries.
-        // https://www.sitepoint.com/how-to-use-ajax-in-wordpress-a-real-world-example/
-
-        $nonce = wp_create_nonce("guestlistadd_nonce");
-
-        $email_id = $args['email_id'];
-        $event_field_id = $args['event_field_id'];
-        $attendees_list_id = $args['attendees_list_id'];
-        $attended_list_id = $args['attended_list_id'];
-
-        // This adds an offset so the id number will always be way beyond the other expected form field IDs.
-        $attended_id_offset = 100;
-
-        // Get all the entries where the "event" field is the event "title"
-        $search_criteria['field_filters'][] = array('key' => $event_field_id, 'value' => $args['event']);
-
-        /// I think we are sorting via JS now...
-        // $sorting = array( 'key' => $sort_field, 'direction' => 'ASC', 'is_numeric' => true );
-
-        // $search_criteria = array();
-        $sorting = array();
-        $paging = array('offset' => 0, 'page_size' => 600);
-        $entries = GFAPI::get_entries($args['form_id'], $search_criteria, $sorting, $paging);
-        $event = get_option('current_event_title');
-
-        // pr($entries);
-
-        $admit_list_html = '<h2>' . $event . '</h2>';
-        $admit_list_html .= '<div class="row">';
-        $admit_list_html .= '<div class="member-list ifl-admit-guest small-12 columns">';
-        $admit_list_html .= '<h2>' . $event . '</h2>';
-        $admit_list_html .= '<div class="member_select_search"><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\'">X</button></div>';
-        $admit_list_html .= '<ul class="member_select_list list-group">';
-
-        $attendee_count = 0;
-        $admitted_count = 0;
-
-        foreach ($entries as $entry_key => $entry) {
-            // echo $entry['3.3']." - ".$entry['3.6']." <br />";
-            // pr(unserialize($entry['7']));
-            // pr(unserialize($entry['17']));
-
-            // $entry_id = $entry['id'];
-
-            // $result = GFAPI::update_entry_field( $entry_id, '35.1', "value" );
-            // pr($result);
-
-            // $attendee_id = '';
-            $attendee_names = unserialize($entry[$attendees_list_id]);
-
-            // https://www.sitepoint.com/how-to-use-ajax-in-wordpress-a-real-world-example/
-
-            $admit_list_html .= '<li class="list-group-item" data-sort="' . $attendee_names[0]['First Name'] . '">
-                <div class="entry large '
-                . $attendee_class . '" ' . $admin_guest_list_flag . '>';
-            // <a class="admit-all" data-entry="'.$entry['id'].'">Admit All</a>
-
-            foreach ($attendee_names as $attendee_key => $attendee) {
-
-                $attended_key = $attended_list_id . '.' . $attendee_key;
-                if ($attendee_key == 0) $attended_key = $attended_list_id;
-
-                if ($entry[$attended_key] == 1) {
-                    $admitted = " admitted";
-                    $admitted_count++;
-                } else {
-                    $admitted = "";
-                }
-
-                $admit_list_html .= '<a class="admit-button' . $admitted . '"  data-entry="'
-                    . $entry['id'] . '" data-attended="' . $attended_key . '">'
-                    . $attendee['First Name'] . ' ' . $attendee['Last Name']
-                    . '</a>';
-                // pr($attendee);
-
-                $attendee_count++;
-            }
-
-            $admit_list_html .= '<span class="entry-email">' . $entry[$email_id] . ' - <span class="entry-id">#' . $entry['id'] . '</span></span>
-
-                </div>
-            </li>';
-        }
-
-        $admit_list_html .= '</ul></div></div>';
-        $admit_list_html .= '<p class="attendee_count">' . $admitted_count . '/' . $attendee_count . '</p>';
-
-        // pr($this->menu_options['form_id']);
-        // pr($event_name);
-
-        return $admit_list_html;
-
-    }
-
-    
-
-    /**
-     * AJAX Get token from reader ID in memory.
-     */
-    public function iflpm_get_token_from_reader() {
-        $reader_id = $_GET['reader_id'];
-        // echo $this->populate_fake_token_in_reader_memory($reader_id);
-        echo get_option('reader_' . $reader_id);
-        die();
-    }
-
-    /**
      * Reset all the attendee statuses for an event.
      */
     public function reset_attendees($event_name) {
@@ -848,62 +705,6 @@ Class IFLPartyMechanics
 
     }
 
-    /// Pretty sure this is deperecated.
-    public function register_rest_api() {
-
-        register_meta('user', 'fortune', [
-            'type' => 'string',
-            'single' => true,
-            'show_in_rest' => true,
-        ]);
-
-        // add_user_meta(1,'fortune','May The Force Be With You');
-
-        add_action('rest_api_init', function () {
-
-            // register_rest_route( 'mint/v1', '/fortune/(?P<id>\d+)', array(
-            register_rest_route('mint/v1', 'fortunes/(?P<id>\d+)', array(
-                'methods' => 'GET',
-                'callback' => array($this, 'get_fortune')
-            ));
-
-            // register_rest_field( 'user', 'fortune', array(
-            //        'get_callback' => array( $this, 'get_user_fortune' ),
-            //        'update_callback' => array( $this, 'add_user_fortune' ),
-            //        'schema' => null
-            //    ));
-
-        });
-
-
-    }
-
-    public function get_fortune($request) {
-
-        $fortune = get_user_meta($request['id'], 'fortune', true);
-        if (empty($fortune)) {
-            return new WP_Error('empty_meta', 'there is no fortune in this cookie', array('status' => 404));
-        }
-
-        $response = new WP_REST_Response($fortune);
-        $response->set_status(200);
-
-        return $response;
-    }
-
-    public function get_user_fortune($user, $field_name, $request) {
-        return get_user_meta($user['id'], $field_name, true);
-    }
-
-    public function add_user_fortune($user, $meta_value) {
-        $fortune = get_user_meta($user['id'], 'fortune', false);
-        if ($fortune) {
-            update_user_meta($user['id'], 'fortune', $meta_value);
-        } else {
-            add_user_meta($user['id'], 'fortune', $meta_value, true);
-        }
-    }
-
     public function test_event_title_stuff() {
         // see https://codex.wordpress.org/Adding_Administration_Menus
         global $hidden_field_name, $wpdb;
@@ -922,6 +723,24 @@ Class IFLPartyMechanics
             echo "<option value='" . strval($result[$i]->event_id) . "' " . $selected . ">" . $result[$i]->title . " - " . date_format(date_create($result[$i]->date),"F j, Y") . "</option>";
         }
         echo "<input type='submit' name='submit' value='Submit Selection Change' /></form>";
+    }
+
+    public function add_attendee_to_event_attendance_table($user,$event_id) {
+    	/// Checks:
+    	/// Bad data in
+    	/// User is already attended...
+    	
+
+    	global $wpdb;
+        $wpdb->insert(
+            ATTENDANCE_TABLE_NAME,
+            array(
+                'user_id' => $user->ID,
+                'event_id' => $event_id
+            )
+        );	
+
+        return true;
     }
 
     public function insert_event($title, $date) {

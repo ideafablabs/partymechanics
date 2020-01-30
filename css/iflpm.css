@@ -1,4 +1,14 @@
 
+
+
+.submit-button {
+	color:gray;
+	border:gray;
+}
+.submit-button.active {
+	color:inherit;
+}
+
 #page-heading {
 	/*display: none;*/
 }
