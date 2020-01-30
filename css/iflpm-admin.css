@@ -1,0 +1,38 @@
+/* Member Select List */ 
+.iflpm-user-tokens {
+	width:100%;
+	border-bottom:1px solid #000;
+}
+.iflpm-user-tokens  tr {
+	
+}
+.iflpm-user-tokens tr:nth-child(odd) {
+	background: #DDD;
+}
+.iflpm-user-tokens th {
+	font-weight: bold;	
+	border-bottom:1px solid #999;
+}
+.iflpm-user-tokens td,th {
+	vertical-align: middle;
+	padding:.3em .5em;
+	border: 0
+}
+.iflpm-user-tokens .user-tokens ul {
+	margin:.5em;
+}
+.iflpm-user-tokens .user-tokens li {	
+	border:1px solid #9999AA;
+	padding:.3em;
+	display: inline-block;
+	margin-right:.5em;
+	margin-bottom:0em;
+	border-radius: 2px;
+	/*margin-right*/
+}
+
+.iflpm-user-tokens li.purpletoken {background: #FF00FF;}
+.iflpm-user-tokens li.redtoken {background: #FF0000;}
+.iflpm-user-tokens li.bluetoken {background: #0000FF;}
+.iflpm-user-tokens li.yellowtoken {background: #FFFF00;}
+.iflpm-user-tokens li.greentoken {background: #00FF00;}

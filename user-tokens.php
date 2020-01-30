@@ -7,6 +7,9 @@ define("USER_TOKENS_DB_VERSION", "1.0");
 
 Class UserTokens {
 
+	public static $token_colors = array(0x00FF00, 0xFFFF00, 0xFF0000, 0x0000FF, 0xFF00FF, 0xFFFFFF);
+	public static $token_color_classes = array('greentoken', 'yellowtoken', 'redtoken', 'bluetoken', 'purpletoken', 'whitetoken');
+
 	public static function test_tokens_stuff() {
 		// for testing tokens functions
 		// self::drop_tokens_table();
@@ -33,6 +36,16 @@ Class UserTokens {
 		echo self::get_token_ids_by_user_id("0") . "<br>";
 		echo self::get_user_id_from_token_id("5") . "<br>";
 		echo self::add_token_id_and_user_id_to_tokens_table("7", "0") . "<br>";
+	}
+
+	public static function get_token_color_class($token_id) {
+		// we think idcode is always even...
+		// this is mostly because we read the little-endian id as if it were
+		// big-endian and are getting kinda lucky. But this /2 mod5 thing 	works so ok for now. dvb 2019.
+		
+		// $colors = array(0x00FF00, 0xFFFF00, 0xFF0000, 0x0000FF, 0xFF00FF, 0xFFFFFF); // Should be G Y R B (& secret purple)
+		$token_id /= 2;		
+		return self::$token_color_classes[$token_id % 5];
 	}
 
 	public static function does_user_tokens_table_exist_in_database() {
@@ -142,9 +155,12 @@ Class UserTokens {
 		if ($wpdb->num_rows == 0) {
 			return "No tokens found for user ID " . $user_id;
 		} else {
-			return join(", ", array_map(function ($token) {
-				return $token->token_id;
-			}, $result));
+			return array_map(function ($token) {
+                return $token->token_id;
+            }, $result);
+			// return join(", ", array_map(function ($token) {
+			// 	return $token->token_id;
+			// }, $result));
 		}
 	}
 
