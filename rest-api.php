@@ -4,15 +4,6 @@
  *
  * Based on example at: https://codex.wordpress.org/Function_Reference/register_post_type
  */
-// add_action( 'init', 'my_book_cpt' );
-// function my_book_cpt() {
-//     $args = array(
-//       'public'       => true,
-//       'show_in_rest' => true,
-//       'label'        => 'Books'
-//     );
-//     register_post_type( 'book', $args );
-// }
 
 //add_action('rest_api_init', function () {
 //    $movie_quotes_controller = new Movie_Quotes_Controller();
@@ -25,7 +16,8 @@
 class Movie_Quotes_Controller extends WP_REST_Controller {
   	public function register_routes() {
     	$namespace = 'mint/v1';
-    	$quote_pair_path = 'quote_pair';
+    	
+        $quote_pair_path = 'quote_pair';
         $get_user_id_from_token_id_path = 'get_user_id_from_token_id';
         $get_token_ids_from_user_id_path = 'get_token_ids_from_user_id';
         $add_token_id_and_user_id_to_tokens_table_path = 'add_token_id_and_user_id_to_tokens_table';
