@@ -12,6 +12,10 @@
 
 define("IFLPM_TABLE_PREFIX", "iflpm_");
 
+/// Some day we might need some filesize management here.
+define("IFLPM_LOGFOLDER", plugin_dir_path(__FILE__) . "logs/");
+define("IFLPM_LOGFILE", IFLPM_LOGFOLDER . 'log.csv');
+
 include 'dbmanager.php';
 include 'rest-api.php';
 include 'user-tokens.php';
@@ -68,14 +72,18 @@ Class IFLPartyMechanics {
 		add_action('admin_enqueue_scripts', array($this, 'register_iflpm_admin_scripts'));
 		
 		// Register REST API Controllers
-		add_action('rest_api_init', function () {
-			$movie_quotes_controller = new Movie_Quotes_Controller();
-			$movie_quotes_controller->register_routes();
-		});
-		add_action('rest_api_init', function () {
-			$nfc_registration_controller = new NFC_Registration_Controller();
-			$nfc_registration_controller->register_routes();
-		});
+		if (class_exists("Movie_Quotes_Controller")) {
+			add_action('rest_api_init', function () {
+				$movie_quotes_controller = new Movie_Quotes_Controller();
+				$movie_quotes_controller->register_routes();
+			});
+		}
+		if (class_exists("NFC_Registration_Controller")) {
+			add_action('rest_api_init', function () {
+				$nfc_registration_controller = new NFC_Registration_Controller();
+				$nfc_registration_controller->register_routes();
+			});
+		}
 
 		// Setup Ajax action hook
 		add_action('wp_ajax_iflpm_async_controller', array($this, 'iflpm_async_controller'));
@@ -135,6 +143,7 @@ Class IFLPartyMechanics {
 
 			// Add pair to the database or get an error.
 			$tokenadd = $this->add_token_id_and_user_id_to_tokens_table($token_id, $user->ID);
+			$this->log_action($tokenadd);
 
 			//// This probably should become if WP_error
 			// if (strpos($tokenadd, 'added') !== false || strpos($tokenadd, 'already') !== false) {
@@ -517,7 +526,7 @@ Class IFLPartyMechanics {
 
 			// Build list HTML
 			// $response .= '<ul class="member_select_list list-group">';
-			$response .= '<table border="0" class="iflpm-user-tokens list-group">';
+			$response .= '<table border="0" class="iflpm-user-tokens list-group member_select_list">';
 			$response .= '<tr class="member_select_list_head">
 								 <th>Name</th>
 								 <th>Email</th>
@@ -747,6 +756,49 @@ Class IFLPartyMechanics {
 		}
 
 		return $case;
+	}
+
+	public function log_action($item, $echo = 0) {
+		echo "In the log function\n";
+		if (!self::check_log_file_exists()) return false;
+
+		date_default_timezone_set("America/Los_Angeles");
+		$date = date("Y-m-d H:i:s");
+
+		if (is_array($item)) {
+			if (is_wp_error($item)) {
+				$message = $item->get_error_message();
+			} else {
+				$message = implode(", ", $item);
+			}
+		} else {
+			$message = $item;
+		}
+
+		error_log($date . ", " . $message, 3, IFLPM_LOGFILE);
+		if ($echo) echo $message;
+	}
+
+	public function check_log_file_exists() {
+
+		// Permissions?
+		if (!file_exists(IFLPM_LOGFOLDER)) {
+			try {
+				mkdir(IFLPM_LOGFOLDER);
+			} catch (Exception $e) {
+				error_log($e->getMessage(), "\n");
+				return false;
+			}
+		}
+		if (!file_exists(IFLPM_LOGFILE)) {
+			try {
+				file_put_contents(IFLPM_LOGFILE, '');
+			} catch (Exception $e) {
+				error_log($e->getMessage(), "\n");
+				return false;
+			}
+		}
+		return true;
 	}
 	/*
 	function iflpm_install() {

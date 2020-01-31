@@ -2,8 +2,8 @@ var $ = jQuery.noConflict();
 
 $(document).ready( function(){
 	
-	// $('.nfc-wrapper').insertAfter($(('#input_1_14')));
-	console.log("Booting Up");
+	// $('.nfc-wrapper').insertAfter($(('#input_1_14')));	
+	console.log("PartyMechanics: Plugin Active");
 
 	$(".nfc_button").on('click', iflpm_ajax_get_token_id_from_reader);
 
@@ -13,7 +13,6 @@ $(document).ready( function(){
 		$('.submit-button').click(function(event){
     		event.preventDefault();
 		});
-
 
 		reader_id = $(".nfc_button").attr('data-reader_id');		
 		
@@ -25,24 +24,6 @@ $(document).ready( function(){
 		// clearInterval(tokenCheckIntervalID);
 	}
 	
-	
-	/* REGISTRATION FORM */
-	$('button.get_token_id').click(function(){
-
-		// get reader id
-		reader_id = 1;
-		reader_value = 0;
-		url = "https://mint.ideafablabs.com/index.php/wp-json/mint/v1/readers/"+reader_id;
-		// get reader value.
-		$.get(url,function(data,status) {
-			console.log(`${data}`);
-			// reader_value = data.reader;
-			$("#nfcid").val(data);
-		});
-		// 
-
-
-	});
 
 	/* RETURN ATTENDEE LIST */
 
@@ -50,7 +31,7 @@ $(document).ready( function(){
 	var attendees = $('.member_select_list'),
 	attendeesli = attendees.children('li');
 
-	attendeesli.sort(function(a,b){
+	attendeesli.sort(function(a,b) {
 		var an = a.getAttribute('data-sort').toLowerCase(),
 			bn = b.getAttribute('data-sort').toLowerCase();
 
@@ -68,127 +49,14 @@ $(document).ready( function(){
 
 	attendeesli.detach().appendTo(attendees);
 
-	console.log("Plugin Active");
-
-	$('a.admit-button').on('click', function(e) { 
-		
-		e.preventDefault();
-		console.log("Admitting Attendee...");
-		$(e.target).addClass('admitting');
-				
-		//TODO Add loading graphic 
-
-		// var iflag_entry_id = jQuery(this).data( 'id' );    
-
-		$.ajax({
-			url : iflpm_ajax.ajax_url,
-			type : 'post',
-			data : {
-				action : 'ifl_admit_guest',
-				entry_id : $(this).data( 'entry' ) ,
-				attendee_id : $(this).data( 'attendee' )
-			},
-			// security : iflpm_ajax.check_nonce,
-			success : function( response ) {
-				console.log("Success!");
-				console.log(response);
-				$(e.target).addClass('admitted');
-				// jQuery('.iflag_contents').html(response);
-			}
-		});
-	/*
-		$.ajax({
-			url : iflpm_ajax.ajax_url,
-			type : 'post',
-			data : {
-				action : 'ifl_sanity_check'
-				// entry_id : $(this).data( 'entry' ) ,
-				// attended_id : $(this).data( 'attended' )
-			},
-			// security : iflpm_ajax.check_nonce,
-			success : function( response ) {
-				console.log("Success!");
-				console.log(response);                
-			}
-		});*/
-		
-		// jQuery(this).hide();            
-	});     
-
+	/// try and async/await this?
 	// Clear search / hide attendee list.
 	$('.clear-search').on('click', function(e) { 
 		// document.getElementById('q').value = '';
 		$(".member_select_list").hide(); //Debug: show all the members. 
 	});
 
-	$('a.admit-all').on('click', function(e) { 
-		
-		e.preventDefault();
-		console.log("Admitting All Attendees...");
-		$(e.target).addClass('admitting');
-				
-		//TODO Add loading graphic 
-
-		// var iflag_entry_id = jQuery(this).data( 'id' );    
-		
-		$.ajax({
-			url : iflpm_ajax.ajax_url,
-			type : 'post',
-			data : {
-				action : 'ifl_admit_all',
-				entry_id : $(this).data( 'entry' ) ,
-				// attended_id : $(this).data( 'attended' )
-			},
-			// security : iflpm_ajax.check_nonce,
-			success : function( response ) {
-				console.log("Success!");
-				console.log(response);
-				$(e.target).parent('div').children('.admit-button').addClass('admitted');
-				// jQuery('.iflag_contents').html(response);
-			}
-		});
-		
-		// jQuery(this).hide();            
-	});
-
-
-
-	// Sort list function.
-	function sortUnorderedList(ul, sortDescending) {
-		if(typeof ul == "string")
-			ul = document.getElementById(ul);
-
-		// Idiot-proof, remove if you want
-		if(!ul) {
-			alert("The UL object is null!");
-			return;
-		}
-
-		// Get the list items and setup an array for sorting
-		var lis = ul.getElementsByTagName("LI");
-		var vals = [];
-
-		// Populate the array
-		for(var i = 0, l = lis.length; i < l; i++)
-			vals.push(lis[i].innerHTML);
-
-		// Sort it
-		vals.sort();
-
-		// Sometimes you gotta DESC
-		if(sortDescending)
-			vals.reverse();
-
-		// Change the list on the page
-		for(var i = 0, l = lis.length; i < l; i++)
-			lis[i].innerHTML = vals[i];
-	}
-
-
-// /
-
-
-/*
+	/*
 	This makes an instant search for the gallery member sign-in list
 		@jordan
 	*/
@@ -225,12 +93,10 @@ $(document).ready( function(){
 			  }
 			});//end of case insensitive chunk
 
-
 			//this part is optional
 			//here we are replacing the spaces with another :contains
 			//what this does is to make the search less exact by searching all words and not full strings
 			var searchSplit = searchTerm.replace(/ /g, "'):containsi('")
-			
 			
 			//here is the meat. We are searching the list based on the search terms
 			$(".member_select_list li").not(":containsi('" + searchSplit + "')").each(function(e)   {
@@ -264,8 +130,6 @@ $(document).ready( function(){
 				}
 				return 0;
 			});
-
-
 		}, 500 );
 	}); 
 
@@ -279,7 +143,6 @@ $(document).ready( function(){
 
 function iflpm_ajax_get_token_id_from_reader(reader_id) {
 			
-	
 	//TODO Add loading graphic 
 	
 	// Get the relevant data.
@@ -352,26 +215,33 @@ function iflpm_ajax_request(package) {
 	});
 }
 
-function ajax_associate_medallion_with_user(reader_id,user_id) {
-			
-	console.log("Associating Token with user "+user_id+" with reader: ");                
-	//TODO Add loading graphic 
-	
-	$.ajax({
-		url : iflpm_ajax.ajax_url,            
-		type : 'get',
-		data : {
-			action : 'iflpm_associate_user_with_token_from_reader',
-			reader_id : reader_id,
-			user_id : user_id
-		},
-		
-		// security : iflpm_ajax.check_nonce,
-		success : function( response ) {
-			console.log("Success!");
-			console.log(response);
-			$('.token-response').html(response);
-		}
-	});
-			
+// Sort list function. /// Deprecated?
+function sortUnorderedList(ul, sortDescending) {
+	if(typeof ul == "string")
+		ul = document.getElementById(ul);
+
+	// Idiot-proof, remove if you want
+	if(!ul) {
+		alert("The UL object is null!");
+		return;
+	}
+
+	// Get the list items and setup an array for sorting
+	var lis = ul.getElementsByTagName("LI");
+	var vals = [];
+
+	// Populate the array
+	for(var i = 0, l = lis.length; i < l; i++)
+		vals.push(lis[i].innerHTML);
+
+	// Sort it
+	vals.sort();
+
+	// Sometimes you gotta DESC
+	if(sortDescending)
+		vals.reverse();
+
+	// Change the list on the page
+	for(var i = 0, l = lis.length; i < l; i++)
+		lis[i].innerHTML = vals[i];
 }
