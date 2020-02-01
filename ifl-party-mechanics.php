@@ -14,7 +14,7 @@ define("IFLPM_TABLE_PREFIX", "iflpm_");
 
 /// Some day we might need some filesize management here.
 define("IFLPM_LOGFOLDER", plugin_dir_path(__FILE__) . "logs/");
-define("IFLPM_LOGFILE", IFLPM_LOGFOLDER . 'log.csv');
+define("IFLPM_LOGFILE", IFLPM_LOGFOLDER . date('Y-m') . '-log.csv');
 
 include 'dbmanager.php';
 include 'rest-api.php';
@@ -96,8 +96,7 @@ Class IFLPartyMechanics {
 		add_shortcode('registrationform', array($this, 'ifl_display_registration_form'));
 		add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));        
 		
-		// register_activation_hook( __FILE__, 'iflpm_install' );
-		// register_activation_hook( __FILE__, 'iflpm_install_data' );
+		register_activation_hook( __FILE__, array($this, 'install_plugin'));	
 	 }
 
 	/**
@@ -399,6 +398,45 @@ Class IFLPartyMechanics {
 			case 'remove_token':
 
 				break;
+			case 'guest_list_toggle':
+
+				// Get the User ID from the AJAX request.
+				$user_id = (!empty($package['user_id'])) ? $package['user_id'] : false;
+				$event_id = (!empty($package['event_id'])) ? $package['event_id'] : false;
+				$action = (!empty($package['action'])) ? $package['action'] : false;
+					
+				// If not there, fail.
+				if ($user_id === false) {
+					  $return['message'] = "No user ID Found";
+					  break;
+				} 				
+
+				// Try and add to special guest table.
+				try {
+					
+					// Get User or Error
+					$user = get_user_by("ID",$user_id);
+					if (is_wp_error($user)) throw new Exception($user->get_error_message(), 1);					
+
+					// Get event title or Error
+					$event_title = IFLPMEventsManager::get_event_title_by_id($event_id);
+
+					if ($action == "add") {
+						IFLPMEventsManager::add_guest_to_special_guests_table($user,$event_id);
+						$return['message'] = $user->display_name." added to Special Guest Table for event: ".$event_title;
+					} else {
+						IFLPMEventsManager::remove_guest_from_special_guests_table($user,$event_id);
+						$return['message'] = $user->display_name." removed from Special Guest Table for event: ".$event_title;
+					}
+										
+					$return['success'] = true;					
+					self::log_action($return['message']);
+										
+				} catch (Exception $e) {
+					$return['message'] = $e->getMessage();
+				}
+					
+				break;
 			default:
 				// err out                
 				$return['message'] = "Bad request object";                
@@ -418,31 +456,25 @@ Class IFLPartyMechanics {
 	 */
 	public function admin_menu_pages() {
 
-		// Originally this if statement only had the second part of the or condition, with $admin_page_call
-		// as an unknown variable, so I got rid of that error as below, but if anything else needs to be done, ???
-		if (!isset($admin_page_call) || $admin_page_call == '') {
-			$admin_page_call = array($this, 'admin_page_call');
-		}
-
 		add_menu_page(
 			__(
-				 'Custom Menu Title', 'textdomain'),     // Page Title
-			'Party Mechanics',                          // Menu Title
-			'manage_options',                           // Required Capability
-			'iflpm_main_menu',                      // Menu Slug
-			$admin_page_call,                           // Function
-			'dashicons-groups',  // Icon URL
+				 'Custom Menu Title', 'textdomain'),	// Page Title
+			'Party Mechanics',								// Menu Title
+			'manage_options',									// Required Capability
+			'iflpm_dashboard',                      	// Menu Slug
+			array($this, 'dashboard_page'),				// Function
+			'dashicons-groups',  							// Icon URL
 			6
 		);
 
-		add_submenu_page('iflpm_main_menu',
+		add_submenu_page('iflpm_dashboard',
 			"Add New Event",
 			"Add New Event",
 			'manage_options',
 			"add_new_event_page",
 			array($this, 'add_new_event_page_call'));
 
-		add_submenu_page('iflpm_main_menu',
+		add_submenu_page('iflpm_dashboard',
 			"Manage User Tokens",
 			"Manage User Tokens",
 			'manage_options',
@@ -455,10 +487,10 @@ Class IFLPartyMechanics {
 	/**
 	 * Build HTML for admin page.
 	 */
-	public function admin_page_call() {
+	public function dashboard_page() {
 		if (isset($_POST['submit'])) {
 			$selected_event_id = $_POST['selected_event_id'];  // Storing Selected Value In Variable
-			update_option('selected_event_id', $selected_event_id);
+			update_option('iflpm_selected_event_id', $selected_event_id);
 		}
 
 		// Echo the html here...
@@ -473,10 +505,10 @@ Class IFLPartyMechanics {
 		IFLPMEventsManager::test_events_table_stuff();
 		IFLPMEventsManager::test_attendance_table_stuff();
 		IFLPMEventsManager::test_special_guests_table_stuff();
-		$this->test_option_stuff();
+		// self::test_option_stuff();
 		//IFLPMEventsManager::test_user_dropdown();
 		//IFLPMEventsManager::test_insert_some_attendees();
-		IFLPMEventsManager::list_attendees_for_selected_event();
+		IFLPMEventsManager::list_attendees_for_selected_event();		
 	}
 
 	function add_new_event_page_call() {
@@ -505,11 +537,11 @@ Class IFLPartyMechanics {
 
 	public function manage_user_tokens_page_call() { 
 		$page_name = 'manage_user_tokens_page';
+		$selected_event_id = get_option('iflpm_selected_event_id');
 
 		$response = ""; // Begin output.
 		/// We really should switch to templates.
-		
-		$member_class = ""; /// ?
+				
 		
 		$user_id = (isset($_GET['user_id'])) ? $_GET['user_id'] : "";
 		$reader_id = (isset($_GET['reader_id'])) ? $_GET['reader_id'] : "";
@@ -536,20 +568,25 @@ Class IFLPartyMechanics {
 			// Build links for each member...
 			foreach ($users as $key => $user) {
 
-				// $formlink = '/wp-admin/admin.php?page='.$page_name.'&user_id=' . $user->ID . '&reader_id=' . $reader_id;
-
 				$query = array(
 					'user_id' => $user->ID,                     
 				);				
-				$formlink = esc_url( add_query_arg( $query ) );
+				
+				$formlink = esc_url( add_query_arg( $query ) );				
+				// $formlink = '/wp-admin/admin.php?page='.$page_name.'&user_id=' . $user->ID . '&reader_id=' . $reader_id;
  
 				///DUMMY ADD TOKENS
 				// $res = $this->add_zone_token_to_zone_tokens_table(rand(20,10000),$user->ID);
 
 				// Get users tokens array.
 				$tokens = UserTokens::get_token_ids_by_user_id($user->ID);
+
+				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user,$selected_event_id)) ? ' guest-list-active' : '';
+				$guest_list_action = ($guest_list_class == ' guest-list-active') ? 'remove' : 'add';
 				
-				$response .= '<tr  class="user-'.$user->ID.'" data-user-id="'.$user->ID.'" data-sort="' . $user->display_name . '">
+				$user_row_class = 'user-'. $user->ID . $guest_list_class;
+
+				$response .= '<tr  class="'.$user_row_class.'" data-user-id="'.$user->ID.'" data-sort="' . $user->display_name . '">
 					<td class="user-displayname">'.$user->display_name.'</td>
 					<td class="user-email">'. $user->user_email.'</td>
 					<td class="user-tokens">'; 
@@ -567,7 +604,10 @@ Class IFLPartyMechanics {
 				
 				$response .= '
 					</td>
-						<td><a class="add-token" data-uid="'.$user->ID.'">Get New Token</a><span class="new-token"></span></td>
+						<td>
+							<a class="add-token" data-uid="'.$user->ID.'">Get New Token</a><span class="new-token"></span>
+							<a class="guest-list-toggle" data-uid="'.$user->ID.'" data-action="'.$guest_list_action.'" data-event="'.$selected_event_id.'">Guest List</a>
+						</td>
 					</tr>';
 			}
 			$response .= '</table>';
@@ -656,29 +696,6 @@ Class IFLPartyMechanics {
 		}
 	}
 
-	
-	public function does_table_exist_in_database($table_name) {
-		global $wpdb;
-		$mytables = $wpdb->get_results("SHOW TABLES");
-		foreach ($mytables as $mytable) {
-			foreach ($mytable as $t) {
-				// echo $t . "<br>";
-				if ($t == $table_name) {
-					  return true;
-				}
-			}
-		}
-		return false;
-	 }
-
-	public function is_table_empty($table_name) {
-		global $wpdb;
-		$rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . $table_name);
-		return $rows[0]->num_rows == 0;
-	}
-
-	 
-
 	public function delete_all_rows_from_table($table_name) {
 		global $wpdb;
 		$result = $wpdb->query("TRUNCATE TABLE " . $table_name);
@@ -759,7 +776,7 @@ Class IFLPartyMechanics {
 	}
 
 	public function log_action($item, $echo = 0) {
-		echo "In the log function\n";
+		
 		if (!self::check_log_file_exists()) return false;
 
 		date_default_timezone_set("America/Los_Angeles");
@@ -775,7 +792,7 @@ Class IFLPartyMechanics {
 			$message = $item;
 		}
 
-		error_log($date . ", " . $message, 3, IFLPM_LOGFILE);
+		error_log($date . ", " . $message . "\n", 3, IFLPM_LOGFILE);
 		if ($echo) echo $message;
 	}
 
@@ -800,48 +817,56 @@ Class IFLPartyMechanics {
 		}
 		return true;
 	}
-	/*
-	function iflpm_install() {
-		global $wpdb;
-		global $iflpm_db_version;
-		$iflpm_db_version = '1.0';
+	
+	function install_plugin() {		
+		
+		self::log_action("Installing IFLPM...");
+		
+		if (!IFLPMDBManager::does_table_exist_in_database(USER_TOKENS_TABLE_NAME)) {
+			UserTokens::create_zone_tokens_table();							
+		} else {
+			self::log_action("Tokens Table already exists.");
+		}
 
-		$table_name = $wpdb->prefix . 'movie_qutoes';
+		if (!IFLPMDBManager::does_table_exist_in_database(EVENTS_TABLE_NAME)) {
+			self::create_events_table();
+		} else {
+			self::log_action("Events Table already exists.");
+		}
 
-		$charset_collate = $wpdb->get_charset_collate();
+		if (!IFLPMDBManager::does_table_exist_in_database(ATTENDANCE_TABLE_NAME)) {
+			self::create_attendance_table();
+		} else {
+			self::log_action("Attendance Table already exists.");
+		}
 
-		$sql = "CREATE TABLE $table_name (
-			 id mediumint(9) NOT NULL AUTO_INCREMENT,
-			 time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-			 name tinytext NOT NULL,
-			 text text NOT NULL,
-			 url varchar(55) DEFAULT '' NOT NULL,
-			 UNIQUE KEY id (id)
-		) $charset_collate;";
+		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
+			self::create_special_guests_table();
+		} else {
+			self::log_action("Special Guests Table already exists.");
+		}
 
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		dbDelta( $sql );
+		if (!IFLPMDBManager::does_table_exist_in_database(MOVIE_QUOTES_TABLE_NAME)) {
+			self::create_movie_quotes_table();
+		} else {
+			self::log_action("Movie Quotes Table already exists.");
+		}
 
-		add_option( 'iflpm_db_version', $iflpm_db_version );
+		if (!IFLPMDBManager::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME)) {
+			self::create_user_pairings_table();
+		} else {
+			self::log_action("Zone Plus One Table already exists.");
+		}
+
 	}
+}
 
-	function iflpm_install_data() {
-		global $wpdb;
-
-		$welcome_name = 'Mr. WordPres';
-		$welcome_text = 'Congratulations, you just completed the installation!';
-
-		$table_name = $wpdb->prefix . 'liveshoutbox';
-
-		$wpdb->insert(
-			 $table_name,
-			 array(
-				  'time' => current_time( 'mysql' ),
-				  'name' => $welcome_name,
-				  'text' => $welcome_text,
-			 )
-		);
-	}*/
+if (!function_exists("pr")) {
+	function pr($input) {
+		echo '<pre>';
+		print_r($input);
+		echo '</pre>';
+	}	
 }
 
 ?>

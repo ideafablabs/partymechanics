@@ -236,4 +236,3 @@ class NFC_Registration_Controller extends WP_REST_Controller {
 
 
 ?>
-

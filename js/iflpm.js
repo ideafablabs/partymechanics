@@ -6,6 +6,7 @@ $(document).ready( function(){
 	console.log("PartyMechanics: Plugin Active");
 
 	$(".nfc_button").on('click', iflpm_ajax_get_token_id_from_reader);
+	$(".iflpm-user-tokens").on('click','.guest-list-toggle', iflpm_ajax_guest_list_toggle);
 
 	if ($(".nfc_button").length) {
 	// if (0) {	
@@ -45,7 +46,7 @@ $(document).ready( function(){
 	});
 
 	// Hide Members List
-	$(".member_select_list").hide(); //Debug: show all the members. 
+	// $(".member_select_list").hide(); //Debug: show all the members. 
 
 	attendeesli.detach().appendTo(attendees);
 
@@ -180,6 +181,64 @@ function iflpm_ajax_get_token_id_from_reader(reader_id) {
 
 		// Or failure.
 		} else {                
+			var usermessage = '<p class="ajax-error">'+response.message+'</p>';                
+		}
+
+		// Give some sort of affirmation...
+		$(".ajax-message").html(usermessage);
+		console.log(response.message);
+	}
+
+	// Send the package ==>
+	iflpm_ajax_request(package);
+			
+}
+
+function iflpm_ajax_guest_list_toggle(event) {
+			
+	//TODO Add loading graphic 
+	
+	var target = event.target;
+
+	// Get the relevant data.	
+	// var reader_id = jQuery(target).data( 'reader_id' );        
+	var user_id = $(target).data( 'uid' );
+	var event_id = $(target).data( 'event' );
+	var action = $(target).data( 'action' );
+
+	console.log("Toggling guest list for user: "+user_id+", event: "+event_id);
+	
+	// Bundle the package.
+	package = {
+		request : 'guest_list_toggle',
+		data : {
+			action : action,
+			user_id : user_id,
+			event_id : event_id
+		}
+	}
+
+	// Forsee outcomes.
+	package.success = function(response) {
+		
+		// Actual success.
+		if (response.success == true) {                
+			if (response.message) {
+				var usermessage = '<p class="ajax-success">'+response.message+'</p>';
+			}
+			
+			userRow = $("tr.user-"+user_id);
+
+			if ($(target).data('action') == 'add') {
+				$(target).data('action','remove');
+				userRow.addClass('guest-list-active');
+			} else {
+				$(target).data('action','add');
+				userRow.removeClass('guest-list-active');
+			}			
+
+		// Or failure.
+		} else { 
 			var usermessage = '<p class="ajax-error">'+response.message+'</p>';                
 		}
 

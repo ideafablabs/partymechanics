@@ -83,6 +83,109 @@ Class IFLPMEventsManager {
 		}
 	}
 
+	public static function add_guest_to_special_guests_table($user,$event_id) {
+		
+		global $wpdb;
+		
+		if (!is_a($user,'WP_User')) {
+			throw new Exception("Bad user data.");
+		}
+		
+		/// event_id is in table? 
+
+		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
+			throw new Exception("Special Guest Table does not exist in database", 1);			
+			// return false;
+		}
+
+		// User is already in added to table...
+		if (self::user_is_on_guest_list($user,$event_id)) {
+			throw new Exception("User is already on guest list.", 1);			
+		}
+
+		// Insert record
+		$records = $wpdb->insert(
+			SPECIAL_GUESTS_TABLE_NAME,
+			array(
+				'user_id' => $user->ID,
+				'event_id' => $event_id,
+			)
+		);
+
+		if (!$records) {
+			throw new Exception("Unknown Error: Inserting Guest Failed", 1);
+		}
+		
+		$result = $wpdb->get_results("SELECT * FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE user_id = '" . $user->ID . "' AND event_id = '".$event_id."'");		
+
+		if ($wpdb->num_rows == 0) {
+			throw new Exception("Unknown Error: Couldnt retrieve after insertion.", 1);
+		} else {			
+			return true;
+		}
+	}
+
+
+	public static function remove_guest_from_special_guests_table($user,$event_id) {
+		
+		global $wpdb;
+		
+		if (!is_a($user,'WP_User')) {
+			throw new Exception("Bad user data.");
+		}
+		
+		/// event_id is in table? 
+
+		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
+			throw new Exception("Special Guest Table does not exist in database", 1);			
+			// return false;
+		}
+
+		// User is already in added to table...
+		if (!self::user_is_on_guest_list($user,$event_id)) {
+			throw new Exception("User was not on guest list.", 1);			
+		}
+
+		// Insert record
+		$records = $wpdb->delete(
+			SPECIAL_GUESTS_TABLE_NAME,
+			array(
+				'user_id' => $user->ID,
+				'event_id' => $event_id,
+			)
+		);
+
+		if (!$records) {
+			throw new Exception("Unknown Error: Deleting Guest Failed", 1);
+		}
+		
+		$result = $wpdb->get_results("SELECT * FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE user_id = '" . $user->ID . "' AND event_id = '".$event_id."'");		
+
+		if ($wpdb->num_rows > 0) {
+			throw new Exception("Unknown Error: Guest still in table after delete call.", 1);
+		} else {			
+			return true;
+		}
+	}
+
+	public static function user_is_on_guest_list($user,$event_id) {
+
+		global $wpdb;
+		
+		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {			
+			return false;
+		}
+		
+		$result = $wpdb->get_results("SELECT record_id FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE user_id = '" . $user->ID . "' AND event_id = '".$event_id."'");
+
+		if ($wpdb->num_rows == 0) {
+			return false;
+		} else {			
+			return true;
+		}
+		return true;
+	}
+
 	public static function insert_event($title, $date) {
 		global $wpdb;
 		$wpdb->insert(
@@ -191,8 +294,52 @@ Class IFLPMEventsManager {
 			self::create_special_guests_table();
 		}
 
+		echo "<h2>Special Guest List</h2>";
+		$selected_event_id = get_option('selected_event_id');
+		
+		$guest_list = self::get_list_of_special_guests_by_event($selected_event_id);
+
+		echo "<ul>";
+		foreach ($guest_list as $key => $user) {
+			echo "<li>".$user->display_name." - ".$user->user_email."</li>";	
+		}
 	}
 
+	public static function get_event_title_by_id($event_id) {
+
+		global $wpdb;
+		
+		if (!IFLPMDBManager::does_table_exist_in_database(EVENTS_TABLE_NAME)) {			
+			throw new Exception("Events table does not exist.", 1);
+		}
+		
+		$result = $wpdb->get_results("SELECT title FROM " . EVENTS_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
+
+		if ($wpdb->num_rows == 0) {
+			throw new Exception("Event not found in Events Table.", 1);
+		} 
+		
+		return $result[0]->title;
+	}
+	
+
+	public static function get_list_of_special_guests_by_event($event_id) {
+		global $wpdb;
+		
+		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {			
+			throw new Exception("Special Events Table does not exist.", 1);
+		}
+		
+		$result = $wpdb->get_results("SELECT user_id FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
+		
+		$users = array();
+		foreach ($result as $key => $record) {
+			$users[$key] = get_user_by('id',$record->user_id);
+		}
+		
+		return $users;
+	}
+	
 	public static function create_events_table() {
 		global $wpdb;
 		global $events_db_version;
@@ -255,7 +402,3 @@ Class IFLPMEventsManager {
 }
 
 ?>
-
-
-
-

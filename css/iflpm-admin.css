@@ -9,6 +9,9 @@
 .iflpm-user-tokens tr:nth-child(odd) {
 	background: #DDD;
 }
+.iflpm-user-tokens  tr.guest-list-active {
+	background: lightblue !important;
+}
 .iflpm-user-tokens th {
 	font-weight: bold;	
 	border-bottom:1px solid #999;

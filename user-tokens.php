@@ -33,7 +33,7 @@ Class UserTokens {
 			echo "Tokens table contains " . $rows[0]->num_rows . " records.<br>";
 		}
 
-		echo self::get_token_ids_by_user_id("0") . "<br>";
+		pr(self::get_token_ids_by_user_id("0"));
 		echo self::get_user_id_from_token_id("5") . "<br>";
 		echo self::add_token_id_and_user_id_to_tokens_table("7", "0") . "<br>";
 	}
