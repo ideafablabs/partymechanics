@@ -9,7 +9,6 @@ Class IFLPMDBManager {
 		$mytables = $wpdb->get_results("SHOW TABLES");
 		foreach ($mytables as $mytable) {
 			foreach ($mytable as $t) {
-				//echo "table name: " . $t . "<br>";
 				if ($t == $table_name) {
 					return true;
 				}

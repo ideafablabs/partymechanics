@@ -3,7 +3,7 @@
 global $wpdb;
 
 // get rid of the "../" if you're not running it from an admin page
-define("QUOTES_CSV_FILE", "../wp-content/plugins/ifl-party-mechanics/quotes.csv");
+define("QUOTES_CSV_FILE", IFLPM_PLUGIN_PATH."quotes.csv");
 
 define("MOVIE_QUOTES_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "movie_quotes");
 define("MOVIE_QUOTES_DB_VERSION", "1.0");
@@ -12,70 +12,29 @@ define("USER_PAIRINGS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "user_pa
 define("USER_PAIRINGS_DB_VERSION", "1.0");
 
 Class MovieQuotes {
-	//public $movie_quotes_table_name;
 
-	public static function test_movie_quotes_stuff() {
-		// for testing movie quotes functions
 
-		//self::drop_movie_quotes_table();
-
+	public static function get_random_movie_quote() {
+		
 		global $wpdb;
-		echo "<br>";
-		if (self::does_movie_quotes_table_exist_in_database()) {
-			echo "Movie quotes table exists<br>";
-		} else {
-			echo "Movie quotes table does not exist, creating movie quotes table<br>";
-			self::create_movie_quotes_table();
+
+		if (!self::does_movie_quotes_table_exist_in_database()) {
+			return false;
 		}
 
-		//self::delete_all_quotes_from_movie_quotes_table();
+		$sql = "SELECT * FROM ".MOVIE_QUOTES_TABLE_NAME." ORDER BY RAND() LIMIT 1";
+		
+		$quote = $wpdb->get_results($sql);
 
-		if (self::is_table_empty(MOVIE_QUOTES_TABLE_NAME)) {
-			echo "Movie quotes table is empty<br>";
-			if (self::does_quotes_csv_file_exist()) {
-				self::import_movie_quotes_to_database();
-			}
-		} else {
-			//echo "Movie quotes table is not empty<br>";
-			$rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . MOVIE_QUOTES_TABLE_NAME);
-			echo "Movie quotes table contains " . $rows[0]->num_rows . " records.<br>";
-		}
-
-		echo "Movie quote #1: " . self::get_movie_quote_by_id(1) . "<BR>";
-	}
-
-	public static function test_user_pairings_stuff() {
-		// for testing user pairings functions
-		global $wpdb;
-		//self::drop_user_pairings_table();
-
-		echo "<br>";
-		if (self::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME)) {
-			echo "User pairings table exists<br>";
-		} else {
-			echo "User pairings table does not exist, creating user pairings table<br>";
-			self::create_user_pairings_table();
-		}
-
-		//self::delete_all_pairings_from_user_pairings_table();
-
-		if (self::is_table_empty(USER_PAIRINGS_TABLE_NAME)) {
-			echo "User pairings table is empty<br>";
-		} else {
-//            echo "User pairings table is not empty<br>";
-			$rows = $wpdb->get_results("SELECT COUNT(*) as num_rows FROM " . USER_PAIRINGS_TABLE_NAME);
-			echo "User pairings table contains " . $rows[0]->num_rows . " records.<br>";
-		}
-
-		echo "Movie quote for pairing of users 1 and 3: " . self::get_movie_quote_by_pairing(1, 3) . "<br>";
+		return $quote[0];
 	}
 
 	public static function does_movie_quotes_table_exist_in_database() {
-		return self::does_table_exist_in_database(MOVIE_QUOTES_TABLE_NAME);
+		return IFLPMDBManager::does_table_exist_in_database(MOVIE_QUOTES_TABLE_NAME);
 	}
 
 	public static function does_user_pairings_table_exist_in_database() {
-		return self::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME);
+		return IFLPMDBManager::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME);
 	}
 
 	public static function does_table_exist_in_database($table_name) {
@@ -187,7 +146,7 @@ Class MovieQuotes {
 		// I commented shuffle out because
 		// (1) My Python script had shuffled them in the first place, so they're already not grouped by movie
 		// (2) If you have to read the quotes file in again, you don't want to change which quote is assigned to which pairing
-		// shuffle($quotes_array);
+		// shuffle($quotes_array); @tané
 
 		// write them to the quotes database
 		foreach ($quotes_array as $entry) {
@@ -202,12 +161,11 @@ Class MovieQuotes {
 				)
 			);
 		}
-
 	}
 
 	public static function get_movie_quote_by_id($id) {
 		global $wpdb;
-		if (!self::does_table_exist_in_database(MOVIE_QUOTES_TABLE_NAME) || self::is_movie_quotes_table_empty()) {
+		if (!IFLPMDBManager::does_table_exist_in_database(MOVIE_QUOTES_TABLE_NAME) || self::is_movie_quotes_table_empty()) {
 			return null;
 		} else {
 			$result = $wpdb->get_results("SELECT * FROM " . MOVIE_QUOTES_TABLE_NAME . " WHERE id = " . $id);
@@ -228,7 +186,7 @@ Class MovieQuotes {
 		$users = [$user_id_1, $user_id_2];
 		sort($users);
 		$pairing_string = "{$users[0]}-{$users[1]}";
-		if (!self::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME)) {
+		if (!IFLPMDBManager::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME)) {
 			return null;
 		}
 		$id = self::get_id_by_pairing($pairing_string);

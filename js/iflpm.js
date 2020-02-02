@@ -2,152 +2,147 @@ var $ = jQuery.noConflict();
 
 $(document).ready( function(){
 	
-	// $('.nfc-wrapper').insertAfter($(('#input_1_14')));	
-	console.log("PartyMechanics: Plugin Active");
+	// console.log("PartyMechanics: Plugin Active");
 
-	$(".nfc_button").on('click', iflpm_ajax_get_token_id_from_reader);
-	$(".iflpm-user-tokens").on('click','.guest-list-toggle', iflpm_ajax_guest_list_toggle);
-
-	if ($(".nfc_button").length) {
-	// if (0) {	
+	$(".iflpm-member-table").on(
+		'click',
+		'.guest-list-toggle', 
+		iflpm_ajax_guest_list_toggle
+	);
 		
+	if ($(".nfc_button").length) {
+		
+		$(".nfc_button").on('click', iflpm_ajax_get_token_id_from_reader);
+		
+		// Lock submit button until good token is pulled.
 		$('.submit-button').click(function(event){
     		event.preventDefault();
 		});
 
-		reader_id = $(".nfc_button").attr('data-reader_id');		
-		
+		// Interval for regular checking of token.
 		// var tokenCheckIntervalID = setInterval(function(){
-			// iflpm_ajax_get_token_id_from_reader(reader_id);
+			// iflpm_ajax_get_token_id_from_reader();
 		// }, 5000);
 
 		// if new token, wipe checker? Maybe not in case they change their mind.
 		// clearInterval(tokenCheckIntervalID);
 	}
 	
+	$(".toggle-attended").click(function(event){
+		var target = $(event.target);
 
-	/* RETURN ATTENDEE LIST */
-
-	// SORT
-	var attendees = $('.member_select_list'),
-	attendeesli = attendees.children('li');
-
-	attendeesli.sort(function(a,b) {
-		var an = a.getAttribute('data-sort').toLowerCase(),
-			bn = b.getAttribute('data-sort').toLowerCase();
-
-		if(an > bn) {
-			return 1;
+		if (target.data("action") == 'show') {
+			$(".attended").show();
+			target.text("Hide Attended");
+			target.data("action",'hide');
+		} else {
+			$(".attended").hide();
+			target.text("Show Attended");
+			target.data("action",'show');
 		}
-		if(an < bn) {
-			return -1;
-		}
-		return 0;
+
 	});
 
-	// Hide Members List
-	// $(".member_select_list").hide(); //Debug: show all the members. 
+	$(".toggle-members").click(function(event){
+		var target = $(event.target);
+			
+		if (target.data("action") == 'show') {
+			$(".members").show();
+			target.text("Hide Members");
+			target.data("action",'hide');
+		} else {
+			$(".members_select_list").hide();
+			target.text("Show Members");
+			target.data("action",'show');
+		}
 
-	attendeesli.detach().appendTo(attendees);
-
-	/// try and async/await this?
-	// Clear search / hide attendee list.
-	$('.clear-search').on('click', function(e) { 
-		// document.getElementById('q').value = '';
-		$(".member_select_list").hide(); //Debug: show all the members. 
 	});
 
-	/*
-	This makes an instant search for the gallery member sign-in list
-		@jordan
-	*/
-	
-	// Setup to delay until user stops typing
-	var delay = (function(){
-		var timer = 0;
-		return function(callback, ms){
-			clearTimeout (timer);
-			timer = setTimeout(callback, ms);
-		};
-	})();
-
-	//we want this function to fire whenever the user types in the search-box
-	$(".member_select_search #q").keyup(function () {
-		
-		delay(function(){
-
-			$(".member_select_list").show();
-		
-			//first we create a variable for the value from the search-box
-			var searchTerm = $(".member_select_search #q").val();
-
-			//then a variable for the list-items (to keep things clean)
-			var listItem = $('.member_select_list').children('li');
+	$(".toggle-guest-list").click(function(event){
+		var target = $(event.target);
 			
-			//extends the default :contains functionality to be case insensitive
-			//if you want case sensitive search, just remove this next chunk
-			$.extend($.expr[':'], {
-			  'containsi': function(elem, i, match, array)
-			  {
-				return (elem.textContent || elem.innerText || '').toLowerCase()
-				.indexOf((match[3] || "").toLowerCase()) >= 0;
-			  }
-			});//end of case insensitive chunk
+		if (target.data("action") == 'show') {
+			$(".guest-list").show();
+			target.text("Hide Guest List");
+			target.data("action",'hide');
+		} else {
+			$(".guest-list").hide();
+			target.text("Show Guest List");
+			target.data("action",'show');
+		}
 
-			//this part is optional
-			//here we are replacing the spaces with another :contains
-			//what this does is to make the search less exact by searching all words and not full strings
-			var searchSplit = searchTerm.replace(/ /g, "'):containsi('")
-			
-			//here is the meat. We are searching the list based on the search terms
-			$(".member_select_list li").not(":containsi('" + searchSplit + "')").each(function(e)   {
+	});
 
-				  //add a "hidden" class that will remove the item from the list
-				  $(this).addClass('hidden');
-
-			});
-			
-			//this does the opposite -- brings items back into view
-			$(".member_select_list li:containsi('" + searchSplit + "')").each(function(e) {
-
-				  //remove the hidden class (reintroduce the item to the list)
-				  $(this).removeClass('hidden');
-
-			});
-
-			// SORT
-			var attendees = $('.member_select_list'),
-			attendeesli = attendees.children('li');
-
-			attendeesli.sort(function(a,b){
-				var an = a.getAttribute('data-sort').toLowerCase(),
-					bn = b.getAttribute('data-sort').toLowerCase();
-
-				if(an > bn) {
-					return 1;
-				}
-				if(an < bn) {
-					return -1;
-				}
-				return 0;
-			});
-		}, 500 );
-	}); 
+	// Activate filterable tables/lists
+	$("#q").on( 'keyup',
+		{
+			target:'.filterable',
+			children:'.filter-item'			
+		}
+		,filter);
 
 	// Auto focus on the search box when we load.
 	setTimeout(function(){
-		$(".member_select_search #q").focus();          
-	},0);
-
+		$("#q").focus();          
+	},500);
 
 });
 
-function iflpm_ajax_get_token_id_from_reader(reader_id) {
+/*
+ 	This makes an instant search filter.	
+ */
+function filter(event) {
+
+	delay(function(){
+		
+		$(event.data.target).show();
+		
+		// First we create a variable for the value from the search-box.
+		var searchTerm = $(event.target).val();
+
+		// Then a variable for the list-items (to keep things clean).
+		var listItem = $(event.data.target).children(event.data.children);
+		
+		// Extends the default :contains functionality to be case insensitive if you want case sensitive search, just remove this next chunk
+		$.extend($.expr[':'], {
+			'containsi': function(elem, i, match, array) {
+				return (elem.textContent || elem.innerText || '').toLowerCase().indexOf((match[3] || "").toLowerCase()) >= 0;
+			}
+		}); // End of case insensitive chunk.
+
+		// Optional
+		// Here we are replacing the spaces with another :contains
+		// What this does is to make the search less exact by searching all words and not full strings
+		var searchSplit = searchTerm.replace(/ /g, "'):containsi('")
+		
+		// Here is the meat. We are searching the list based on the search terms
+		$(event.data.target+" "+event.data.children).not(":containsi('" + searchSplit + "')").each(function(e)   {				  
+			  $(this).addClass('hidden');
+		});
+		
+		// This does the opposite -- brings items back into view
+		$(event.data.target+" "+event.data.children+":containsi('" + searchSplit + "')").each(function(e) {				  
+			$(this).removeClass('hidden');
+		});
+	
+	},500);
+}
+
+// Setup to delay until user stops typing
+var delay = (function(){
+	var timer = 0;
+	return function(callback, ms){
+		clearTimeout (timer);
+		timer = setTimeout(callback, ms);
+	};
+})();
+
+// Front end ajax for getting token.
+function iflpm_ajax_get_token_id_from_reader() {
 			
-	//TODO Add loading graphic 
+	///TODO Add loading graphic 
 	
 	// Get the relevant data.
-	// var reader_id = jQuery(target).data( 'reader_id' );        
 	var reader_id = $(".nfc_button").data( 'reader_id' );
 	console.log("Getting Token from reader "+reader_id);
 	
@@ -163,30 +158,29 @@ function iflpm_ajax_get_token_id_from_reader(reader_id) {
 	package.success = function(response) {
 		
 		// Actual success.
-		if (response.success == true) {                
+		if (response.success == true) {
 			if (response.message) {
+				/// UIdisplayMessage(response);	we could make a function that manages the UI message			
 				var usermessage = '<p class="ajax-success">'+response.message+'</p>';
-			}
-			// response.token_id;
-			var usermessage = '<p class="ajax-success">'+response.token_id+'</p>';
-			
+			}			
+						
 			$(".submit-button").addClass('active');
 			$('.submit-button.active').unbind('click');
+			
+			// console.log(token_color);
 
-			/// Gotta change this if we change the code. Find a new way!
-			// var new_token = '<li>'+response.token_id+' <a class="remove-token icon" data-tid="'+response.token_id+'">x</a></li>';
-			// $('tr.user-'+uid+' .user-tokens ul').append(new_token);
-
-			// $(target).parent('tr').children('.user-tokens ul')
+			$(".token-response").html('<span class="token '+response.token_color+'" />');			
+			
 
 		// Or failure.
 		} else {                
-			var usermessage = '<p class="ajax-error">'+response.message+'</p>';                
+			// var usermessage = '<p class="ajax-error error">'+response.message+'</p>';                
+			$(".ajax-message").prepend(build_wp_notice(response).fadeIn());	
 		}
 
 		// Give some sort of affirmation...
-		$(".ajax-message").html(usermessage);
-		console.log(response.message);
+		/// 
+			
 	}
 
 	// Send the package ==>
@@ -194,12 +188,14 @@ function iflpm_ajax_get_token_id_from_reader(reader_id) {
 			
 }
 
+// Admin ajax for guest list toggling
 function iflpm_ajax_guest_list_toggle(event) {
-			
-	//TODO Add loading graphic 
-	
+
 	var target = event.target;
 
+	///TODO Add loading graphic 
+	// showLoader('guest-list',target);
+	
 	// Get the relevant data.	
 	// var reader_id = jQuery(target).data( 'reader_id' );        
 	var user_id = $(target).data( 'uid' );
@@ -208,13 +204,17 @@ function iflpm_ajax_guest_list_toggle(event) {
 
 	console.log("Toggling guest list for user: "+user_id+", event: "+event_id);
 	
+	$(target).html('<span class="loading"></span>');
+	
+	console.log(target);
 	// Bundle the package.
 	package = {
+		target : event.target,
 		request : 'guest_list_toggle',
 		data : {
 			action : action,
 			user_id : user_id,
-			event_id : event_id
+			event_id : event_id,			
 		}
 	}
 
@@ -222,34 +222,66 @@ function iflpm_ajax_guest_list_toggle(event) {
 	package.success = function(response) {
 		
 		// Actual success.
-		if (response.success == true) {                
-			if (response.message) {
-				var usermessage = '<p class="ajax-success">'+response.message+'</p>';
-			}
+		if (response.success == true) {
 			
 			userRow = $("tr.user-"+user_id);
 
 			if ($(target).data('action') == 'add') {
-				$(target).data('action','remove');
-				userRow.addClass('guest-list-active');
+				$(target).data('action','remove');				
+				$(target).html('Remove From Guest List');
+				userRow.addClass('special-guest');
 			} else {
 				$(target).data('action','add');
-				userRow.removeClass('guest-list-active');
+				$(target).html('Add to Guest List');
+				userRow.removeClass('special-guest');
 			}			
+
 
 		// Or failure.
 		} else { 
-			var usermessage = '<p class="ajax-error">'+response.message+'</p>';                
-		}
 
+		}
 		// Give some sort of affirmation...
-		$(".ajax-message").html(usermessage);
-		console.log(response.message);
+		$(".iflpm-wrap").prepend(build_wp_notice(response).fadeIn());		
 	}
 
 	// Send the package ==>
 	iflpm_ajax_request(package);
 			
+}
+
+// Build WP Notice box for AJAX actions.
+function build_wp_notice(response) {
+
+	// var testresponse = {
+	// 	message:'test message',
+	// 	notice : {
+	// 		level:'',
+	// 		display:true,
+	// 		dismissible:true			
+	// 	}
+	// }
+
+	if (!response.notice.display) return false;
+
+	var notice = $('<div class="notice hidden"></div>').addClass(response.notice.level); 
+	
+	var noticeMessage = document.createElement('p'); 
+	noticeMessage.innerText =response.message ;
+	
+	notice.append(noticeMessage);
+	
+	if (response.notice.dismissible) {		
+		var dismissbutton = $('<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>');
+		notice.append(dismissbutton);
+		notice.addClass('is-dismissible');
+
+		dismissbutton.on('click',function(e){			
+			$(e.target).parent('.notice').fadeOut();
+		})
+	}
+
+	return notice;
 }
 
 function iflpm_ajax_request(package) {
@@ -260,47 +292,20 @@ function iflpm_ajax_request(package) {
 		data : {
 			action : 'iflpm_async_controller',                
 			security : iflpm_ajax.check_nonce, 
+			// target : package.target,
 			request : package.request,
 			package : package.data
-		},
+		},		
 		success : function( json ) {                
 			console.log(json);
 			var response = JSON.parse(json);
-			package.success(response);
+			package.success(response);			
+		},
+		complete : function() {
+			// $(package.target).children('.loading').removeClass('loading');
 		},
 		error : function(jqXHR, textStatus, errorThrown) {
 			console.log(jqXHR + " :: " + textStatus + " :: " + errorThrown);
 		}
 	});
-}
-
-// Sort list function. /// Deprecated?
-function sortUnorderedList(ul, sortDescending) {
-	if(typeof ul == "string")
-		ul = document.getElementById(ul);
-
-	// Idiot-proof, remove if you want
-	if(!ul) {
-		alert("The UL object is null!");
-		return;
-	}
-
-	// Get the list items and setup an array for sorting
-	var lis = ul.getElementsByTagName("LI");
-	var vals = [];
-
-	// Populate the array
-	for(var i = 0, l = lis.length; i < l; i++)
-		vals.push(lis[i].innerHTML);
-
-	// Sort it
-	vals.sort();
-
-	// Sometimes you gotta DESC
-	if(sortDescending)
-		vals.reverse();
-
-	// Change the list on the page
-	for(var i = 0, l = lis.length; i < l; i++)
-		lis[i].innerHTML = vals[i];
 }

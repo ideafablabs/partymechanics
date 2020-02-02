@@ -5,11 +5,6 @@
  * Based on example at: https://codex.wordpress.org/Function_Reference/register_post_type
  */
 
-//add_action('rest_api_init', function () {
-//    $movie_quotes_controller = new Movie_Quotes_Controller();
-//    $movie_quotes_controller->register_routes();
-//});
-
 // https://codex.wordpress.org/Creating_Tables_with_Plugins
 // https://www.wpeka.com/make-custom-endpoints-wordpress-rest-api.html
 

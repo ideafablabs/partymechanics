@@ -11,10 +11,11 @@
  */
 
 define("IFLPM_TABLE_PREFIX", "iflpm_");
+define("IFLPM_PLUGIN_PATH", plugin_dir_path(__FILE__));
 
-/// Some day we might need some filesize management here.
-define("IFLPM_LOGFOLDER", plugin_dir_path(__FILE__) . "logs/");
-define("IFLPM_LOGFILE", IFLPM_LOGFOLDER . date('Y-m') . '-log.csv');
+define("IFLPM_VIEWS_PATH", IFLPM_PLUGIN_PATH . "views/");
+define("IFLPM_LOG_PATH", IFLPM_PLUGIN_PATH . "logs/");
+define("IFLPM_LOGFILE", IFLPM_LOG_PATH . date('Y-m') . '-log.csv');
 
 include 'dbmanager.php';
 include 'rest-api.php';
@@ -25,11 +26,12 @@ include 'movie-quotes.php';
 global $wpdb;
 
 $IFLPartyMechanics = new IFLPartyMechanics;
-$IFLPartyMechanics->run();
+$IFLPartyMechanics->init();
 
 Class IFLPartyMechanics {    
 	
 	///TODO Magic Numbers!
+
 	private $form_id = '1';
 	private $email_id = '9';
 	private $event_field_id = '12';
@@ -57,9 +59,10 @@ Class IFLPartyMechanics {
 	 );
 
 	/*
-	 * Action hooks
+	 * Initialize Plugin
+	 * @constructor
 	 */
-	public function run($options = array()) {
+	public function init($options = array()) {
 		
 		global $hidden_field_name;
 		
@@ -97,11 +100,90 @@ Class IFLPartyMechanics {
 		add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));        
 		
 		register_activation_hook( __FILE__, array($this, 'install_plugin'));	
-	 }
+	}
+
+	/**
+	 * Add Menu Pages to Wordpress Admin Backend
+	 * @init action
+	 * https://www.ibenic.com/creating-wordpress-menu-pages-oop/
+	 */
+	public function admin_menu_pages() {
+
+		add_menu_page(
+			__('IFL Party Mechanics Dashboard', 
+			'textdomain'), 									// Page Title
+			'Party Mechanics',								// Menu Title
+			'manage_options',									// Required Capability
+			'iflpm_dashboard',                      	// Menu Slug
+			array($this, 'admin_view_controller'),				// Function
+			'dashicons-groups',  							// Icon URL
+			6
+		);
+
+		add_submenu_page(
+			'iflpm_dashboard',								 
+			"Add New Event",									
+			"Add New Event",									
+			'manage_options',									
+			"iflpm_events",							
+			array($this, 'admin_view_controller'),
+			''														
+		); 
+
+		add_submenu_page(
+			'iflpm_dashboard',				// string $parent_slug,
+			"Manage User Tokens",									// string $page_title, 
+			"Manage User Tokens",									// string $menu_title,
+			'manage_options',									// string $capability, 
+			"iflpm_members",									// string $menu_slug, 
+			array($this, 'admin_view_controller'),									// callable $function =
+			''									// int $position = null
+		);
+
+		add_submenu_page(								
+			'iflpm_dashboard',										
+			"IFLPM Settings",										
+			"Settings",										
+			'manage_options',										
+			"iflpm_settings",										
+			array($this, 'admin_view_controller')	
+		);
+	}
+	
+	/**
+	 * Admin page controller. Pulls View template files.
+	 * @init action
+	 */
+	public function admin_view_controller() {
+		global $plugin_page, $wpdb;
+		$page_title = get_admin_page_title();
+
+		/// https://digwp.com/2016/05/wordpress-admin-notices/
+
+		switch ($plugin_page) {
+			case 'iflpm_dashboard':
+				include IFLPM_VIEWS_PATH . 'dashboard.inc.php';
+				break;
+			case 'iflpm_events':
+				include IFLPM_VIEWS_PATH . 'events-manager.inc.php';
+				break;
+			case 'iflpm_members':
+				include IFLPM_VIEWS_PATH . 'member-manager.inc.php';
+				break;
+			case 'iflpm_settings':
+				include IFLPM_VIEWS_PATH . 'settings.inc.php';
+				break;	
+			default:
+				# code...
+				break;
+		}
+
+	}
 
 	/**
 	 * Shortcode wrapper for displaying the admission list w NFC.
-	 * Ex: [entry_processor event="Event Title Goes Here" regform="1" ]
+	 * @shortcode definition
+	 * Usage: [entry_processor event="Event Title Goes Here" regform="1" ]
 	 */
 	public function ifl_entry_processor($atts) {
 		$args = shortcode_atts(array(
@@ -119,17 +201,17 @@ Class IFLPartyMechanics {
 		$token_id = (isset($_REQUEST['token_id'])) ? $_REQUEST['token_id'] : '0';
 		
 		$submit = (isset($_REQUEST['submit'])) ? $_REQUEST['submit'] : '0';
-
-		$member_class = "";/// 
-		$admin_guest_list_flag = "";
-		$attendee_count = "";
+		
+		$event_id = (isset($_REQUEST['event_id'])) ? $_REQUEST['event_id'] : get_option('iflpm_selected_event_id');
+		
+		$attendee_count = IFLPMEventsManager::get_attendee_count_for_event($event_id);
 		$attendance_count = "";
 		
 		// echo "SUBMIT = " . $submit . "\n"; ///
 
 		// Begin response html string.
-		$response = '<div class="iflpm-entry-processor"> <div class="ajax-message"></div>';
-		$start_over_link = '<ul class="return-links">';
+		$response = '<div class="iflpm-container iflpm-entry-processor"><div class="ajax-message"></div>';
+		$start_over_link = '<div class="return-links">';
 
 		// Complete with Entry GForm and go back to Entry List or Create New User again.
 		if ($submit) {
@@ -142,15 +224,13 @@ Class IFLPartyMechanics {
 
 			// Add pair to the database or get an error.
 			$tokenadd = $this->add_token_id_and_user_id_to_tokens_table($token_id, $user->ID);
-			$this->log_action($tokenadd);
+			self::log_action($tokenadd);
 
 			//// This probably should become if WP_error
 			// if (strpos($tokenadd, 'added') !== false || strpos($tokenadd, 'already') !== false) {
 			
 			if (!(substr($tokenadd, 0, 5) == "Error")) {
-				 
-				$event_id = get_option('selected_event_id');
-				
+		
 				try  {
 
 					if (IFLPMEventsManager::add_attendee_to_event_attendance_table($user,$event_id)) {
@@ -195,12 +275,12 @@ Class IFLPartyMechanics {
 		}
 
 		// Pick Reader        
-		if ($reader_id == '') {
-			// echo "READER ID == ''\n"; ///
-			$available_reader_count = 4; /// magic numbers
+		if ($reader_id == '') {			
+			// $token_reader_count = 4; /// magic numbers
+			$token_reader_count = get_option('iflpm_token_reader_count'); 
 
 			$response .= '<ul class="reader_list list-group">';
-			for ($i = 1; $i <= $available_reader_count; $i++) {
+			for ($i = 1; $i <= $token_reader_count; $i++) {
 				 $response .= '<li class="list-group-item"><span class="icon-ifl-svg"></span><a class="reader_choice_button" href="./?reader_id=' . $i . '">READER ' . $i . '</a></li>';
 			}
 			$response .= '</ul>';
@@ -232,7 +312,7 @@ Class IFLPartyMechanics {
 				$response .= '<p class="error">Form is not active.</p>';
 			}
 
-			$start_over_link .= '</ul>';
+			$start_over_link .= '</div>';
 			$response .= $start_over_link.'</div>';
 
 			return $response;
@@ -245,39 +325,50 @@ Class IFLPartyMechanics {
 			$users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
 
 			/// Later on we will have a switch for form entries instead of members.
-
-			$response .= '<button class="btn-info register_button_wrap"><a class="new_registration_button" href="./?reader_id=' . $reader_id . '&create=1">Add New Member</a></button><button class="btn-info"><a class="return-link reader-choice" href="./">Back to Reader Choice</a></button>';
-
 			$start_over_link .= '</ul>';
 			$response .= $start_over_link;
 
+			// Build nav/tool buttons.
+			$response .= '<div class="nav-buttons"><a class="new_registration_button button" href="./?reader_id=' . $reader_id . '&create=1">Add New Member</a><a class="return-link reader-choice button" href="./">Back to Readers</a><a class="toggle-attended button" data-action="show">Show Attended</a><a class="toggle-members button" data-action="show">Show IFL Members</a><a class="toggle-guest-list button" data-action="show">Show Guest List</a></div>';
+
 			// Build search HTML.
-			$response .= '<div class="member_select_search"><span class="glyphicon glyphicon-user"></span><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">X</button></div>';
+			$response .= '<div class="member_select_search filter">				
+				<input type="text" name="q" value="" placeholder="Search for a member..." id="q" /><a class="clear-search button" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">Clear</a></div>';
 
 			// Build list HTML
-			$response .= '<ul class="member_select_list list-group">';
+			$response .= '<ul class="member_select_list filterable list-group">';
 
 			// Build links for each member...
-			foreach ($users as $key => $user) {
+			foreach ($users as $key => $user) {					
 
-				 $formlink = './?user_email=' . $user->user_email . '&membername=' . urlencode($user->display_name) . '&reader_id=' . $reader_id;
+				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user,$event_id)) ? 'special-guest' : '';
+				$attended_class = (IFLPMEventsManager::user_attended_event($user,$event_id)) ? 'attended' : '';
 
-				 $response .= '<li class="list-group-item list-group-item-action" data-sort="' . $user->display_name . '">
-				 <span class="glyphicon glyphicon-user"></span>
-				 <a id="' . $user->ID . '" class=" ' . $member_class . '" href="' . $formlink . '" ' . $admin_guest_list_flag . '>
-				 <span class="member-displayname">' . $user->display_name . '</span>' .
-					  '<span class="attendance_count alignright">' . $attendance_count . '</span>'
+				// Build item class
+				$list_item_class = array(
+					'user-'.$user->ID, 				
+					'filter-item list-group-item',
+					$guest_list_class,
+					$attended_class
+				);
+				$list_item_class = trim(implode(' ',$list_item_class));
 
-					  . '
-				 <br /><span class="member-email">' . $user->user_email . '</span></a>
-				 </li>';
+				// Build for link.
+				$formlink = './?user_email=' . $user->user_email . '&membername=' . urlencode($user->display_name) . '&reader_id=' . $reader_id;
+
+				$response .= '<li class="'.$list_item_class.'" data-sort="' . $user->display_name . '">
+				<a class="attendee-link" id="' . $user->ID . '" href="' . $formlink . '">
+				<span class="glyphicon glyphicon-user"></span>
+				<span class="member-displayname">' . $user->display_name . '</span></a>
+				<span class="member-email">' . $user->user_email . '</span>
+				</li>';
 			}
 
-			$response .= '</ul></div>';
+			$response .= '</ul>';
 			return $response;
 		} else {
 			// We have the reader ID so lets give a link to get back to just after that.
-			$start_over_link .= '<li ><button><a class="return-link list-choice" href="./?reader_id=' . $reader_id . '">Back to Member List</a></button></li>';
+			$start_over_link .= '<a class="return-link list-choice button" href="./?reader_id=' . $reader_id . '">Back to Member List</a>';
 		}
 
 		// Associate token ID with user...        
@@ -288,26 +379,20 @@ Class IFLPartyMechanics {
 			// Setup JS to regularly check if token is assigned, If not, bring it up to assign.
 
 			$response .= '<div class="container">';
-			$response .= '<h2>' . $user->display_name . '</h2>';
-			$response .= '<p>Scan medallion and click here:</p>';
-			$response .= '<p><div class="token_id"></div></p>';
-
+			$response .= '<h2 class="member-name">' . $user->display_name . '</h2>';
 			$response .= '<p><div class="token-response"></div></p>';
+			$response .= '<p>Scan medallion and click here:</p>';			
+			
+			$response .= '<p><a data-reader_id="' . $reader_id . '" class="nfc_button button"><span class="ifl-svg2"></span>Load Reader '.$reader_id.'</a>';			
+			$response .= '<a class="submit-button button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1">Admit Guest</a></p>';			
 
-			$response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button"><span class="ifl-svg2"></span>Check Medallion</button></p>';
-			// $response .= '<p><button data-reader_id="' . $reader_id . '" class="nfc_button">Associate Medallion</button></p>';
-			$response .= '<p><a class="submit-button button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1"><button>Admit Guest</button></a></p>';
-
-			$response .= '</div>';
-			// if (token_id_exists_in_table($token_id)) {}
-
-			$start_over_link .= '</ul>';
+			$start_over_link .= '</div>';
 			$response .= $start_over_link.'</div>';
 
 			return $response;
 		} else {
 			// We have the user email so lets give a link to get back to just before that.
-			$start_over_link .= '<li><a class="return-link list-choice" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '">Back to Member Detail</a></li>';
+			$start_over_link .= '<li><a class="return-link list-choice button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '">Back to Member Detail</a></li>';
 		}
 
 		// There was a problem somewhere along the way...
@@ -317,19 +402,23 @@ Class IFLPartyMechanics {
 		return $response;
 	}
 
-	// Async Controller
-	// Easiest Overview of AJAX Setup for WP: https://stackoverflow.com/questions/17982078/returning-json-data-with-ajax-in-wordpress
+	/*
+	 * AJAX Request Controller
+	 * @ajax response
+	 * https://stackoverflow.com/questions/17982078/returning-json-data-with-ajax-in-wordpress
+	 */
 	public function iflpm_async_controller() { 
 
 		// Switch on 'request' post var
 		$request = (!empty($_POST['request'])) ? $_POST['request'] : false;
 		$package = (!empty($_POST['package'])) ? $_POST['package'] : false;
+		
 		$return['success'] = false;
-
-		// echo $_POST['package'];
-		// echo json_encode($_POST);
-		// print_r($package['uid']);
-		// wp_die();
+		$return['notice'] = array(
+			'display' => true, 
+			'dismissible' => true, 
+			'level' => '',
+		);
 		
 		switch ($request) {
 			case 'get_token':
@@ -360,6 +449,7 @@ Class IFLPartyMechanics {
 				} else {
 					  $return['success'] = true;
 					  $return['token_id'] = $token_id;
+					  $return['token_color'] = UserTokens::get_token_color_class($token_id);
 					  $return['message'] = "New token found.";
 				}
 				
@@ -443,6 +533,8 @@ Class IFLPartyMechanics {
 				break;
 		}
 
+		$return['notice']['level'] = ($return['success'] == true) ? 'notice-success' : 'notice-error' ;
+
 		// Wrap our return response. 
 		echo json_encode($return);
 
@@ -451,67 +543,13 @@ Class IFLPartyMechanics {
 	}
 
 	/**
-	 * Add Menu Page in Wordpress Admin
-	 * https://www.ibenic.com/creating-wordpress-menu-pages-oop/
+	 * Load Event Manager page.
+	 * @returns void
 	 */
-	public function admin_menu_pages() {
-
-		add_menu_page(
-			__(
-				 'Custom Menu Title', 'textdomain'),	// Page Title
-			'Party Mechanics',								// Menu Title
-			'manage_options',									// Required Capability
-			'iflpm_dashboard',                      	// Menu Slug
-			array($this, 'dashboard_page'),				// Function
-			'dashicons-groups',  							// Icon URL
-			6
-		);
-
-		add_submenu_page('iflpm_dashboard',
-			"Add New Event",
-			"Add New Event",
-			'manage_options',
-			"add_new_event_page",
-			array($this, 'add_new_event_page_call'));
-
-		add_submenu_page('iflpm_dashboard',
-			"Manage User Tokens",
-			"Manage User Tokens",
-			'manage_options',
-			"iflpm_manage_user_tokens_page",
-			array($this, 'manage_user_tokens_page_call')
-		);
-
-	 }
-
-	/**
-	 * Build HTML for admin page.
-	 */
-	public function dashboard_page() {
-		if (isset($_POST['submit'])) {
-			$selected_event_id = $_POST['selected_event_id'];  // Storing Selected Value In Variable
-			update_option('iflpm_selected_event_id', $selected_event_id);
-		}
-
-		// Echo the html here...
+	public function add_new_event_page_call() {
 		
-		IFLPMEventsManager::test_event_title_stuff();
-		IFLPMEventsManager::test_event_registration_form_stuff();
-		
-		/// We need to setup install function... 
-		MovieQuotes::test_user_pairings_stuff();
-		MovieQuotes::test_movie_quotes_stuff();
-		UserTokens::test_tokens_stuff();
-		IFLPMEventsManager::test_events_table_stuff();
-		IFLPMEventsManager::test_attendance_table_stuff();
-		IFLPMEventsManager::test_special_guests_table_stuff();
-		// self::test_option_stuff();
-		//IFLPMEventsManager::test_user_dropdown();
-		//IFLPMEventsManager::test_insert_some_attendees();
-		IFLPMEventsManager::list_attendees_for_selected_event();		
-	}
+		include IFLPM_VIEWS_PATH . 'event-manager.inc.php';
 
-	function add_new_event_page_call() {
 		if (isset($_POST['submit_new_event'])) {
 			$title = trim($_POST['new_event_title']);
 			$date = $_POST['new_event_date'];
@@ -536,6 +574,8 @@ Class IFLPartyMechanics {
 	}
 
 	public function manage_user_tokens_page_call() { 
+		include 'templates/member-manager.inc.php';
+		return;
 		$page_name = 'manage_user_tokens_page';
 		$selected_event_id = get_option('iflpm_selected_event_id');
 
@@ -551,10 +591,10 @@ Class IFLPartyMechanics {
 			// Get the users from the DB...
 			$users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
 
-			// Build search HTML.
-			$response .= '<div class="member_select_search"><span class="glyphicon glyphicon-user"></span><input type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">Clear</button></div>';
-
 			$response .= '<div class="ajax-message"></div>';
+
+			// Build search HTML.
+			$response .= '<div class="member_select_search"><span class="glyphicon glyphicon-user"></span><input autocomplete="off" type="text" name="q" value="" placeholder="Search for a member..." id="q"><button  class="clear-search" onclick="document.getElementById(\'q\').value = \'\';$(\'.member_select_search #q\').focus();">Clear</button></div>';	
 
 			// Build list HTML
 			// $response .= '<ul class="member_select_list list-group">';
@@ -581,8 +621,8 @@ Class IFLPartyMechanics {
 				// Get users tokens array.
 				$tokens = UserTokens::get_token_ids_by_user_id($user->ID);
 
-				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user,$selected_event_id)) ? ' guest-list-active' : '';
-				$guest_list_action = ($guest_list_class == ' guest-list-active') ? 'remove' : 'add';
+				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user,$selected_event_id)) ? ' special-guest' : '';
+				$guest_list_action = ($guest_list_class == ' special-guest') ? 'remove' : 'add';
 				
 				$user_row_class = 'user-'. $user->ID . $guest_list_class;
 
@@ -655,6 +695,10 @@ Class IFLPartyMechanics {
 //
 //        return $content;
 //    }
+
+	public function settings_page_call() {		
+		// include 'templates/iflpm-settings.inc.php';
+	}
 
 	/**
 	 * Shortcode wrapper for displaying the registration gravity form.
@@ -799,9 +843,9 @@ Class IFLPartyMechanics {
 	public function check_log_file_exists() {
 
 		// Permissions?
-		if (!file_exists(IFLPM_LOGFOLDER)) {
+		if (!file_exists(IFLPM_LOG_PATH)) {
 			try {
-				mkdir(IFLPM_LOGFOLDER);
+				mkdir(IFLPM_LOG_PATH);
 			} catch (Exception $e) {
 				error_log($e->getMessage(), "\n");
 				return false;
@@ -858,6 +902,15 @@ Class IFLPartyMechanics {
 			self::log_action("Zone Plus One Table already exists.");
 		}
 
+		// Install Quotes into DB
+		if (IFLPMDBManager::is_table_empty(MOVIE_QUOTES_TABLE_NAME)) {
+			if (MovieQuotes::does_quotes_csv_file_exist()) {
+				MovieQuotes::import_movie_quotes_to_database();				
+				self::log_action("Quotes file imported in Movie Quotes Table");
+			}			
+		}
+
+		if (get_option('iflpm_token_reader_count')=='') update_option('iflpm_token_reader_count',4);
 	}
 }
 

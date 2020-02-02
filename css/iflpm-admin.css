@@ -1,41 +1,73 @@
+
+/*  Member Filter Styles */
+.table-filter {
+	height: 5em;
+	display: block;
+	/*position: absolute;*/
+	/*top:10px;*/
+}
+.table-filter #q {
+	font-size:2em;
+	margin-bottom:1.1em;
+	padding:10px;
+	height:2em;
+	width:80%;
+	float: left;
+}
+.table-filter .clear-filter {
+	color:white;
+	font-size:2em;
+	width:18%;
+	margin-left:6px;
+	height: 2em;
+	float: left;
+	background: #1D8CB5;
+}
+
 /* Member Select List */ 
-.iflpm-user-tokens {
+.iflpm-member-table {
 	width:100%;
 	border-bottom:1px solid #000;
 }
-.iflpm-user-tokens  tr {
+.iflpm-member-table  tr {
 	
 }
-.iflpm-user-tokens tr:nth-child(odd) {
+.iflpm-member-table tr:nth-child(odd):not(.hidden) {
 	background: #DDD;
 }
-.iflpm-user-tokens  tr.guest-list-active {
+.iflpm-member-table  tr.special-guest {
 	background: lightblue !important;
 }
-.iflpm-user-tokens th {
+.iflpm-member-table th {
 	font-weight: bold;	
 	border-bottom:1px solid #999;
 }
-.iflpm-user-tokens td,th {
+.iflpm-member-table td,th {
 	vertical-align: middle;
 	padding:.3em .5em;
 	border: 0
 }
-.iflpm-user-tokens .user-tokens ul {
+.iflpm-member-table .user-tokens ul {
 	margin:.5em;
 }
-.iflpm-user-tokens .user-tokens li {	
+.iflpm-member-table .user-tokens li {	
 	border:1px solid #9999AA;
 	padding:.3em;
 	display: inline-block;
 	margin-right:.5em;
 	margin-bottom:0em;
-	border-radius: 2px;
+	border-radius: 4px;
 	/*margin-right*/
 }
 
-.iflpm-user-tokens li.purpletoken {background: #FF00FF;}
-.iflpm-user-tokens li.redtoken {background: #FF0000;}
-.iflpm-user-tokens li.bluetoken {background: #0000FF;}
-.iflpm-user-tokens li.yellowtoken {background: #FFFF00;}
-.iflpm-user-tokens li.greentoken {background: #00FF00;}
+.loading {
+	min-width: 30px;
+	min-height: 30px;
+	background: transparent url('loading-spinner-multicolor.gif') center center no-repeat;
+}
+
+.iflpm-member-table li.purpletoken {background: #FF00FF; color:white;}
+.iflpm-member-table li.redtoken {background: #FF0000;}
+.iflpm-member-table li.bluetoken {background: #0000FF;}
+.iflpm-member-table li.yellowtoken {background: #FFFF00;}
+.iflpm-member-table li.greentoken {background: #00FF00;}
