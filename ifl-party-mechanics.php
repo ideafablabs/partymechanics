@@ -115,38 +115,39 @@ Class IFLPartyMechanics {
 			'Party Mechanics',								// Menu Title
 			'manage_options',									// Required Capability
 			'iflpm_dashboard',                      	// Menu Slug
-			array($this, 'admin_view_controller'),				// Function
+			array($this, 'admin_view_controller'),		// Function
 			'dashicons-groups',  							// Icon URL
 			6
 		);
 
 		add_submenu_page(
-			'iflpm_dashboard',								 
-			"Add New Event",									
-			"Add New Event",									
-			'manage_options',									
-			"iflpm_events",							
-			array($this, 'admin_view_controller'),
-			''														
+			'iflpm_dashboard',							// string $parent_slug,	 
+			"Add New Event",								// string $page_title, 	
+			"Add New Event",								// string $menu_title,	
+			'manage_options',								// string $capability, 	
+			"iflpm_events",								// string $menu_slug, 
+			array($this, 'admin_view_controller'),	// callable $function
+			''													// int $position = null	
 		); 
 
 		add_submenu_page(
-			'iflpm_dashboard',				// string $parent_slug,
-			"Manage User Tokens",									// string $page_title, 
-			"Manage User Tokens",									// string $menu_title,
-			'manage_options',									// string $capability, 
-			"iflpm_members",									// string $menu_slug, 
-			array($this, 'admin_view_controller'),									// callable $function =
-			''									// int $position = null
+			'iflpm_dashboard',							// string $parent_slug,
+			"Manage User Tokens",						// string $page_title, 
+			"Manage User Tokens",						// string $menu_title,
+			'manage_options',								// string $capability, 
+			"iflpm_members",								// string $menu_slug, 
+			array($this, 'admin_view_controller'),	// callable $function
+			''													// int $position = null
 		);
 
 		add_submenu_page(								
-			'iflpm_dashboard',										
-			"IFLPM Settings",										
-			"Settings",										
-			'manage_options',										
-			"iflpm_settings",										
-			array($this, 'admin_view_controller')	
+			'iflpm_dashboard',							// string $parent_slug,
+			"IFLPM Settings",								// string $page_title, 		
+			"Settings",										// string $menu_title,
+			'manage_options',								// string $capability, 		
+			"iflpm_settings",								// string $menu_slug, 		
+			array($this, 'admin_view_controller'),	// callable $function
+			''													// int $position = null
 		);
 	}
 	
@@ -178,6 +179,25 @@ Class IFLPartyMechanics {
 				break;
 		}
 
+	}
+
+	/// Testing getting all of the token, attendance, and guest list data in one query, then running through it.
+	public function get_it_all() {
+		global $wpdb;
+
+		$event_id = '1'; ///
+		
+		$sql = "SELECT 
+					gue.user_id as Guest, 
+					att.user_id as Att 
+				FROM ".ATTENDANCE_TABLE_NAME." att 
+				LEFT JOIN ".SPECIAL_GUESTS_TABLE_NAME." gue 
+				ON gue.user_id = att.user_id 
+				WHERE gue.event_id = ".$event_id;
+
+		$results = $wpdb->get_results($sql);
+
+		pr($results);
 	}
 
 	/**
@@ -281,7 +301,7 @@ Class IFLPartyMechanics {
 
 			$response .= '<ul class="reader_list list-group">';
 			for ($i = 1; $i <= $token_reader_count; $i++) {
-				 $response .= '<li class="list-group-item"><span class="icon-ifl-svg"></span><a class="reader_choice_button" href="./?reader_id=' . $i . '">READER ' . $i . '</a></li>';
+				 $response .= '<li class="list-group-item"><span class="icon-ifl-svg"></span><a class="reader_choice_button button" href="./?reader_id=' . $i . '">READER ' . $i . '</a></li>';
 			}
 			$response .= '</ul>';
 			return $response;

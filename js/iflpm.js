@@ -2,6 +2,29 @@ var $ = jQuery.noConflict();
 
 $(document).ready( function(){
 	
+	pageModel = {
+
+		showAttended:false,
+		filter:false,		
+		refresh:function() {
+			console.log("refreshing UI");
+
+			$(".member_select_list .list-group-item").hide();		
+			
+			if (!this.filter) {
+				$(".member_select_list .list-group-item").show();			
+			}
+			else if (this.filter == 'special-guests') {
+				$(".member_select_list .special-guest").show();				
+			}
+			else if (this.filter == 'members') {
+				$(".member_select_list .member").show();				
+			}
+
+			if (!this.showAttended) { $(" .member_select_list .attended").hide(); }
+		}
+	}
+
 	// console.log("PartyMechanics: Plugin Active");
 
 	$(".iflpm-member-table").on(
@@ -19,6 +42,7 @@ $(document).ready( function(){
     		event.preventDefault();
 		});
 
+		///
 		// Interval for regular checking of token.
 		// var tokenCheckIntervalID = setInterval(function(){
 			// iflpm_ajax_get_token_id_from_reader();
@@ -32,45 +56,47 @@ $(document).ready( function(){
 		var target = $(event.target);
 
 		if (target.data("action") == 'show') {
-			$(".attended").show();
+			pageModel.showAttended = true;
 			target.text("Hide Attended");
 			target.data("action",'hide');
 		} else {
-			$(".attended").hide();
+			pageModel.showAttended = false;
 			target.text("Show Attended");
 			target.data("action",'show');
 		}
 
+		pageModel.refresh();
 	});
 
 	$(".toggle-members").click(function(event){
 		var target = $(event.target);
 			
 		if (target.data("action") == 'show') {
-			$(".members").show();
+			pageModel.filter = 'members';
 			target.text("Hide Members");
 			target.data("action",'hide');
 		} else {
-			$(".members_select_list").hide();
+			pageModel.filter = false;
 			target.text("Show Members");
 			target.data("action",'show');
 		}
 
+		pageModel.refresh();
 	});
 
 	$(".toggle-guest-list").click(function(event){
 		var target = $(event.target);
 			
 		if (target.data("action") == 'show') {
-			$(".guest-list").show();
+			pageModel.filter = 'special-guests';
 			target.text("Hide Guest List");
 			target.data("action",'hide');
 		} else {
-			$(".guest-list").hide();
+			pageModel.filter = false;
 			target.text("Show Guest List");
 			target.data("action",'show');
 		}
-
+		pageModel.refresh();
 	});
 
 	// Activate filterable tables/lists

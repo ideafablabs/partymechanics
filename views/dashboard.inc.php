@@ -28,7 +28,9 @@
 	<?php include 'admin-header.inc.php'  ?>
 
 	<a href="admin.php?page=iflpm_events&amp;new" class="page-title-action">Add New Event</a>
-	
+
+	<?php ///self::get_it_all(); ?>
+		
 	<div class="loading">a</div>
 
 	<form name="select_event" method="post" action="#">

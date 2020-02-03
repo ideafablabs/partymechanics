@@ -166,6 +166,9 @@ a.button:hover,a.button:visited:hover {
 	display: none;
 	/*border-color:gray !important;*/
 }
+.hidden {
+	display: none !important;
+}
 
 span.token {
 	display: inline-block;
