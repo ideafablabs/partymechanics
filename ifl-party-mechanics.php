@@ -453,7 +453,7 @@ Class IFLPartyMechanics {
 				} 
 
 				//// remove me when ready
-				$this->populate_fake_token_in_reader_memory($reader_id);///
+				// $this->populate_fake_token_in_reader_memory($reader_id);///
 
 				// Get the latest stored token from WP options table..
 				$token_id = get_option('reader_'.$reader_id);
@@ -882,44 +882,44 @@ Class IFLPartyMechanics {
 		return true;
 	}
 	
-	function install_plugin() {		
+	public function install_plugin() {		
 		
 		self::log_action("Installing IFLPM...");
 		
 		if (!IFLPMDBManager::does_table_exist_in_database(USER_TOKENS_TABLE_NAME)) {
-			UserTokens::create_zone_tokens_table();							
+			UserTokens::create_tokens_table();							
 		} else {
 			self::log_action("Tokens Table already exists.");
 		}
 
 		if (!IFLPMDBManager::does_table_exist_in_database(EVENTS_TABLE_NAME)) {
-			self::create_events_table();
+			IFLPMEventsManager::create_events_table();
 		} else {
 			self::log_action("Events Table already exists.");
 		}
 
 		if (!IFLPMDBManager::does_table_exist_in_database(ATTENDANCE_TABLE_NAME)) {
-			self::create_attendance_table();
+			IFLPMEventsManager::create_attendance_table();
 		} else {
 			self::log_action("Attendance Table already exists.");
 		}
 
 		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
-			self::create_special_guests_table();
+			IFLPMEventsManager::create_special_guests_table();
 		} else {
 			self::log_action("Special Guests Table already exists.");
 		}
 
 		if (!IFLPMDBManager::does_table_exist_in_database(MOVIE_QUOTES_TABLE_NAME)) {
-			self::create_movie_quotes_table();
+			MovieQuotes::create_movie_quotes_table();
 		} else {
 			self::log_action("Movie Quotes Table already exists.");
 		}
 
 		if (!IFLPMDBManager::does_table_exist_in_database(USER_PAIRINGS_TABLE_NAME)) {
-			self::create_user_pairings_table();
+			MovieQuotes::create_user_pairings_table();
 		} else {
-			self::log_action("Zone Plus One Table already exists.");
+			self::log_action("Quote Pair Table already exists.");
 		}
 
 		// Install Quotes into DB
@@ -930,7 +930,7 @@ Class IFLPartyMechanics {
 			}			
 		}
 
-		if (get_option('iflpm_token_reader_count')=='') update_option('iflpm_token_reader_count',4);
+		if (get_option('iflpm_token_reader_count')=='') update_option('iflpm_token_reader_count',4); /// magic number should go in defaults array.
 	}
 }
 
