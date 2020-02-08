@@ -2,13 +2,13 @@
 
 global $wpdb;
 
-define("EVENTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "eventss");
+define("EVENTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "events");
 define("EVENTS_DB_VERSION", "1.0");
 
-define("ATTENDANCE_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "attendances");
+define("ATTENDANCE_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "attendance");
 define("ATTENDANCE_DB_VERSION", "1.0");
 
-define("SPECIAL_GUESTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "special_guestss");
+define("SPECIAL_GUESTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "special_guests");
 define("SPECIAL_GUESTS_DB_VERSION", "1.0");
 
 
