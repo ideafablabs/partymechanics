@@ -2,13 +2,13 @@
 
 global $wpdb;
 
-define("EVENTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "events");
+define("EVENTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "eventss");
 define("EVENTS_DB_VERSION", "1.0");
 
-define("ATTENDANCE_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "attendance");
+define("ATTENDANCE_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "attendances");
 define("ATTENDANCE_DB_VERSION", "1.0");
 
-define("SPECIAL_GUESTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "special_guests");
+define("SPECIAL_GUESTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "special_guestss");
 define("SPECIAL_GUESTS_DB_VERSION", "1.0");
 
 
@@ -265,7 +265,7 @@ Class IFLPMEventsManager {
 
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = "CREATE TABLE EVENTS_TABLE_NAME (
+		$sql = "CREATE TABLE ".EVENTS_TABLE_NAME." (
 			  event_id mediumint(9) NOT NULL AUTO_INCREMENT,
 			  title tinytext NOT NULL,
 			  date date NOT NULL,
@@ -273,32 +273,33 @@ Class IFLPMEventsManager {
 			) $charset_collate;";
 
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-		dbDelta($sql);
+		$result = dbDelta($sql);
 
 		add_option('events_db_version', $events_db_version);
 	}
 
 	public static function create_attendance_table() {
 		global $wpdb;
+		global $events_db_version;
 
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = "CREATE TABLE " . ATTENDANCE_TABLE_NAME . " (
+		$sql = "CREATE TABLE ".ATTENDANCE_TABLE_NAME." (
 			  record_id mediumint(9) NOT NULL AUTO_INCREMENT,
 			  user_id bigint(20) unsigned NOT NULL,
 			  event_id mediumint(9) NOT NULL,
-			  PRIMARY KEY  (record_id),
-			  FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
-			  FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
-			) " . $charset_collate . ";";
+			  PRIMARY KEY  (record_id) ". //,
+			  // FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
+			  // FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
+			") $charset_collate;";
 
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-		dbDelta($sql);
+		$result = dbDelta($sql);
 
 		add_option('attendance_db_version', ATTENDANCE_DB_VERSION);
 	}
 
-	public function create_special_guests_table() {
+	public static function create_special_guests_table() {
 		global $wpdb;
 
 		$charset_collate = $wpdb->get_charset_collate();
@@ -307,14 +308,14 @@ Class IFLPMEventsManager {
 			  record_id mediumint(9) NOT NULL AUTO_INCREMENT,
 			  user_id bigint(20) unsigned NOT NULL,
 			  event_id mediumint(9) NOT NULL,
-			  PRIMARY KEY  (record_id),
-			  FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
-			  FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
-			) " . $charset_collate . ";";
+			  PRIMARY KEY  (record_id)".
+			  // FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
+			  // FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
+			") $charset_collate;";
 
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-		dbDelta($sql);
-
+		$result = dbDelta($sql);
+		
 		add_option('special_guests_db_version', SPECIAL_GUESTS_DB_VERSION);
 	}
 
