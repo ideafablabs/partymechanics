@@ -33,6 +33,7 @@
 #define PN532_SS   15
 #define PN532_MISO 12
 #define PN532_SS2   16
+// #define PN532_SS2   4
 
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 Adafruit_PN532 nfc2(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2);

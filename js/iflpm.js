@@ -25,6 +25,12 @@ $(document).ready( function(){
 		}
 	}
 
+	window.onscroll = function (e) {
+		if ($(".filter input").is(':focus')) {
+			$(".filter input").blur();
+		}
+
+	}
 	// console.log("PartyMechanics: Plugin Active");
 
 	$(".iflpm-member-table").on(
@@ -100,6 +106,7 @@ $(document).ready( function(){
 	});
 
 	// Activate filterable tables/lists
+	$('.filter-item:visible:odd').addClass('zebra-stripe');
 	$("#q").on( 'keyup',
 		{
 			target:'.filterable',
@@ -150,6 +157,9 @@ function filter(event) {
 		$(event.data.target+" "+event.data.children+":containsi('" + searchSplit + "')").each(function(e) {				  
 			$(this).removeClass('hidden');
 		});
+		
+		$('.filter-item').removeClass('zebra-stripe');
+		$('.filter-item:visible:odd').addClass('zebra-stripe');
 	
 	},500);
 }

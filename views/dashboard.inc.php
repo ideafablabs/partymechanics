@@ -31,7 +31,7 @@
 
 	<?php ///self::get_it_all(); ?>
 		
-	<div class="loading">a</div>
+	<!-- <div class="loading">a</div> -->
 
 	<form name="select_event" method="post" action="#">
 		<?php wp_nonce_field('event-select','event-select-nonce'); ?>

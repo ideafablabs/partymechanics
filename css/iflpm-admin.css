@@ -32,7 +32,7 @@
 .iflpm-member-table  tr {
 	
 }
-.iflpm-member-table tr:nth-child(odd):not(.hidden) {
+.iflpm-member-table .filter-item.zebra-stripe {
 	background: #DDD;
 }
 .iflpm-member-table  tr.special-guest {
@@ -63,11 +63,11 @@
 .loading {
 	min-width: 30px;
 	min-height: 30px;
-	background: transparent url('loading-spinner-multicolor.gif') center center no-repeat;
+	background: transparent url('icons/loading-spinner-multicolor.gif') center center no-repeat;
 }
 
 .iflpm-member-table li.purpletoken {background: #FF00FF; color:white;}
-.iflpm-member-table li.redtoken {background: #FF0000;}
-.iflpm-member-table li.bluetoken {background: #0000FF;}
+.iflpm-member-table li.redtoken {background: #FF0000; color:white;}
+.iflpm-member-table li.bluetoken {background: #0000FF; color:white;}
 .iflpm-member-table li.yellowtoken {background: #FFFF00;}
 .iflpm-member-table li.greentoken {background: #00FF00;}

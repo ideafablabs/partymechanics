@@ -210,17 +210,18 @@ class NFC_Registration_Controller extends WP_REST_Controller {
 
 	public function post_item($request) {
 		$reader_id = $request->get_param( 'reader_id' );
-		$reader_value = $request->get_param( 'reader_value' );
+		$token_id = $request->get_param( 'token_id' );
 
-		if (!empty($reader_value) && !empty($reader_id) ) {
+		if (empty($token_id))
+			return new WP_REST_Response("Token ID not found.", 404);
 
-			update_option('reader_'.$reader_id,$reader_value);
+		if (empty($reader_id))
+			return new WP_REST_Response("Reader ID not found.", 404);
 
-			return new WP_REST_Response("Reader Value Updated", 200);
-		} else {
-			return new WP_REST_Response("NFC parameters not found", 200);
-		}
+		update_option('reader_'.$reader_id,$token_id);
 
+		// return new WP_REST_Response("Reader ".$reader_id." Updated: ".$token_id, 200);
+		return new WP_REST_Response($token_id, 200);
 	}
 
 	public function get_items_permissions_check($request) {

@@ -127,7 +127,7 @@ Class IFLPartyMechanics {
 			'manage_options',								// string $capability, 	
 			"iflpm_events",								// string $menu_slug, 
 			array($this, 'admin_view_controller'),	// callable $function
-			''													// int $position = null	
+			null												// int $position = null	
 		); 
 
 		add_submenu_page(
@@ -137,7 +137,7 @@ Class IFLPartyMechanics {
 			'manage_options',								// string $capability, 
 			"iflpm_members",								// string $menu_slug, 
 			array($this, 'admin_view_controller'),	// callable $function
-			''													// int $position = null
+			null												// int $position = null
 		);
 
 		add_submenu_page(								
@@ -147,7 +147,7 @@ Class IFLPartyMechanics {
 			'manage_options',								// string $capability, 		
 			"iflpm_settings",								// string $menu_slug, 		
 			array($this, 'admin_view_controller'),	// callable $function
-			''													// int $position = null
+			null													// int $position = null
 		);
 	}
 	
@@ -209,28 +209,27 @@ Class IFLPartyMechanics {
 		$args = shortcode_atts(array(
 			'event' => $this->menu_options['form_event_title'],
 			'regform' => $this->menu_options['registrationform_id'],
-			'attendanceform' => $this->menu_options['attendanceform_id'],
-			'event_field_id' => $this->menu_options['event_field_id']
+			'event_id' => get_option('iflpm_selected_event_id')
+			// 'attendanceform' => $this->menu_options['attendanceform_id'],
+			// 'event_field_id' => $this->menu_options['event_field_id']
 		), $atts);
 
 		$event = $args['event'];
 		$attendanceform = $args['attendanceform'];
 
+
+		$event_id = (isset($_REQUEST['event_id'])) ? $_REQUEST['event_id'] : $args['event_id'];
 		$reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
 		$user_email = (isset($_REQUEST['user_email'])) ? $_REQUEST['user_email'] : '';
 		$token_id = (isset($_REQUEST['token_id'])) ? $_REQUEST['token_id'] : '0';
-		
 		$submit = (isset($_REQUEST['submit'])) ? $_REQUEST['submit'] : '0';
-		
-		$event_id = (isset($_REQUEST['event_id'])) ? $_REQUEST['event_id'] : get_option('iflpm_selected_event_id');
-		
+				
+		$event_title = IFLPMEventsManager::get_event_title_by_id($event_id);
 		$attendee_count = IFLPMEventsManager::get_attendee_count_for_event($event_id);
-		$attendance_count = "";
 		
-		// echo "SUBMIT = " . $submit . "\n"; ///
-
 		// Begin response html string.
 		$response = '<div class="iflpm-container iflpm-entry-processor"><div class="ajax-message"></div>';
+		$response .= '<h1 class="event-title">'.$event_title.'</h1>';
 		$start_over_link = '<div class="return-links">';
 
 		// Complete with Entry GForm and go back to Entry List or Create New User again.
@@ -301,7 +300,7 @@ Class IFLPartyMechanics {
 
 			$response .= '<ul class="reader_list list-group">';
 			for ($i = 1; $i <= $token_reader_count; $i++) {
-				 $response .= '<li class="list-group-item"><span class="icon-ifl-svg"></span><a class="reader_choice_button button" href="./?reader_id=' . $i . '">READER ' . $i . '</a></li>';
+				 $response .= '<li class="list-group-item"><a class="reader-select-button button" href="./?reader_id=' . $i . '"><span class="icon-ifl-svg"></span> READER ' . $i . '</a></li>';
 			}
 			$response .= '</ul>';
 			return $response;
@@ -344,7 +343,6 @@ Class IFLPartyMechanics {
 			// Get the users from the DB...
 			$users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
 
-			/// Later on we will have a switch for form entries instead of members.
 			$start_over_link .= '</ul>';
 			$response .= $start_over_link;
 
@@ -399,12 +397,11 @@ Class IFLPartyMechanics {
 			// Setup JS to regularly check if token is assigned, If not, bring it up to assign.
 
 			$response .= '<div class="container">';
-			$response .= '<h2 class="member-name">' . $user->display_name . '</h2>';
-			$response .= '<p><div class="token-response"></div></p>';
-			$response .= '<p>Scan medallion and click here:</p>';			
+			$response .= '<h2 class="member-name">' . $user->display_name . '</h2>';			
+			$response .= '<p>Scan medallion and click load:</p>';			
 			
 			$response .= '<p><a data-reader_id="' . $reader_id . '" class="nfc_button button"><span class="ifl-svg2"></span>Load Reader '.$reader_id.'</a>';			
-			$response .= '<a class="submit-button button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1">Admit Guest</a></p>';			
+			$response .= '<a class="submit-button button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1">Admit Guest</a></p>';$response .= '<p><div class="token-response"></div></p>';
 
 			$start_over_link .= '</div>';
 			$response .= $start_over_link.'</div>';
@@ -629,7 +626,7 @@ Class IFLPartyMechanics {
 			foreach ($users as $key => $user) {
 
 				$query = array(
-					'user_id' => $user->ID,                     
+					'user_id' => $user->ID,
 				);				
 				
 				$formlink = esc_url( add_query_arg( $query ) );				

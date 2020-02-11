@@ -16,8 +16,6 @@
 	background: transparent url('loading-spinner-multicolor.gif') center center no-repeat;
 }
 
-
-
 * { color: white; }
 
 
@@ -87,6 +85,9 @@ a.button:hover,a.button:visited:hover {
 	color:rgb(235,219,52);
 	border:2px solid rgb(235,219,52);
 }
+a.reader-select-button {
+	width: 100%;
+}
 
 .filter input {
 	
@@ -130,7 +131,7 @@ a.button:hover,a.button:visited:hover {
 	border: 2px solid #34b1eb;
 }
 .member_select_list .list-group-item:hover {
-	background: #666;
+	background: #7d18a8;
 }
 .member_select_list .list-group-item a.attendee-link {
 	display: block;
@@ -172,18 +173,17 @@ a.button:hover,a.button:visited:hover {
 
 span.token {
 	display: inline-block;
-	height:50px;
-	width: 50px;
-	border-radius: 2em;
-	border:2px solid white;
-	background-color:purple;
-	/*background-image: transparent url() no-repeat no-repeat */
+	height:100px;
+	width: 100px;
+	border-radius: 3em;
+	border:2px solid white;	
+	background-size: contain;
 }
-.token.greentoken { background-color:green; }
-.token.bluetoken { background-color:blue; }
-.token.redtoken { background-color:red; }
-.token.yellowtoken { background-color:yellow; }
-.token.purpletoken { background-color:purple; }
+.token.greentoken {background-color:green;background-image: url(icons/pendant-vector-doublemint.svg);	}
+.token.bluetoken { background-color:blue; background-image: url(icons/pendant-vector-winterfresh.svg); }
+.token.redtoken { background-color:red; background-image: url(icons/pendant-vector-bigred.svg);}
+.token.yellowtoken { background-color:yellow; background-image: url(icons/pendant-vector-juicyfruit.svg); }
+.token.purpletoken { background-color:purple; background-image: url(icons/pendant-vector-team.svg); }
 
 /* /// Should be mobile first, yo! */
 @media screen and (max-width: 960px) {
