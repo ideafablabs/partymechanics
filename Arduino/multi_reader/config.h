@@ -31,7 +31,6 @@ const String LOG_FILE = "actions.log";
 #define BRIGHTNESS 100
 
 // NFC Details
-#define TOKENMAX 4
 
 // LOLIN MCU
 // #define PN532_SCK  14	// SK
@@ -43,8 +42,7 @@ const String LOG_FILE = "actions.log";
 #define PN532_SCK  14
 #define PN532_MOSI 13
 #define PN532_MISO 12
-#define PN532_SS  15
-// #define PN532_SS1  15
-// #define PN532_SS2   4
+#define PN532_SS1  15
+#define PN532_SS2   4
 
 #endif // CONFIG_H

@@ -2,7 +2,6 @@
 
 global $wpdb;
 
-// get rid of the "../" if you're not running it from an admin page
 define("QUOTES_CSV_FILE", IFLPM_PLUGIN_PATH."quotes.csv");
 
 define("MOVIE_QUOTES_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "movie_quotes");

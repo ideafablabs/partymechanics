@@ -110,6 +110,59 @@ Class UserTokens {
 		}
 	}
 
+	public static function delete_user_token($token_id, $user_id) {
+		// This function removes a token from the zone tokens table, so that that token is no longer registered to
+		// any user, but it does not affect any records in the plus one zones table, because those are tied to users
+		// rather than individual tokens.
+		global $wpdb;
+		
+		if (!IFLPMDBManager::does_table_exist_in_database(USER_TOKENS_TABLE_NAME)) {
+			return new WP_Error('no-token-table', "User tokens table does not exist in database");
+		}
+
+		$token_id = trim($token_id);
+		
+		if ($token_id == "") {
+			return new WP_Error('no-token-id', "Empty User token ID");
+		} else if (!preg_match("/^\d+$/", $token_id)) {
+			return new WP_Error('non-numeric-token-id', "Non-numeric characters in user token ID");
+		}
+
+		$user_id = trim($user_id);
+		if ($user_id == "") {
+			return new WP_Error('no-user-id', "Empty User ID");
+		}
+
+		// if (!self::is_user_id_in_database($user_id)) {
+		// 	return new WP_Error('user-missing', "User ID " . $user_id . " is not a registered user");
+		// }
+
+		$response = self::get_user_id_from_token_id($token_id);
+		if (is_wp_error($response)) {
+			return $response;
+		} else {
+			$user_id_registered_to_that_token = $response;
+		}
+
+		if ($user_id_registered_to_that_token != $user_id) {
+			return new WP_Error('user-mismatch', "Token ID " . $token_id . " is registered to a different userID.");
+		}
+
+		$wpdb->delete(
+			USER_TOKENS_TABLE_NAME,
+			array(
+				'token_id' => $token_id,
+			)
+		);
+
+		$result = $wpdb->get_results("SELECT * FROM " . USER_TOKENS_TABLE_NAME . " WHERE token_id = '" . $token_id . "'");
+		if ($wpdb->num_rows == 0) {
+			return "Zone token ID " . $token_id . " successfully deleted from tokens table";
+		} else {
+			return new WP_Error('unknown-error', "Error deleting zone token ID " . $token_id . " from the tokens table");
+		}
+	}
+
 	// === DB Methods ===
 
 	public static function create_tokens_table() {

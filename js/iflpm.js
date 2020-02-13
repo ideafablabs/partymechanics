@@ -38,6 +38,8 @@ $(document).ready( function(){
 		'.guest-list-toggle', 
 		iflpm_ajax_guest_list_toggle
 	);
+	
+	$(".iflpm-member-table").on('click','.remove-token', iflpm_ajax_remove_token_by_id);
 		
 	if ($(".nfc_button").length) {
 		
@@ -284,6 +286,44 @@ function iflpm_ajax_guest_list_toggle(event) {
 	// Send the package ==>
 	iflpm_ajax_request(package);
 			
+}
+
+function iflpm_ajax_remove_token_by_id(e) {
+	e.preventDefault();
+	var target = e.target;        
+	
+	// Get the relevant data.
+	var tid = jQuery(this).data( 'tid' );
+	
+	// Bundle the package.
+	package = {
+		request : 'remove_token',
+		data : {
+			tid : tid
+		}
+	}
+
+	// Forsee outcomes.
+	package.success = function(response) {            
+
+		// Actual success.
+		if (response.success == true) {				
+			$(target).parent('li').remove();
+		// Or failure.
+		} else {                                
+			
+		}
+
+		// Give some sort of affirmation...			
+		$(".iflpm-wrap").prepend(build_wp_notice(response).fadeIn());		
+		console.log(response.message);
+
+
+	}
+
+	// Send the package ==>
+	iflpm_ajax_request(package);
+	
 }
 
 // Build WP Notice box for AJAX actions.

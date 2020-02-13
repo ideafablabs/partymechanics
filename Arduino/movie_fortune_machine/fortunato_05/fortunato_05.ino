@@ -26,14 +26,15 @@
 
 #define count(x)   (sizeof(x) / sizeof(x[0]))
 
-#define PIN 5
+#define LEDPIN 5
 
 #define PN532_SCK  14
 #define PN532_MOSI 13
-#define PN532_SS   15
 #define PN532_MISO 12
-#define PN532_SS2   16
-// #define PN532_SS2   4
+#define PN532_SS   15
+#define PN532_SS2   4
+// #define PN532_SS2   16
+
 
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 Adafruit_PN532 nfc2(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2);
@@ -41,7 +42,7 @@ Adafruit_PN532 nfc2(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2);
 #define NUM_LEDS 48
 #define BRIGHTNESS 50
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LEDPIN, NEO_GRB + NEO_KHZ800);
 
 int ringSize = 24;
 int ring1First = 0;
@@ -53,11 +54,11 @@ WiFiClient client;
 HTTPClient http;
 
 // Replace with your network credentials
-const char* ssid = "Rainbow";
-const char* password = "Un1c0rn!";
+// const char* ssid = "Rainbow";
+// const char* password = "Un1c0rn!";
 
-//const char* ssid = "Idea Fab Labs";
-//const char* password = "vortexrings";
+const char* ssid = "Idea Fab Labs";
+const char* password = "vortexrings";
 
 //const char* ssid = "";
 //const char* password = "";

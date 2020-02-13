@@ -273,7 +273,6 @@ Class IFLPartyMechanics {
 					
 				} catch (Exception $e) {
 						
-					
 					// Output the error message.
 					$response .= '<p class="error">';
 					$response .= $e->getMessage();
@@ -392,8 +391,7 @@ Class IFLPartyMechanics {
 		// Associate token ID with user...        
 		if ($submit == '0') {
 			$user = get_user_by('email', $user_email);
-			/// Do a check here to see if the currently stored NFC is unassigned.
-
+			
 			// Setup JS to regularly check if token is assigned, If not, bring it up to assign.
 
 			$response .= '<div class="container">';
@@ -503,6 +501,33 @@ Class IFLPartyMechanics {
 
 				break;
 			case 'remove_token':
+
+				// Get the Token ID from the AJAX request.
+				$token_id = (!empty($package['tid'])) ? $package['tid'] : false;
+				
+				// If not there, fail.
+				if ($token_id === false) {
+					$return['message'] = "No Token ID Found";
+					break;
+				} 
+
+				// Get user ID because its currently necessary for deleting a zone token, /// kind of as a safeguard.
+				$user_id = UserTokens::get_user_id_from_token_id($token_id);
+
+				// Try and add to token table.
+				/// this should be a try{}...
+				$response = UserTokens::delete_user_token($token_id,$user_id);
+				// $response = "";///
+
+				// Did we fail?
+				if (is_wp_error($response)) {
+					$return['message'] = $response->get_error_message();
+				} else {
+					$return['success'] = true;
+					$return['token_id'] = $token_id;
+					$return['message'] = $response;
+				}
+
 
 				break;
 			case 'guest_list_toggle':

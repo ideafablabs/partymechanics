@@ -24,17 +24,111 @@
 // Time
 long now = 0;
 
-//  NFC
-// Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-Adafruit_PN532 nfc(PN532_SS);
-
 typedef uint32_t nfcid_t; // We treat the NFCs as 4 byte values throughout, for easiest.
-long lastRead,holdTime,holdStartTime,successTime = 0;
-uint16_t cardreaderPeriod = 500; // ms
-uint16_t successPeriod = 3000; 	// ms
 
-enum readerState {RQ_STANDBY,RQ_PENDING,RQ_SUCCESS,RQ_FAILED};
-uint8_t state = RQ_STANDBY;
+class NFCReader {
+
+	public:
+	
+	Adafruit_PN532* nfc;
+	long holdTime,holdStartTime = 0;
+
+	nfcid_t tokenID,lastID = -1;
+
+	NFCReader(uint8_t SCK, uint8_t MISO, uint8_t MOSI, uint8_t SS) {
+		this->nfc = new Adafruit_PN532(SCK, MISO, MOSI, SS);
+		// this->nfc = new Adafruit_PN532(SS);
+	}
+
+	bool begin() {
+		this->nfc->begin();
+
+		uint32_t versiondata = this->nfc->getFirmwareVersion();
+		if (! versiondata) {
+			return false;	    	
+		}
+
+		// Set the max number of retry attempts to read from a card		
+		this->nfc->setPassiveActivationRetries(0x01);
+
+		// Configure board to read RFID tags
+		this->nfc->SAMConfig();		
+
+		return true;
+	}
+
+	nfcid_t run() {
+
+		this->tokenID = pollNfc();
+		return this->tokenID;
+	 	
+	 // 	if (this->tokenID != this->lastID) { // Detect change in card.
+	 			 		
+	 // 		if (tokenID1 != 0){ // Card found.
+		// 		logAction("Reader detected tokenID: " + (String)tokenID1);
+
+		// 		// Reader state becomes active.
+		// 		this->holdStartTime = now;
+		// 		Serial.printf("Hold start time: %d", this->holdStartTime);
+
+		// 		// Do initial hold action.
+		// 		// if (READER_ID) {									
+		// 		// 	registerToken(tokenID, READER_ID);
+		// 		// } else {
+		// 		// 	plusOneZone(tokenID, ZONE_ID);
+		// 		// }
+
+		// 	} else { // Card was removed.
+		// 		Serial.println("Card Removed.");
+				
+		// 		// Reader state becomes inactive.
+		// 		holdTime1 = 0;				
+		// 	}
+		// 	lastID1 = tokenID1;
+		// } else {
+			
+		// 	if (tokenID1 != 0) {
+				
+		// 		// Increase hold timer.
+		// 		holdTime1 = now - holdStartTime1;
+				
+		// 		// Do longer hold actions.
+		// 		if (holdTime1 > 5000) {
+		// 		    Serial.println("Held for 5s");
+		// 		}
+		// 	}
+		// }
+	}
+
+	// Return the 64 bit uid, with ZERO meaning nothing presently detected.
+	nfcid_t pollNfc() {
+		uint8_t uidBytes[8] = {0};
+		uint8_t uidLength;
+		nfcid_t uid = 0;
+
+		// Check for card
+		int foundCard = this->nfc->readPassiveTargetID(PN532_MIFARE_ISO14443A, &uidBytes[0], &uidLength, 100);
+
+		if (foundCard) {		
+			uidLength = 4; // it's little-endian endian, the lower four are enough, and all we can use on this itty bitty cpu. ///magic numbers
+		 	
+		 	// Unspool the bins right here.
+		 	for (int ix = 0; ix < uidLength; ix++)
+				uid = (uid << 8) | uidBytes[ix];
+		}
+
+		return uid;
+	}
+};
+
+/// Make Vector
+NFCReader readers[] = {
+	NFCReader(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS1)
+	// , NFCReader(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2)
+};
+
+long lastRead = 0;
+uint16_t cardreaderPeriod = 500; // ms
 
 // LED
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LEDPIN, NEO_GRB + NEO_KHZ800);
@@ -43,38 +137,16 @@ long lastBlink = 0;
 const uint16_t ledPeriod = 40; // ms 24fps
 uint32_t tokenColors[] = { 0x00FF00, 0xFFFF00, 0xFF0000, 0x0000FF, 0xFF00FF, 0xFFFFFF,  }; // Should be G Y R B (& secret purple)
 
-uint8_t tokenCount = 0;
-uint8_t tokenSelection[TOKENMAX];
-uint32_t tokensAchieved[TOKENMAX];
-
-enum mapping
-{
-	SOCKETSTART1 = 0,
-	SOCKETEND1 = 0,
-	SOCKETSTART2 = 1,
-	SOCKETEND2 = 1,
-	SOCKETSTART3 = 2,
-	SOCKETEND3 = 2,
-	SOCKETSTART4 = 3,
-	SOCKETEND4 = 3,
-	METERSTART1 = 4,
-	METEREND1 = 7,
-	METERSTART2 = 8,
-	METEREND2 = 11
-};
-
 // Communications
 ESP8266WiFiMulti wifiMulti;
 asyncHTTPrequest apiClient;
 AsyncWebServer server(80);
 
-
-
 void setup() {
 
 	Serial.begin(115200);
 	Serial.println("Hello!");
-	
+
 	// LED Launch.
 	strip.setBrightness(BRIGHTNESS);
 	strip.begin();
@@ -93,10 +165,11 @@ void setup() {
 	
 	setupClient();
 
-	resetTokens();
-
 	logAction("Booted Up");
+
 }
+
+nfcid_t tokenIDs[READER_COUNT];
 
 void loop() {
 	
@@ -105,178 +178,68 @@ void loop() {
 	
 	// +-------------------------
 	// | Poll the NFC
-	static nfcid_t lastID = -1;
-	static nfcid_t tokenID = -1;
+	// static nfcid_t lastID = -1;
+	// static nfcid_t tokenID = -1;
 	// static long holdStartTime,holdTime;
 
+	static int pollCount = 0; // just for printing the poll dots.
+	char pollChar = '.'; // dots for no read, + for active.
+
 	if (now >= lastRead + cardreaderPeriod) { // Time for next card poll.
-  
-		tokenID = pollNfc();
-	 	
-	 	if (tokenID != lastID) { // Detect change in card.
-	 			 		
-	 		if (tokenID != 0){ // Card found.
-				logAction("Reader detected tokenID: " + (String)tokenID);
+  	
+  		for(int i=0; i<READER_COUNT; i++){
+  		   tokenIDs[i] = readers[i].run();
 
-				// Reader state becomes active.
-				holdStartTime = now;
-				Serial.printf("Hold start time: %d", holdStartTime);
+  		   if (tokenIDs[i]) {
+				Serial.print("Reader: "+(String)i);
+				Serial.println((String)tokenIDs[i]);
+  		   }
+  		}
 
-				// Do initial action.
-				for(int i=0; i<TOKENMAX; i++){
-					
-					uint8_t tokenColorSelector = getTokenColor(tokenID);
-					
-					if (tokenColorSelector == tokenSelection[i]) {
-						if (tokensAchieved[i] == tokenID) {
-							break;
-						} else {
-							tokensAchieved[i] = tokenID;
-							tokenCount++;	
-							break;
-						}						
-					}
+  		if (pollCount % 20 == 0)  // so the dots dont scroll right forever.
+		Serial.printf("\n%4d ", pollCount);
+		pollCount++;
+		Serial.print(pollChar);
 
-				}
-				
-				
-
-
-				// if (meter full)
-				state = RQ_PENDING;
-
-			} else { // Card was removed.
-				Serial.println("Card Removed.");
-				
-				// Reader state becomes inactive.
-				holdTime = 0;				
-			}
-			lastID = tokenID;
-		} else {
-			
-			if (tokenID != 0) {
-				
-				// Increase hold timer.
-				holdTime = now - holdStartTime;
-				
-				// Do longer hold actions.
-				if (holdTime > 5000) {
-				    // Serial.println("Held for "+holdTime);
-				}
-			}
-		}
 		lastRead = now;
-	}
-
-	// 
-	if (state == RQ_SUCCESS && now >= successTime + successPeriod) { 
-		state = RQ_STANDBY;
-		tokenCount = 0;
-
-		resetTokens();		
-	} 
-	else if (tokenCount == TOKENMAX) {
-		state = RQ_SUCCESS;
 	}
 
 	// +-------------------------
 	// | Do LEDs.	
-	if (now >= lastBlink + ledPeriod) {
+	// if (now >= lastBlink + ledPeriod) {
 		
-		// Clear pixels.
-		for(int i=0; i<NUM_LEDS; i++){
-			strip.setPixelColor(i, 0);
-		}
+	// 	// Clear pixels.
+	// 	for(int i=0; i<NUM_LEDS; i++){
+	// 		strip.setPixelColor(i, 0);
+	// 	}
 
-		uint32_t c = 0x00FFFF;
-		uint8_t colormin = 10;
-		uint8_t colormax = 100-colormin;
-		// Color wave
-		uint8_t a = step % colormax;
+	// 	// Default color.
+	// 	uint32_t c = 0x00FFFF;	
+		
+	// 	// if reader is being held.
+	// 	if (holdTime1) {
+	// 		c = tokenColors[getTokenColor(tokenID1)];
+	// 	} 
 
-		if (a > colormax/2) a = colormax - a;
+	// 	uint8_t colormin = 10;
+	// 	uint8_t colormax = 100-colormin;
+	// 	// Color wave
+	// 	uint8_t a = step % colormax;
+	// 	if (a > colormax/2) a = colormax - a;
 			
-		for(int i=SOCKETSTART1; i<=SOCKETEND1; i++){
-		    c = tokenColors[tokenSelection[0]];
-		    if (tokensAchieved[0] != 0) {
-		    	c = 0xFFFFFF;
-		    }
-		    c = alpha(c,colormin+a);
-		    strip.setPixelColor(i,c);
-		}
-		for(int i=SOCKETSTART2; i<=SOCKETEND2; i++){
-		    c = tokenColors[tokenSelection[1]];
-		    if (tokensAchieved[1] != 0) {
-		    	c = 0xFFFFFF;
-		    }
-		    c = alpha(c,colormin+a);
-		    strip.setPixelColor(i,c);
-		}
-		for(int i=SOCKETSTART3; i<=SOCKETEND3; i++){
-		    c = tokenColors[tokenSelection[2]];
-		    if (tokensAchieved[2] != 0) {
-		    	c = 0xFFFFFF;
-		    }
-		    c = alpha(c,colormin+a);
-		    strip.setPixelColor(i,c);
-		}
-		for(int i=SOCKETSTART4; i<=SOCKETEND4; i++){
-		    c = tokenColors[tokenSelection[3]];
-		    if (tokensAchieved[3] != 0) {
-		    	c = 0xFFFFFF;
-		    }
-		    c = alpha(c,colormin+a);
-		    strip.setPixelColor(i,c);
-		}
+	// 	for(int i=0; i<NUM_LEDS; i++){				
+	// 		strip.setPixelColor(i, alpha(c,colormin+a));
+	// 	}
 
-		// Default color.
-		c = 0x00FFFF;
-
-		c = alpha(c,colormin+a);
-		for(int i=METERSTART1; i<=METEREND1; i++){		   
-		   strip.setPixelColor(i,c);
-		}
-
-		c = 0xFF3300;
-		c = alpha(c,colormin+a);
-		for(int i=METERSTART2; i<=METEREND2; i++){
-		   strip.setPixelColor(i,c);
-		}
-	
-		// if (state == RQ_FAILED) {
-		// 	c = 0xFF0000;
-		// 	if (step % 10) {
-		// 		c = 0;
-		// 	} 
-		// } 
-
-		// if (state == RQ_PENDING) {
-		// 	c = tokenColors[getTokenColor(tokenID)];
-		// } 
-
-		// if (state == RQ_SUCCESS) {
-		// 	c = 0xFFFFFF;
-		// 	if (step % 10) {
-		// 		c = 0;
-		// 	}			
-		// } 
-
-		// Let the magic happen.
-		strip.show();
+	// 	// Let the magic happen.
+	// 	strip.show();
  
-		// Update step.
-		step++;
+	// 	// Update step.
+	// 	step++;
 
-		// Update timer.
-		lastBlink = now;
-	}
-}
-
-void resetTokens() {
-	for(int i=0; i<TOKENMAX; i++){
-	    tokenSelection[i] = random(4);
-	    tokensAchieved[i] = 0;
-	}	
+	// 	// Update timer.
+	// 	lastBlink = now;
+	// }
 }
 
 // we think idcode is always even...
@@ -335,15 +298,6 @@ void onClientStateChange(void * arguments, asyncHTTPrequest * aReq, int readySta
     	/// We might want to store the response and check syncronously so log doesn't get chunked.
     	logAction(aReq->responseHTTPcode()+" "+aReq->responseText());
 
-    	// request case here.
-    	if (aReq->responseHTTPcode() == 200) {
-    		state = RQ_SUCCESS;
-    		successTime = now;	
-    	} else {
-    		state = RQ_FAILED;
-    		successTime = now;
-    	}
-
     	/// This should probably be json so we can confirm respones types.
 
       break;
@@ -362,16 +316,7 @@ void plusOneZone(long tokenID, int zoneID) {
 void registerToken(long tokenID, int readerID) {
 	
 	String tokenString = String(tokenID);
-	String baseURI = API_BASE+API_ENDPOINT + "readers/";
-	String params = "token_id=" + tokenString;	
-
-	startAsyncRequest(baseURI,params,"POST");
-}
-
-void registerMintToken(long tokenID, int readerID) {
-	
-	String tokenString = String(tokenID);
-	String baseURI = API_BASE+API_ENDPOINT + "readers/"+ readerID;
+	String baseURI = API_BASE+API_ENDPOINT + "reader/";
 	String params = "token_id=" + tokenString;	
 
 	startAsyncRequest(baseURI,params,"POST");
@@ -395,29 +340,15 @@ void setupWiFi() {
 
 void setupNFC() {
 
-	// digitalWrite(PN532_SS, HIGH);
-	
-	nfc.begin();
-	
-	uint32_t versiondata = nfc.getFirmwareVersion();
-	if (! versiondata) {
-		Serial.print("Didn't find PN53x board");
-		delay(1000); // wait a second and give it a go.
-    	ESP.restart();
+	for(int i=0; i<READER_COUNT; i++){
+		
+		if (!readers[i].begin()) {
+			ESP.restart();
+		}
+
+		// Serial.println("NFC " + i + " ready.");
+		
 	}
-	// Got ok data, print it out!
-	Serial.print("Found chip PN532"); Serial.println((versiondata>>24) & 0xFF, HEX); 
-	Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC); 
-	Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
-
-	// Set the max number of retry attempts to read from a card
-	// This prevents us from waiting forever for a card, which is
-	// the default behaviour of the PN532.
-	nfc.setPassiveActivationRetries(0x01);
-
-	// Configure board to read RFID tags
-	nfc.SAMConfig();
-	Serial.println("NFC ready. Waiting for an ISO14443A card...");
 }
 
 // Async Setup.
@@ -430,14 +361,11 @@ void setupClient() {
 void startAsyncRequest(String request, String params, String type){
     
 	logAction(type + " REQUEST: " + request + "?" + params);
-    	
-	if(apiClient.readyState() == 0 || apiClient.readyState() == 4){ // Only one send at a time here.
-		apiClient.open(type.c_str(),request.c_str());		
+    
+	if(apiClient.readyState() == 0 || apiClient.readyState() == 4){		
+		apiClient.open(type.c_str(),request.c_str());
 		if (type == "POST") apiClient.setReqHeader("Content-Type","application/x-www-form-urlencoded");
-		
 		apiClient.send(params);	
-	} else {
-		logAction("Request attempted but busy sending...Try again.");
 	}
 }
 
@@ -502,35 +430,6 @@ void notFound(AsyncWebServerRequest *request) {
     request->send(404, "text/plain", "Connected but not found");
 }
 
-// Return the 64 bit uid, with ZERO meaning nothing presently detected.
-nfcid_t pollNfc()
-{
-	uint8_t uidBytes[8] = {0};
-	uint8_t uidLength;
-	nfcid_t uid = 0;
-
-	static int pollCount = 0; // just for printing the poll dots.
-	char pollChar = '.'; // dots for no read, + for active.
-
-	// Check for card
-	int foundCard = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, &uidBytes[0], &uidLength, 100);
-
-	if (foundCard) {		
-		uidLength = 4; // it's little endian, the lower four are enough, and all we can use on this itty bitty cpu. ///magic numbers
-	 	
-	 	// Unspool the bins right here.
-	 	for (int ix = 0; ix < uidLength; ix++)
-			uid = (uid << 8) | uidBytes[ix];
-
-		pollChar = '+'; //
-	}
-
-	if (pollCount % 20 == 0)  // so the dots dont scroll right forever.
-		Serial.printf("\n%4d ", pollCount);
-	pollCount++;
-	Serial.print(pollChar);
-	return uid;
-}
 
 // Count Macro.
 #define count(x) (sizeof(x) / sizeof(x[0]))
@@ -606,4 +505,3 @@ void logAction(String actionString) {
 	f.close();
     
 }
-
