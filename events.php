@@ -184,7 +184,7 @@ Class IFLPMEventsManager {
 		global $wpdb;
 		$selected_event_id = get_option('selected_event_id');
 		
-		$attendees_for_selected_event = $wpdb->get_results("SELECT * FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = " . $selected_event_id);
+		$attendees_for_selected_event = $wpdb->get_results("SELECT * FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = '" . $selected_event_id . "'");
 		
 		echo "<p><b>People in the attendance table who attended the selected event:</b></p>";
 		pr($attendees_for_selected_event);
@@ -201,7 +201,7 @@ Class IFLPMEventsManager {
 		}
 		
 		$attendees = array();		
-		$result = $wpdb->get_results("SELECT user_id FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = ".$event_id);
+		$result = $wpdb->get_results("SELECT user_id FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
 				
 		foreach ($result as $attendee) {
 			$attendees[] = get_user_by("ID", $attendee->user_id);
@@ -218,7 +218,7 @@ Class IFLPMEventsManager {
 			// throw new Exception("Attendance Table does not exist in database", 1);
 		}
 				
-		$result = $wpdb->get_results("SELECT COUNT(user_id) FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = ".$event_id);
+		$result = $wpdb->get_results("SELECT COUNT(user_id) FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
 
 		return $result->num_rows;	
 	}
@@ -265,7 +265,7 @@ Class IFLPMEventsManager {
 
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = "CREATE TABLE ".EVENTS_TABLE_NAME." (
+		$sql = "CREATE TABLE " . EVENTS_TABLE_NAME . " (
 			  event_id mediumint(9) NOT NULL AUTO_INCREMENT,
 			  title tinytext NOT NULL,
 			  date date NOT NULL,
