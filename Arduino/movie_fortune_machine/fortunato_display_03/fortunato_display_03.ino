@@ -9,7 +9,7 @@
 #include <WiFiClient.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
-
+  
 // LED Matrix driver
 #include <MaxMatrix.h>
 #include <avr/pgmspace.h>
@@ -146,11 +146,11 @@ int LEDPin = LED_BUILTIN;
 
 ESP8266WiFiMulti WiFiMulti;
 
-//const char* ssid = "Idea Fab Labs";
-//const char* password = "vortexrings";
+const char* ssid = "Idea Fab Labs";
+const char* password = "vortexrings";
 // Home test Wifi
-const char* ssid = "Rainbow";
-const char* password = "Un1c0rn!";
+// const char* ssid = "Rainbow";
+// const char* password = "Un1c0rn!";
 
 const int SCROLL_SPEED = 25;
 
