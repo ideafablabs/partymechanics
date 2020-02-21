@@ -4,7 +4,7 @@
  * Plugin Name: IFL Party Mechanics
  * Plugin URI:
  * Description: This plugin manages our party antics.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Idea Fab Labs Teams
  * Author URI: https://github.com/ideafablabs/
  * License: GPL3
@@ -99,7 +99,8 @@ Class IFLPartyMechanics {
 		add_shortcode('registrationform', array($this, 'ifl_display_registration_form'));
 		add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));        
 		
-		register_activation_hook( __FILE__, array($this, 'install_plugin'));	
+		register_activation_hook( __FILE__, array($this, 'install_plugin'));
+		add_action( 'plugins_loaded',  array($this, 'check_attendance_table_for_update'));
 	}
 
 	/**
@@ -951,6 +952,16 @@ Class IFLPartyMechanics {
 		}
 
 		if (get_option('iflpm_token_reader_count')=='') update_option('iflpm_token_reader_count',4); /// magic number should go in defaults array.
+	}
+
+	public function check_attendance_table_for_update() {
+		$version = get_option("ATTENDANCE_DB_VERSION", "0");
+		// echo "Current attendance table version is " . $version . "<br>";
+		if ($version != ATTENDANCE_DB_VERSION) {
+			// echo "Updating attendance table!<br>";
+			IFLPMEventsManager::update_attendance_table_version($version);
+			// echo "Updated attendance table version is " . ATTENDANCE_DB_VERSION . "<br>";
+		}
 	}
 }
 
