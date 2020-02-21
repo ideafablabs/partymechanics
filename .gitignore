@@ -2,3 +2,5 @@
 */.DS_Store
 logs/
 */config.h
+Arduino/.DS_Store
+Arduino/vortexrings/config.h
