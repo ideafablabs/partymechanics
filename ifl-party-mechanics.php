@@ -215,8 +215,6 @@ Class IFLPartyMechanics {
 		), $atts);
 
 		$event = $args['event'];
-		$attendanceform = $args['attendanceform'];
-
 
 		$event_id = (isset($_REQUEST['event_id'])) ? $_REQUEST['event_id'] : $args['event_id'];
 		$reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
@@ -226,10 +224,10 @@ Class IFLPartyMechanics {
 				
 		$event_title = IFLPMEventsManager::get_event_title_by_id($event_id);
 		$attendee_count = IFLPMEventsManager::get_attendee_count_for_event($event_id);
-		
+		// pr($attendee_count);
 		// Begin response html string.
 		$response = '<div class="iflpm-container iflpm-entry-processor"><div class="ajax-message"></div>';
-		$response .= '<h1 class="event-title">'.$event_title.'</h1>';
+		$response .= '<h1 class="event-title">'.$event_title.' - '.$attendee_count.'</h1>';
 		$start_over_link = '<div class="return-links">';
 
 		// Complete with Entry GForm and go back to Entry List or Create New User again.
