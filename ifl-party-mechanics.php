@@ -4,7 +4,7 @@
  * Plugin Name: IFL Party Mechanics
  * Plugin URI:
  * Description: This plugin manages our party antics.
- * Version: 2.0.2
+ * Version: 2.0.3
  * Author: Idea Fab Labs Teams
  * Author URI: https://github.com/ideafablabs/
  * License: GPL3

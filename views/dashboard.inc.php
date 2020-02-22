@@ -77,10 +77,10 @@
 		<p class="attendance-total">Total: <?php echo $attendance_total; ?></p>
 		<ul>
 		
-		<?php 
-			foreach ($attendees as $key => $attendee) {				
+		<?php
+			foreach ($attendees as $key => $attendee) {
 				echo '<li>'.$attendee->display_name.'</li>';
-			}			
+			}
 		
 		echo '</ul>';
 	} catch (Exception $e) {
@@ -98,12 +98,12 @@
 		<h2>Special Guest List</h2>
 		<p class="special-guest-total">Total: <?php echo $special_guest_total; ?></p>
 		<ul class="special-guest-list member-list">
-		<?php foreach ($guest_list as $key => $user) {
-			echo "<li>".$user->display_name." - ".$user->user_email."</li>";	
+		<?php foreach ($guest_list as $guest) {
+			echo "<li>" . $guest->guest_first_name . " " . $guest->guest_last_name . "</li>";
 		} ?>
 		</ul>
 	
-	<?php 
+	<?php
 	} catch (Exception $e) {
 		echo $e->getMessage();
 	}

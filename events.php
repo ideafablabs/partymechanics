@@ -255,14 +255,7 @@ Class IFLPMEventsManager
 			throw new Exception("Special Events Table does not exist.", 1);
 		}
 
-		$result = $wpdb->get_results("SELECT user_id FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
-
-		$users = array();
-		foreach ($result as $key => $record) {
-			$users[$key] = get_user_by('id', $record->user_id);
-		}
-
-		return $users;
+		return $wpdb->get_results("SELECT guest_email, guest_first_name, guest_last_name FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
 	}
 
 	public static function create_events_table() {
