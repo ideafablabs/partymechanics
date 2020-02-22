@@ -22,6 +22,7 @@ include 'rest-api.php';
 include 'user-tokens.php';
 include 'events.php';
 include 'movie-quotes.php';
+include 'spirit-knobs.php';
 
 global $wpdb;
 
@@ -79,6 +80,13 @@ Class IFLPartyMechanics {
 			add_action('rest_api_init', function () {
 				$movie_quotes_controller = new Movie_Quotes_Controller();
 				$movie_quotes_controller->register_routes();
+			});
+		}
+		// Register REST API Controllers
+		if (class_exists("Spirit_Knobs_Controller")) {
+			add_action('rest_api_init', function () {
+				$spirit_knobs_controller = new Spirit_Knobs_Controller();
+				$spirit_knobs_controller->register_routes();
 			});
 		}
 		if (class_exists("NFC_Registration_Controller")) {
@@ -228,7 +236,7 @@ Class IFLPartyMechanics {
 		// pr($attendee_count);
 		// Begin response html string.
 		$response = '<div class="iflpm-container iflpm-entry-processor"><div class="ajax-message"></div>';
-		$response .= '<h1 class="event-title">'.$event_title.' - '.$attendee_count.'</h1>';
+		$response .= '<h1 class="event-title">'.$event_title.'</h1>';
 		$start_over_link = '<div class="return-links">';
 
 		// Complete with Entry GForm and go back to Entry List or Create New User again.
@@ -397,8 +405,10 @@ Class IFLPartyMechanics {
 			$response .= '<h2 class="member-name">' . $user->display_name . '</h2>';			
 			$response .= '<p>Scan medallion and click load:</p>';			
 			
-			$response .= '<p><a data-reader_id="' . $reader_id . '" class="nfc_button button"><span class="ifl-svg2"></span>Load Reader '.$reader_id.'</a>';			
-			$response .= '<a class="submit-button button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1">Admit Guest</a></p>';$response .= '<p><div class="token-response"></div></p>';
+			$response .= '<p><a data-reader_id="' . $reader_id . '" class="nfc_button button"><span class="ifl-svg2"></span>Load Reader '.$reader_id.'</a><br />';			
+			$response .= '<p><div class="token-response"></div></p>';
+			$response .= '<a class="admit-button submit-button button hidden" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1">Admit Guest</a></p>';
+
 
 			$start_over_link .= '</div>';
 			$response .= $start_over_link.'</div>';
@@ -769,8 +779,7 @@ Class IFLPartyMechanics {
 		return $content;
 	}
 
-	 
-	 
+		 
 
 	public function test_option_stuff() {
 		echo "<br><b>Reader NFC IDs in options table:</b><br>";
@@ -794,6 +803,17 @@ Class IFLPartyMechanics {
 	// rest-api.php calls this
 	public function get_movie_quote_by_pairing($user_id_1, $user_id_2) {
 		return MovieQuotes::get_movie_quote_by_pairing($user_id_1, $user_id_2);
+	}
+	
+	public function get_user_spirits_by_id($user_id) {
+		return SpiritKnobs::get_user_spirits_by_id($user_id);
+	}
+	public function update_user_spirits_by_id($user_id,$spirits) {
+		return SpiritKnobs::update_user_spirits_by_id($user_id, $spirits);
+	}
+	// rest-api.php calls this
+	public function insert_spirits($user_id, $spirits) {
+		return SpiritKnobs::insert_spirits($user_id, $spirits);
 	}
 
 	// rest-api.php calls this
@@ -941,6 +961,12 @@ Class IFLPartyMechanics {
 			MovieQuotes::create_user_pairings_table();
 		} else {
 			self::log_action("Quote Pair Table already exists.");
+		}
+
+		if (!IFLPMDBManager::does_table_exist_in_database(SPIRIT_KNOBS_TABLE_NAME)) {
+			SpiritKnobs::create_spirit_knobs_table();
+		} else {
+			self::log_action("Spirit Knobs Table already exists.");
 		}
 
 		// Install Quotes into DB
