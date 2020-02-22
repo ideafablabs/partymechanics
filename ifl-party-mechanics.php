@@ -4,7 +4,7 @@
  * Plugin Name: IFL Party Mechanics
  * Plugin URI:
  * Description: This plugin manages our party antics.
- * Version: 2.0.1
+ * Version: 2.0.2
  * Author: Idea Fab Labs Teams
  * Author URI: https://github.com/ideafablabs/
  * License: GPL3
@@ -100,7 +100,7 @@ Class IFLPartyMechanics {
 		add_shortcode('ticketform', array($this, 'ifl_display_purchase_form'));        
 		
 		register_activation_hook( __FILE__, array($this, 'install_plugin'));
-		add_action( 'plugins_loaded',  array($this, 'check_attendance_table_for_update'));
+		add_action( 'plugins_loaded',  array($this, 'check_tables_for_update'));
 	}
 
 	/**
@@ -180,25 +180,6 @@ Class IFLPartyMechanics {
 				break;
 		}
 
-	}
-
-	/// Testing getting all of the token, attendance, and guest list data in one query, then running through it.
-	public function get_it_all() {
-		global $wpdb;
-
-		$event_id = '1'; ///
-		
-		$sql = "SELECT 
-					gue.user_id as Guest, 
-					att.user_id as Att 
-				FROM ".ATTENDANCE_TABLE_NAME." att 
-				LEFT JOIN ".SPECIAL_GUESTS_TABLE_NAME." gue 
-				ON gue.user_id = att.user_id 
-				WHERE gue.event_id = ".$event_id;
-
-		$results = $wpdb->get_results($sql);
-
-		pr($results);
 	}
 
 	/**
@@ -954,13 +935,21 @@ Class IFLPartyMechanics {
 		if (get_option('iflpm_token_reader_count')=='') update_option('iflpm_token_reader_count',4); /// magic number should go in defaults array.
 	}
 
-	public function check_attendance_table_for_update() {
+	public function check_tables_for_update() {
 		$version = get_option("ATTENDANCE_DB_VERSION", "0");
 		// echo "Current attendance table version is " . $version . "<br>";
 		if ($version != ATTENDANCE_DB_VERSION) {
 			// echo "Updating attendance table!<br>";
 			IFLPMEventsManager::update_attendance_table_version($version);
 			// echo "Updated attendance table version is " . ATTENDANCE_DB_VERSION . "<br>";
+		}
+
+		$version = get_option("SPECIAL_GUESTS_DB_VERSION", "0");
+		// echo "Current special guests table version is " . $version . "<br>";
+		if ($version != SPECIAL_GUESTS_DB_VERSION) {
+			// echo "Updating special guests table!<br>";
+			IFLPMEventsManager::update_special_guests_table_version($version);
+			// echo "Updated special guests table version is " . SPECIAL_GUESTS_DB_VERSION . "<br>";
 		}
 	}
 }

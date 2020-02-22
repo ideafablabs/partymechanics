@@ -6,10 +6,10 @@ define("EVENTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "events");
 define("EVENTS_DB_VERSION", "1.0");
 
 define("ATTENDANCE_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "attendance");
-define("ATTENDANCE_DB_VERSION", "1.1");
+define("ATTENDANCE_DB_VERSION", "1.2");
 
 define("SPECIAL_GUESTS_TABLE_NAME", $wpdb->prefix . IFLPM_TABLE_PREFIX . "special_guests");
-define("SPECIAL_GUESTS_DB_VERSION", "1.0");
+define("SPECIAL_GUESTS_DB_VERSION", "1.1");
 
 
 Class IFLPMEventsManager
@@ -58,15 +58,13 @@ Class IFLPMEventsManager
 		}
 	}
 
-	public static function add_guest_to_special_guests_table($user, $event_id) {
+	public static function add_guest_to_special_guests_table($event_id, $guest_email, $guest_first_name, $guest_last_name) {
 
 		global $wpdb;
 
-		if (!is_a($user, 'WP_User')) {
-			throw new Exception("Bad user data.");
-		}
+		$guest_email = strtolower($guest_email);
 
-		/// event_id is in table? 
+		/// event_id is in table?
 
 		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
 			throw new Exception("Special Guest Table does not exist in database", 1);
@@ -74,7 +72,7 @@ Class IFLPMEventsManager
 		}
 
 		// User is already in added to table...
-		if (self::user_is_on_guest_list($user, $event_id)) {
+		if (self::user_is_on_guest_list($guest_email, $event_id)) {
 			throw new Exception("User is already on guest list.", 1);
 		}
 
@@ -82,8 +80,10 @@ Class IFLPMEventsManager
 		$records = $wpdb->insert(
 			SPECIAL_GUESTS_TABLE_NAME,
 			array(
-				'user_id' => $user->ID,
 				'event_id' => $event_id,
+				'guest_email' => $guest_email,
+				'guest_first_name' => $guest_first_name,
+				'guest_last_name' => $guest_last_name,
 			)
 		);
 
@@ -91,7 +91,7 @@ Class IFLPMEventsManager
 			throw new Exception("Unknown Error: Inserting Guest Failed", 1);
 		}
 
-		$result = $wpdb->get_results("SELECT * FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE user_id = '" . $user->ID . "' AND event_id = '" . $event_id . "'");
+		$result = $wpdb->get_results("SELECT * FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE guest_email = '" . $guest_email . "' AND event_id = '" . $event_id . "'");
 
 		if ($wpdb->num_rows == 0) {
 			throw new Exception("Unknown Error: Couldnt retrieve after insertion.", 1);
@@ -101,15 +101,13 @@ Class IFLPMEventsManager
 	}
 
 
-	public static function remove_guest_from_special_guests_table($user, $event_id) {
+	public static function remove_guest_from_special_guests_table($guest_email, $event_id) {
 
 		global $wpdb;
 
-		if (!is_a($user, 'WP_User')) {
-			throw new Exception("Bad user data.");
-		}
+		$guest_email = strtolower($guest_email);
 
-		/// event_id is in table? 
+		/// event_id is in table?
 
 		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
 			throw new Exception("Special Guest Table does not exist in database", 1);
@@ -117,7 +115,7 @@ Class IFLPMEventsManager
 		}
 
 		// User is already in added to table...
-		if (!self::user_is_on_guest_list($user, $event_id)) {
+		if (!self::user_is_on_guest_list($guest_email, $event_id)) {
 			throw new Exception("User was not on guest list.", 1);
 		}
 
@@ -125,7 +123,7 @@ Class IFLPMEventsManager
 		$records = $wpdb->delete(
 			SPECIAL_GUESTS_TABLE_NAME,
 			array(
-				'user_id' => $user->ID,
+				'guest_email' => $guest_email,
 				'event_id' => $event_id,
 			)
 		);
@@ -134,7 +132,7 @@ Class IFLPMEventsManager
 			throw new Exception("Unknown Error: Deleting Guest Failed", 1);
 		}
 
-		$result = $wpdb->get_results("SELECT * FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE user_id = '" . $user->ID . "' AND event_id = '" . $event_id . "'");
+		$result = $wpdb->get_results("SELECT * FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE guest_email = '" . $guest_email . "' AND event_id = '" . $event_id . "'");
 
 		if ($wpdb->num_rows > 0) {
 			throw new Exception("Unknown Error: Guest still in table after delete call.", 1);
@@ -143,22 +141,19 @@ Class IFLPMEventsManager
 		}
 	}
 
-	public static function user_is_on_guest_list($user, $event_id) {
+	public static function user_is_on_guest_list($guest_email, $event_id) {
 
 		global $wpdb;
+
+		$guest_email = strtolower($guest_email);
 
 		if (!IFLPMDBManager::does_table_exist_in_database(SPECIAL_GUESTS_TABLE_NAME)) {
 			return false;
 		}
 
-		$result = $wpdb->get_results("SELECT record_id FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE user_id = '" . $user->ID . "' AND event_id = '" . $event_id . "'");
+		$result = $wpdb->get_results("SELECT record_id FROM " . SPECIAL_GUESTS_TABLE_NAME . " WHERE guest_email = '" . $guest_email . "' AND event_id = '" . $event_id . "'");
 
-		if ($wpdb->num_rows == 0) {
-			return false;
-		} else {
-			return true;
-		}
-		return true;
+		return $wpdb->num_rows != 0;
 	}
 
 	public static function insert_event($title, $date) {
@@ -302,7 +297,7 @@ Class IFLPMEventsManager
 			  check_in_time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 			  PRIMARY KEY  (record_id),
 			  FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
-			  FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
+			  FOREIGN KEY  (event_id) REFERENCES " . EVENTS_TABLE_NAME . "(event_id)
 			) " . $charset_collate . ";";
 
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -314,12 +309,10 @@ Class IFLPMEventsManager
 	public static function update_attendance_table_version($oldVersion) {
 		global $wpdb;
 
-		if ($oldVersion == "1.0") {
-			// Make sure the new column doesn't already exist, even though that issue should only come up during testing
-			$row = $wpdb->get_results("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '" . ATTENDANCE_TABLE_NAME . "' AND column_name = 'check_in_time'");
-			if (empty($row)) {
-				$wpdb->query("ALTER TABLE " . ATTENDANCE_TABLE_NAME . " ADD check_in_time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL");
-			}
+		if ($oldVersion == "1.0" || $oldVersion == "1.1") {
+			// Drop the old never-even-used table and recreate it with the currently-desired fields and correct events table foreign key
+			$wpdb->query("DROP TABLE IF EXISTS " . ATTENDANCE_TABLE_NAME);
+			self::create_attendance_table();
 		}
 
 		update_option('attendance_db_version', ATTENDANCE_DB_VERSION);
@@ -331,18 +324,31 @@ Class IFLPMEventsManager
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE " . SPECIAL_GUESTS_TABLE_NAME . " (
-			  record_id mediumint(9) NOT NULL AUTO_INCREMENT,
-			  user_id bigint(20) unsigned NOT NULL,
-			  event_id mediumint(9) NOT NULL,
-			  PRIMARY KEY  (record_id),
-			   FOREIGN KEY  (user_id) REFERENCES wp_users(ID),
-			   FOREIGN KEY  (event_id) REFERENCES wp_events(event_id)
+			record_id mediumint(9) NOT NULL AUTO_INCREMENT,
+			guest_email tinytext NOT NULL,
+			guest_first_name tinytext,
+			guest_last_name tinytext,
+			event_id mediumint(9) NOT NULL,
+			PRIMARY KEY  (record_id),
+			FOREIGN KEY  (event_id) REFERENCES " . EVENTS_TABLE_NAME . "(event_id)
 			) " . $charset_collate . ";";
 
 		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 		$result = dbDelta($sql);
 
 		add_option('special_guests_db_version', SPECIAL_GUESTS_DB_VERSION);
+	}
+
+	public static function update_special_guests_table_version($oldVersion) {
+		global $wpdb;
+
+		if ($oldVersion == "1.0") {
+			// Drop the old never-even-used table and recreate it with the currently-desired fields and correct events table foreign key
+			$wpdb->query("DROP TABLE IF EXISTS " . SPECIAL_GUESTS_TABLE_NAME);
+			self::create_special_guests_table();
+		}
+
+		update_option('special_guests_db_version', SPECIAL_GUESTS_DB_VERSION);
 	}
 
 }
