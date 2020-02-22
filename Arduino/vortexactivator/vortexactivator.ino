@@ -9,8 +9,10 @@
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 
-#include <Adafruit_NeoPixel.h>
+//#include <Adafruit_NeoPixel.h>
 // #include <Adafruit_DotStar.h>
+
+#include <FastLED.h>
 
 // Onboard Libs
 #include <ESPAsyncWebServer.h>
@@ -36,24 +38,33 @@ long now = 0;
 //  NFC
 // Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 // Adafruit_PN532 nfc(PN532_SS);
+//Adafruit_PN532 nfcs[READER_COUNT] = {
+//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS1),
+//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2),
+//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS3),
+//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS4),
+//};
+
 Adafruit_PN532 nfcs[READER_COUNT] = {
-  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS1),
-  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2),
-  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS3),
-  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS4),
+	Adafruit_PN532(PN532_SS1),
+	Adafruit_PN532(PN532_SS2),
+	Adafruit_PN532(PN532_SS3),
+	Adafruit_PN532(PN532_SS4),
 };
+
 
 typedef uint32_t nfcid_t; // We treat the NFCs as 4 byte values throughout, for easiest.
 long lastRead, successTime = 0;
 uint16_t cardreaderPeriod = 500; // ms
-uint16_t successPeriod = 3000; 	// ms
+uint16_t successPeriod = 3000;   // ms
 
 enum readerState {RQ_STANDBY,RQ_PENDING,RQ_SUCCESS,RQ_FAILED};
 uint8_t state = RQ_STANDBY;
 
 // LED
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LEDPIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LEDPIN, NEO_GRB + NEO_KHZ800);
 // Adafruit_DotStar strip = Adafruit_DotStar(NUM_LEDS, LEDPIN, LEDCLK, DOTSTAR_BRG);
+CRGB leds[READER_COUNT][NUM_LEDS];
 
 int step = 0 ;
 long lastBlink = 0;
@@ -99,12 +110,17 @@ void setup() {
 	Serial.println("Henlo!");
 	
 	// LED Launch.
-	strip.setBrightness(BRIGHTNESS);
-	strip.begin();
+	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUM_LEDS);  // GRB ordering is assumed
+	FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[1], NUM_LEDS);  // GRB ordering is assumed
+	FastLED.addLeds<NEOPIXEL, LEDPIN3>(leds[2], NUM_LEDS);  // GRB ordering is assumed
+	FastLED.addLeds<NEOPIXEL, LEDPIN4>(leds[3], NUM_LEDS);  // GRB ordering is assumed
+
+	FastLED.setBrightness(BRIGHTNESS);
+	//strip.begin();
 
 	showAll(0xFF0000);
 
-	setupNFC();	
+	setupNFC(); 
 
 	showAll(0x0000FF);
 
@@ -136,109 +152,105 @@ void loop() {
 
 	if (now >= lastRead + cardreaderPeriod) { // Time for next card poll.
 
-		for (int i = 0; i < READER_COUNT; i++) { 
-  		
-			tokenIDs[i] = pollNfc(i);
-	 	
-	 		if (tokenIDs[i] != lastIDs[i]) { // Detect change in card.
-	 			 		
-	 			if (tokenIDs[i] != 0){ // Card found.
-					logAction("Reader "+(String)i+" detected tokenID: " + (String)tokenIDs[i]);
-
-					// Reader state becomes active.
-					holdStartTimes[i] = now;
-					Serial.printf("R%d - Hold start time: %d\n",i, holdStartTimes[i]);
-
-					// Do initial hold action.
-					
-
-					// state = RQ_PENDING;
-
-				} else { // Card was removed.
-					Serial.printf("R%d - Card Removed.\n",i);
-					
-					// Reader state becomes inactive.
-					holdTimes[i] = 0;				
-				}
-				lastIDs[i] = tokenIDs[i];
-			} else {
+	 for (int i = 0; i < READER_COUNT; i++) { 
+		
+		tokenIDs[i] = pollNfc(i);
+	 
+		if (tokenIDs[i] != lastIDs[i]) { // Detect change in card.
 				
-				if (tokenIDs[i] != 0) {
-					
-					// Increase hold timer.
-					holdTimes[i] = now - holdStartTimes[i];
-					
-					// Do longer hold actions.
-					if (holdTimes[i] > 5000) {
-					    // Serial.println("Held for "+holdTime);
-					}
-				}
+			if (tokenIDs[i] != 0){ // Card found.
+			 logAction("Reader "+(String)i+" detected tokenID: " + (String)tokenIDs[i]);
+
+			 // Reader state becomes active.
+			 holdStartTimes[i] = now;
+			 Serial.printf("R%d - Hold start time: %d\n",i, holdStartTimes[i]);
+
+			 // Do initial hold action.
+			 
+
+			 // state = RQ_PENDING;
+
+			} else { // Card was removed.
+			 Serial.printf("R%d - Card Removed.\n",i);
+			 
+			 // Reader state becomes inactive.
+			 holdTimes[i] = 0;       
+			}
+			lastIDs[i] = tokenIDs[i];
+		} else {
+			
+			if (tokenIDs[i] != 0) {
+			 
+			 // Increase hold timer.
+			 holdTimes[i] = now - holdStartTimes[i];
+			 
+			 // Do longer hold actions.
+			 if (holdTimes[i] > 5000) {
+					// Serial.println("Held for "+holdTime);
+			 }
 			}
 		}
-		lastRead = now;
+	 }
+	 lastRead = now;
 	}
 
 	// if (state == RQ_SUCCESS && now >= successTime + successPeriod) { 
-		// state == RQ_STANDBY;
+	 // state == RQ_STANDBY;
 	// }
 	
 	// if (state >= RQ_SUCCESS && holdTimes) {
-		// continue success notice...
+	 // continue success notice...
 	// }
 	else if (state >= RQ_SUCCESS && now >= successTime + successPeriod) { 
-		state = RQ_STANDBY;
-	}	
+	 state = RQ_STANDBY;
+	} 
 
 	// +-------------------------
-	// | Do LEDs.	
+	// | Do LEDs. 
 	if (now >= lastBlink + ledPeriod) {
-		
-		// Clear pixels.
-		for(int i=0; i<NUM_LEDS; i++){
-			strip.setPixelColor(i, 0);
+	 
+		for(int i=0; i<READER_COUNT; i++){
+
+	 		// Clear pixels.
+	 		for(int p=0; p<NUM_LEDS; p++){
+				leds[i][p] = 0;
+			}
+			
+			// Default color.
+	 		uint32_t c = 0x00FFFF;
+						
+			if (tokenIDs[i] > 0) {
+				c = tokenColors[getTokenColor(tokenIDs[i])];
+			}
+
+			// if (state == RQ_SUCCESS) {
+			// 	c = 0xFFFFFF;
+			// 	if (step % 10) {
+			// 		c = 0;
+			// 	} 
+				
+			// }
+
+			uint8_t colormin = 10;
+			uint8_t colormax = 100-colormin;
+			
+			// Color wave
+			uint8_t a = step % colormax;
+			if (a > colormax/2) a = colormax - a;
+				
+			for(int p=0; p<NUM_LEDS; p++){        
+				leds[i][p] = (alpha(c,colormin+a));
+			}
 		}
 
-		// Default color.
-		uint32_t c = 0x00FFFF;	
-	
-		if (state == RQ_FAILED) {
-			c = 0xFF0000;
-			if (step % 10) {
-				c = 0;
-			} 
-		} 
-
-		if (state == RQ_PENDING) {
-			c = tokenColors[getTokenColor(tokenID)];
-		} 
-
-		if (state == RQ_SUCCESS) {
-			c = 0xFFFFFF;
-			if (step % 10) {
-				c = 0;
-			} 
-			
-		} 
-
-		uint8_t colormin = 10;
-		uint8_t colormax = 100-colormin;
-		
-		// Color wave
-		uint8_t a = step % colormax;
-		if (a > colormax/2) a = colormax - a;
-			
-		for(int i=0; i<NUM_LEDS; i++){				
-			strip.setPixelColor(i, alpha(c,colormin+a));
-		}
-
-		// Let the magic happen.
-		strip.show();
+	 // Let the magic happen.
+	 FastLED.show();
  
-		// Update step.
-		step++;
+	 // Update step.
+	 step++;
 
-		// Update timer.
-		lastBlink = now;
+	 // Update timer.
+	 lastBlink = now;
 	}
 }
 
@@ -258,67 +270,69 @@ uint8_t extractGreen(uint32_t c) { return ( (c >> 8) & 0xFF ); }
 uint8_t extractBlue(uint32_t c) { return ( c & 0xFF ); }
 
 uint32_t rgba(byte r, byte g, byte b, int a) {
-  
-  int rr = (r*a)/100;
-  int gg = (g*a)/100;
-  int bb = (b*a)/100;
+	
+	int rr = (r*a)/100;
+	int gg = (g*a)/100;
+	int bb = (b*a)/100;
+	uint32_t hexx = (rr << 16L) | (gg << 8L) | bb;
 
-  return strip.Color(rr,gg,bb);
+	//Serial.println(hexx);
+	return hexx;
 }
 
 uint32_t alpha(uint32_t c, int a) {
-  
-  uint8_t r = extractRed(c);
-  uint8_t g = extractGreen(c);
-  uint8_t b = extractBlue(c);
-    
-  return rgba(r,g,b,a);
+	
+	uint8_t r = extractRed(c);
+	uint8_t g = extractGreen(c);
+	uint8_t b = extractBlue(c);
+	 
+	return rgba(r,g,b,a);
 }
 
 // https://github.com/boblemaire/asyncHTTPrequest
 // https://stackoverflow.com/questions/54820798/how-to-receive-json-response-from-rest-api-using-esp8266-arduino-framework
 void onClientStateChange(void * arguments, asyncHTTPrequest * aReq, int readyState) {
-  
-  switch (readyState) {
-    case 0: // readyStateUnsent: Client created, open not yet called.
-      break;
+	
+	switch (readyState) {
+	 case 0: // readyStateUnsent: Client created, open not yet called.
+		break;
 
-    case 1: // readyStateOpened: open() has been called, connected    	
-      break;
+	 case 1: // readyStateOpened: open() has been called, connected      
+		break;
 
-    case 2: // readyStateHdrsRecvd: send() called, response headers available
-      break;
+	 case 2: // readyStateHdrsRecvd: send() called, response headers available
+		break;
 
-    case 3:	// readyStateLoading: receiving, partial data available
-      break;
+	 case 3: // readyStateLoading: receiving, partial data available
+		break;
 
-    case 4: // readyStateDone: Request complete, all data available.
+	 case 4: // readyStateDone: Request complete, all data available.
 
-    	// Log Response.
-    	/// We might want to store the response and check syncronously so log doesn't get chunked.
-    	String rcode = (String)aReq->responseHTTPcode();
-    	logAction(rcode+" "+aReq->responseText());
+		// Log Response.
+		/// We might want to store the response and check syncronously so log doesn't get chunked.
+		String rcode = (String)aReq->responseHTTPcode();
+		logAction(rcode+" "+aReq->responseText());
 
-    	// request case here.
-    	if (aReq->responseHTTPcode() == 200) {
-    		state = RQ_SUCCESS;
-    		successTime = now;	
-    	} else {
-    		state = RQ_FAILED;
-    		successTime = now;
-    	}
+		// request case here.
+		if (aReq->responseHTTPcode() == 200) {
+			state = RQ_SUCCESS;
+			successTime = now;  
+		} else {
+			state = RQ_FAILED;
+			successTime = now;
+		}
 
-    	/// This should probably be json so we can confirm respones types.
+		/// This should probably be json so we can confirm respones types.
 
-      break;
-  }
+		break;
+	}
 }
 
 void plusOneZone(long tokenID, int zoneID) {
  
-	String tokenString = String(tokenID);		
+	String tokenString = String(tokenID);   
 	String baseURI = API_BASE+API_ENDPOINT + "zones/"+zoneID;
-	String params = "token_id=" + tokenString;	
+	String params = "token_id=" + tokenString;  
 	
 	startAsyncRequest(baseURI,params,"POST");
 }
@@ -327,7 +341,7 @@ void registerToken(long tokenID, int readerID) {
 	
 	String tokenString = String(tokenID);
 	String baseURI = API_BASE+API_ENDPOINT + "readers/";
-	String params = "token_id=" + tokenString;	
+	String params = "token_id=" + tokenString;  
 
 	startAsyncRequest(baseURI,params,"POST");
 }
@@ -336,7 +350,7 @@ void registerMintToken(long tokenID, int readerID) {
 	
 	String tokenString = String(tokenID);
 	String baseURI = API_BASE+API_ENDPOINT + "readers/"+ readerID;
-	String params = "token_id=" + tokenString;	
+	String params = "token_id=" + tokenString;  
 
 	startAsyncRequest(baseURI,params,"POST");
 }
@@ -350,8 +364,8 @@ void setupWiFi() {
 
 	Serial.print("Wifi Connecting.");
 	while (wifiMulti.run() != WL_CONNECTED) {
-		Serial.print(".");
-		delay(1000);
+	 Serial.print(".");
+	 delay(1000);
 	} 
 	
 	logAction("WiFi connected to SSID: '"+WiFi.SSID()+"' @ "+WiFi.localIP().toString());
@@ -359,27 +373,27 @@ void setupWiFi() {
 
 void setupNFC() {
 	
-   for (int i = 0; i < READER_COUNT; i++) { 
-   	
-   	nfcs[i].begin();
+	for (int i = 0; i < READER_COUNT; i++) { 
+	 
+	 nfcs[i].begin();
 
-		uint32_t versiondata = nfcs[i].getFirmwareVersion();
-		if (! versiondata) {
-			Serial.printf("Didn't find PN532 board %d",i);
-			delay(1000); // wait a second and give it a go.
-			ESP.restart();
-		}
-		// Got ok data, print it out!
-		Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
-		Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC); 
-		Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
-		
-		nfcs[i].setPassiveActivationRetries(0x01);
-		// configure board to read RFID tags
-		nfcs[i].SAMConfig();
+	 uint32_t versiondata = nfcs[i].getFirmwareVersion();
+	 if (! versiondata) {
+		Serial.printf("Didn't find PN532 board %d",i);
+		delay(1000); // wait a second and give it a go.
+		ESP.restart();
+	 }
+	 // Got ok data, print it out!
+	 Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX); 
+	 Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC); 
+	 Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
+	 
+	 nfcs[i].setPassiveActivationRetries(0x01);
+	 // configure board to read RFID tags
+	 nfcs[i].SAMConfig();
 
-		lastIDs[i] = -1;
-    	tokenIDs[i] = -1;
+	 lastIDs[i] = -1;
+		tokenIDs[i] = -1;
 	}
 
 	Serial.println("Waiting for an ISO14443A Card on all nfcs...");
@@ -393,16 +407,16 @@ void setupClient() {
 }
 
 void startAsyncRequest(String request, String params, String type){
-    
+	 
 	logAction(type + " REQUEST: " + request + "?" + params);
-    	
-	if(apiClient.readyState() == 0 || apiClient.readyState() == 4){ // Only one send at a time here.
-		apiClient.open(type.c_str(),request.c_str());		
-		if (type == "POST") apiClient.setReqHeader("Content-Type","application/x-www-form-urlencoded");
 		
-		apiClient.send(params);	
+	if(apiClient.readyState() == 0 || apiClient.readyState() == 4){ // Only one send at a time here.
+	 apiClient.open(type.c_str(),request.c_str());   
+	 if (type == "POST") apiClient.setReqHeader("Content-Type","application/x-www-form-urlencoded");
+	 
+	 apiClient.send(params); 
 	} else {
-		logAction("Request attempted but busy sending...Try again.");
+	 logAction("Request attempted but busy sending...Try again.");
 	}
 }
 
@@ -411,9 +425,9 @@ void setupServer() {
 	
 	// Start the file system.
 	if(!SPIFFS.begin()){
-		Serial.println("An Error has occurred while mounting SPIFFS");
-		return;
-  	}
+	 Serial.println("An Error has occurred while mounting SPIFFS");
+	 return;
+	 }
 	
 	// Root / Home
 	// server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -421,21 +435,18 @@ void setupServer() {
 	//  });
 
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-		request->send(200, "text/plain", "fgkldsjklfgjklgfdljk");
+	 request->send(200, "text/plain", "fgkldsjklfgjklgfdljk");
 
-		// request->send(SPIFFS, LOG_FILE, "text/plain");
+	 // request->send(SPIFFS, LOG_FILE, "text/plain");
 	});
 
 	server.serveStatic("/log/", SPIFFS, LOG_FILE);
 	
-	AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
-	
-
 	// server.on("/log/flush", HTTP_GET, [](AsyncWebServerRequest *request){
-	// 	flushLog();
-	// 	request->send(200, "text/plain", "Log flushed.");
-	// 	// request->send(SPIFFS, "/"+LOG_FILE, "text/plain");
-	// });	
+	//  flushLog();
+	//  request->send(200, "text/plain", "Log flushed.");
+	//  // request->send(SPIFFS, "/"+LOG_FILE, "text/plain");
+	// });  
 
 	// // DEMO
 	// // Send a GET request to <IP>/get?message=<message>
@@ -460,13 +471,13 @@ void setupServer() {
  //       }
  //       request->send(200, "text/plain", "Hello, POST: " + message);
  //   });
-   
-   server.onNotFound(notFound);
-  
-   server.begin();
+	
+	server.onNotFound(notFound);
+	
+	server.begin();
 }
 void notFound(AsyncWebServerRequest *request) {
-    request->send(404, "text/plain", "Connected but not found");
+	 request->send(404, "text/plain", "Connected but not found");
 }
 
 // Return the 64 bit uid, with ZERO meaning nothing presently detected.
@@ -480,20 +491,20 @@ nfcid_t pollNfc(uint8_t reader_id)
 	// char pollChar = '.'; // dots for no read, + for active.
 
 	// Check for card
-	int foundCard = nfcs[reader_id].readPassiveTargetID(PN532_MIFARE_ISO14443A, &uidBytes[0], &uidLength, 100);
+	int foundCard = nfcs[reader_id].readPassiveTargetID(PN532_MIFARE_ISO14443A, &uidBytes[0], &uidLength, 500);
 
-	if (foundCard) {		
-		uidLength = 4; // it's little endian, the lower four are enough, and all we can use on this itty bitty cpu. ///magic numbers
-	 	
-	 	// Unspool the bins right here.
-	 	for (int ix = 0; ix < uidLength; ix++)
-			uid = (uid << 8) | uidBytes[ix];
+	if (foundCard) {    
+	 uidLength = 4; // it's little endian, the lower four are enough, and all we can use on this itty bitty cpu. ///magic numbers
+	 
+	 // Unspool the bins right here.
+	 for (int ix = 0; ix < uidLength; ix++)
+		uid = (uid << 8) | uidBytes[ix];
 
-		// pollChar = '+'; //
+	 // pollChar = '+'; //
 	}
 
 	// if (pollCount % 20 == 0)  // so the dots dont scroll right forever.
-	// 	Serial.printf("\n%4d ", pollCount);
+	//  Serial.printf("\n%4d ", pollCount);
 	// pollCount++;
 	// Serial.print(pollChar);
 	return uid;
@@ -507,17 +518,19 @@ long id(uint8_t bins[]) {
 	uint32_t c;
 	c = bins[0];
 	for (int i=1;i<count(bins);i++){
-		c <<= 8;
-		c |= bins[i];
+	 c <<= 8;
+	 c |= bins[i];
 	}
 	return c;
 }
 // === LED Functions ===
 void showAll(uint32_t color) {
-	for(int i=0; i<NUM_LEDS; i++){
-	    strip.setPixelColor(i,color);
+	for(int i=0; i<READER_COUNT; i++){
+		for(int p=0; p<NUM_LEDS; p++){
+			leds[i][p] = color;    
+		}		
 	}
-	strip.show();
+	FastLED.show();
 }
 
 // === Log Functions ===
@@ -529,21 +542,21 @@ String printLog() {
 	File f = SPIFFS.open(LOG_FILE, "r");
 	
 	if (!f) {
-		output = "file open failed";
-		return output;
+	 output = "file open failed";
+	 return output;
 	}
 
 	output = "====== Reading from LOG_FILE =======";
 
 	while(f.available()) {
-	   //Lets read line by line from the file
-	   String line = f.readStringUntil('\n');
-	   // Serial.print(xCnt);
-	   // Serial.print("  ");
-	   // Serial.println(line);
-	   output += xCnt + "  " + line + "\n";
+		//Lets read line by line from the file
+		String line = f.readStringUntil('\n');
+		// Serial.print(xCnt);
+		// Serial.print("  ");
+		// Serial.println(line);
+		output += xCnt + "  " + line + "\n";
 
-	   xCnt ++;
+		xCnt ++;
 	}
 	f.close();    
 
@@ -559,22 +572,22 @@ void listFiles() {
 
 	while(file){
 
-	   Serial.print("FILE: ");
-	   Serial.println(file.name());
+		Serial.print("FILE: ");
+		Serial.println(file.name());
 
-	   file = root.openNextFile();
+		file = root.openNextFile();
 	}
 }
 
 void flushLog() {
-	File f = SPIFFS.open(LOG_FILE, "w");	
-		f.printf("%s %s: ", __DATE__, __TIME__);
-		f.println("Begin Log");
+	File f = SPIFFS.open(LOG_FILE, "w");  
+	 f.printf("%s %s: ", __DATE__, __TIME__);
+	 f.println("Begin Log");
 	f.close();
 }
 
 void logAction(String actionString) {
-    
+	 
 	Serial.printf("\n%s %s: ", __DATE__, __TIME__);
 	Serial.println(actionString);
 
@@ -583,9 +596,9 @@ void logAction(String actionString) {
 	// if not exists, create using W, other wise append with A
 	if (!SPIFFS.exists(LOG_FILE)) mode = "w";
 
-	File f = SPIFFS.open(LOG_FILE, mode);			
-		f.printf("%s %s: ", __DATE__, __TIME__);
-		f.println(actionString);
+	File f = SPIFFS.open(LOG_FILE, mode);     
+	 f.printf("%s %s: ", __DATE__, __TIME__);
+	 f.println(actionString);
 	f.close();
-    
+	 
 }

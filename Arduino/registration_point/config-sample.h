@@ -9,9 +9,6 @@
 #define DNS_NAME "zone-plus-one" // Zone DNS
 #define READER_ID 0 // 0 for Zone, 1 for intake.
 
-//  NFC
-#define READER_COUNT 2
-
 #define SSID1 "MYWIFISSID"
 #define PASSWORD1 "MYWIFIPASS"
 #define SSID2 "MYWIFISSID"
