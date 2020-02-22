@@ -249,59 +249,44 @@ class Spirit_Knobs_Controller extends WP_REST_Controller {
 			),
 
 		]);
+
+		/// This belongs elsewhere but we don't have time now.
+		$path = 'vortex/';
+		register_rest_route( $namespace, '/' . $path, [
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_vortex' ),
+				'permission_callback' => array( $this, 'get_items_permissions_check' )
+				),
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'send_vortex' ),
+				'permission_callback' => array( $this, 'get_items_permissions_check' )
+			),
+
+		]);
 	}
-	public function get_item($request) {
+	public function get_vortex($request) {
 
-		global $IFLPartyMechanics;
+		$vortex = get_option('vortexcannon');
 
-		$token_id = $request['token_id'];
+		if ($vortex == 1) {
+			update_option('vortexcannon',0);
 
-		$user_id = $IFLPartyMechanics->get_user_id_from_token_id($token_id);
-
-		if ($user_id === false) {
-			return new WP_Error( 'no_value', 'No user found for token ID.', array( 'status' => 404 ) );
+			IFLPartyMechanics::log_action("VORTEXSENT!");
+			return new WP_REST_Response("GO", 200);
 		}
+
+		return new WP_REST_Response("NO", 404);
+
 		
-		$spirits = $IFLPartyMechanics->get_user_spirits_by_id($user_id);
-
-		if ($spirits === false) {
-			return new WP_Error( 'no_value', 'Retrieving spirits failed.', array( 'status' => 404 ) );
-		}
-		// if ($spirits == 0) {
-		// 	return new WP_Error( 'no_id', 'No new ID available.', array( 'status' => 200 ) );
-		// }
-
-		return new WP_REST_Response($spirits, 200);
 	}
 
-	public function post_item($request) {
-		
-		global $IFLPartyMechanics;
+	public function send_vortex($request) {		
 
-		$spirits = $request['spirits'];
-		$token_id = $request['token_id'];
+		update_option('vortexcannon',1);
 
-		$user_id = $IFLPartyMechanics->get_user_id_from_token_id($token_id);
-
-		if ($user_id === false) {
-			return new WP_Error( 'no_value', 'No user found for token ID.', array( 'status' => 404 ) );
-		}
-		
-		// $reader_id = $request->get_param( 'reader_id' );
-		// $token_id = $request->get_param( 'token_id' );
-
-		if (empty($user_id))
-			return new WP_REST_Response("User ID not found.", 404);
-
-		if (empty($spirits))
-			return new WP_REST_Response("Spirits not found.", 404);
-
-		$response = $IFLPartyMechanics->update_user_spirits_by_id($user_id,$spirits);	
-
-		// IFLPartyMechanics::log_action($response);
-		/// ERRORs
-
-		return new WP_REST_Response($response, 200);
+		return new WP_REST_Response("SAVED", 200);
 	}
 
 	public function get_items_permissions_check($request) {
