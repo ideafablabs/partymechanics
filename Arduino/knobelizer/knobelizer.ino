@@ -8,6 +8,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include <ArduinoOTA.h>
 
 #include <FastLED.h>
 
@@ -160,11 +161,12 @@ void loop() {
 			for(int i=0; i<KNOB_COUNT; i++){
                    
 				int read = analogRead(knobpins[i]);	        
-				knobvals[i] = map(read, 0, 4096, 0, 64);
-	        
+				knobvals[i] = map(read, 0, 4096, 0, 14);
+
 				uint8_t hist = 2;
 
-				if (knobvals[i] > lastvalues[i]+hist || knobvals[i] < lastvalues[i]-hist) {        
+				// if (knobvals[i] > lastvalues[i]+hist || knobvals[i] < lastvalues[i]-hist) {        
+				if (knobvals[i] != lastvalues[i]) {        
 	            
 	            // String output = time+" - "+dicks[selector]+" of Dicks (ps:Send Nudes)";	            
 	            // String val = (String)knobvals[i];	         
@@ -173,18 +175,20 @@ void loop() {
 	            lastvalues[i] = knobvals[i];
 	            knobsend = 1;
 				}
-        	} 
+        	
 
-        	if (knobsend) {
-        		knobPackage = "K,";
-        		for(int i=0; i<KNOB_COUNT; i++){
-        			knobPackage.concat((String)knobvals[i]);
-        			knobPackage.concat(",");
-        		}        		
-        		Serial.println(knobPackage);
-        		if (socketActive) webSocket.sendTXT(knobPackage);
-				knobsend = 0;
-        	}
+	        	if (knobsend) {
+	        		knobPackage = "K,";
+	        		knobPackage.concat(i);
+	        		knobPackage.concat(",");
+	        		knobPackage.concat((String)knobvals[i]);
+	        				        	
+	        		Serial.println(knobPackage);
+	        		if (socketActive) webSocket.sendTXT(knobPackage);
+					knobsend = 0;
+	        	}
+
+        	} 
 
      	}
       lastknob = now;
@@ -285,10 +289,13 @@ void loop() {
 			} 
 		} 
 
-		if (state == RQ_PENDING) {
-			c = tokenColors[getTokenColor(tokenID)];
-		} 
-
+		for(int i=0; i<READER_COUNT; i++){
+			if (holdTimes[i]) {
+				c = tokenColors[getTokenColor(tokenIDs[i])];
+			} 
+    
+		}
+		
 		if (state == RQ_SUCCESS) {
 			c = 0xFFFFFF;
 			if (step % 10) {

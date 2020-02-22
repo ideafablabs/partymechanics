@@ -36,45 +36,36 @@
 long now = 0;
 
 //  NFC
-// Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-// Adafruit_PN532 nfc(PN532_SS);
-//Adafruit_PN532 nfcs[READER_COUNT] = {
-//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS1),
-//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS2),
-//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS3),
-//  Adafruit_PN532(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS4),
-//};
-
 Adafruit_PN532 nfcs[READER_COUNT] = {
+	Adafruit_PN532(PN532_SS0),
 	Adafruit_PN532(PN532_SS1),
 	Adafruit_PN532(PN532_SS2),
 	Adafruit_PN532(PN532_SS3),
-	Adafruit_PN532(PN532_SS4),
 };
-
 
 typedef uint32_t nfcid_t; // We treat the NFCs as 4 byte values throughout, for easiest.
 long lastRead, successTime = 0;
 uint16_t cardreaderPeriod = 500; // ms
-uint16_t successPeriod = 3000;   // ms
+uint16_t successPeriod = 10000;   // ms
+uint16_t cooldownPeriod = 300000;   // ms 5m
+uint16_t cooldownPeriod = 20000;   // ms 5m
 
-enum readerState {RQ_STANDBY,RQ_PENDING,RQ_SUCCESS,RQ_FAILED};
+enum requestState {RQ_STANDBY,RQ_PENDING,RQ_SUCCESS,RQ_FAILED};
+enum activatorState {AC_READY,AC_SUCCESS,AC_COOLDOWN};
 uint8_t state = RQ_STANDBY;
+uint8_t ac_state = AC_READY;
 
 // LED
 //Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LEDPIN, NEO_GRB + NEO_KHZ800);
-// Adafruit_DotStar strip = Adafruit_DotStar(NUM_LEDS, LEDPIN, LEDCLK, DOTSTAR_BRG);
 CRGB leds[READER_COUNT][NUM_LEDS];
 
 int step = 0 ;
 long lastBlink = 0;
-const uint16_t ledPeriod = 40; // ms 24fps
+const uint16_t ledPeriod = 100; // ms 24fps
 uint32_t tokenColors[] = { 0x00FF00, 0xFFFF00, 0xFF0000, 0x0000FF, 0xFF00FF, 0xFFFFFF,  }; // Should be G Y R B (& secret purple)
 
-// uint8_t tokenCount = 0;
-// uint8_t tokenSelection[READER_COUNT];
-// uint32_t tokensAchieved[READER_COUNT];
-
+uint8_t tokenCount = 0;
+uint8_t tokenSelection[READER_COUNT];
 long holdTimes[READER_COUNT];
 long holdStartTimes[READER_COUNT];
 
@@ -110,10 +101,10 @@ void setup() {
 	Serial.println("Henlo!");
 	
 	// LED Launch.
-	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUM_LEDS);  // GRB ordering is assumed
-	FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[1], NUM_LEDS);  // GRB ordering is assumed
-	FastLED.addLeds<NEOPIXEL, LEDPIN3>(leds[2], NUM_LEDS);  // GRB ordering is assumed
-	FastLED.addLeds<NEOPIXEL, LEDPIN4>(leds[3], NUM_LEDS);  // GRB ordering is assumed
+	FastLED.addLeds<NEOPIXEL, LEDPIN0>(leds[0], NUM_LEDS);  // GRB ordering is assumed
+	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[1], NUM_LEDS);  // GRB ordering is assumed
+	FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[2], NUM_LEDS);  // GRB ordering is assumed
+	FastLED.addLeds<NEOPIXEL, LEDPIN3>(leds[3], NUM_LEDS);  // GRB ordering is assumed
 
 	FastLED.setBrightness(BRIGHTNESS);
 	//strip.begin();
@@ -137,6 +128,7 @@ void setup() {
 	// printLog();
 	listFiles();
 
+	resetTokens();
 }
 
 void loop() {
@@ -150,60 +142,86 @@ void loop() {
 	static nfcid_t tokenID = -1;
 	// static long holdStartTime,holdTime;
 
+	if (ac_state == AC_READY) {
 	if (now >= lastRead + cardreaderPeriod) { // Time for next card poll.
 
-	 for (int i = 0; i < READER_COUNT; i++) { 
+	 	for (int i = 0; i < READER_COUNT; i++) { 
 		
-		tokenIDs[i] = pollNfc(i);
-	 
-		if (tokenIDs[i] != lastIDs[i]) { // Detect change in card.
+			tokenIDs[i] = pollNfc(i);
+		 
+			if (tokenIDs[i] != lastIDs[i]) { // Detect change in card.
+					
+				if (tokenIDs[i] != 0){ // Card found.
+					logAction("Reader "+(String)i+" detected tokenID: " + (String)tokenIDs[i]);
+
+					// Reader state becomes active.
+					holdStartTimes[i] = now;
+					Serial.printf("R%d - Hold start time: %d\n",i, holdStartTimes[i]);
+
+					// Do initial hold action.
+					uint8_t colorID = getTokenColorID(tokenIDs[i]);
+					if (colorID == tokenSelection[i] || colorID == 4) {
+						tokenCount++;	
+					}
+
+					// state = RQ_PENDING;
+
+				} else { // Card was removed.
+				 	Serial.printf("R%d - Card Removed.\n",i);
+				 
+				 
+				 	if (tokenCount > 0) {
+				 		tokenCount--;	
+				 	}
+
+				 	// Reader state becomes inactive.
+				 	holdTimes[i] = 0;
+				}
 				
-			if (tokenIDs[i] != 0){ // Card found.
-			 logAction("Reader "+(String)i+" detected tokenID: " + (String)tokenIDs[i]);
+				lastIDs[i] = tokenIDs[i];
 
-			 // Reader state becomes active.
-			 holdStartTimes[i] = now;
-			 Serial.printf("R%d - Hold start time: %d\n",i, holdStartTimes[i]);
-
-			 // Do initial hold action.
-			 
-
-			 // state = RQ_PENDING;
-
-			} else { // Card was removed.
-			 Serial.printf("R%d - Card Removed.\n",i);
-			 
-			 // Reader state becomes inactive.
-			 holdTimes[i] = 0;       
-			}
-			lastIDs[i] = tokenIDs[i];
-		} else {
-			
-			if (tokenIDs[i] != 0) {
-			 
-			 // Increase hold timer.
-			 holdTimes[i] = now - holdStartTimes[i];
-			 
-			 // Do longer hold actions.
-			 if (holdTimes[i] > 5000) {
-					// Serial.println("Held for "+holdTime);
-			 }
+			} else {
+				
+				if (tokenIDs[i] != 0) {
+				 
+				 	// Increase hold timer.
+				 	holdTimes[i] = now - holdStartTimes[i];
+				 
+				 	// Do longer hold actions.
+				 	if (holdTimes[i] > 5000) {
+						// Serial.println("Held for "+holdTime);
+				 	}
+				}
 			}
 		}
-	 }
-	 lastRead = now;
+		lastRead = now;
+	}
 	}
 
-	// if (state == RQ_SUCCESS && now >= successTime + successPeriod) { 
-	 // state == RQ_STANDBY;
-	// }
+	// We have all tokens? Send it!
+	if (ac_state == AC_READY && tokenCount == READER_COUNT) {
+		Serial.println("ACTIVATE");
+		changeState(AC_SUCCESS);
+		successTime = now;
+		tokenCount = 0;
+		sendVortexActivation();
+	}
+
+	if (ac_state == AC_COOLDOWN && now >= successTime + cooldownPeriod ) {
+		changeState(AC_READY);	
+		resetTokens();
+	}
+
+	if (ac_state == AC_SUCCESS && now >= successTime + successPeriod) { 
+	 	changeState(AC_COOLDOWN);
+	}
 	
 	// if (state >= RQ_SUCCESS && holdTimes) {
 	 // continue success notice...
 	// }
-	else if (state >= RQ_SUCCESS && now >= successTime + successPeriod) { 
-	 state = RQ_STANDBY;
-	} 
+	// else if (state >= RQ_SUCCESS && now >= successTime + successPeriod) { 
+	//  state = RQ_STANDBY;
+	// } 
 
 	// +-------------------------
 	// | Do LEDs. 
@@ -218,12 +236,14 @@ void loop() {
 			
 			// Default color.
 	 		uint32_t c = 0x00FFFF;
-						
-			if (tokenIDs[i] > 0) {
-				c = tokenColors[getTokenColor(tokenIDs[i])];
+
+	 		c = tokenColors[tokenSelection[i]];
+
+			if (holdTimes[i] && getTokenColorID(tokenIDs[i]) == tokenSelection[i] || getTokenColorID(tokenIDs[i]) == 4) {
+				c = 0xFF00FF;
 			}
 
-			// if (state == RQ_SUCCESS) {
+			// if (ac_state == AC_COOLDOWN) {
 			// 	c = 0xFFFFFF;
 			// 	if (step % 10) {
 			// 		c = 0;
@@ -241,6 +261,24 @@ void loop() {
 			for(int p=0; p<NUM_LEDS; p++){        
 				leds[i][p] = (alpha(c,colormin+a));
 			}
+
+			if (ac_state == AC_COOLDOWN) {				
+				for(int p=0; p<NUM_LEDS; p++){        
+					leds[i][p] = 0;
+				}
+				leds[i][step%NUM_LEDS] = 0xFF00FF;
+			}
+
+			if (ac_state == AC_SUCCESS) {				
+				c = 0xFFFFFF;
+				if (step%2) {
+					c = 0;
+				}
+
+				for(int p=0; p<NUM_LEDS; p++){        
+					leds[i][p] = c;
+				}			
+			}
 		}
 
 	 // Let the magic happen.
@@ -254,10 +292,22 @@ void loop() {
 	}
 }
 
+
+void resetTokens() {
+	for(int i=0; i<READER_COUNT; i++){
+	   tokenSelection[i] = random(4);	    
+	}	
+}
+
 // we think idcode is always even...
 // this is mostly because we read the little-endian id as if it were
 // big-endian and are getting kinda lucky. But this /2 mod5 thing works so ok for now. dvb 2019.
-uint8_t getTokenColor(nfcid_t uid)
+uint32_t getTokenColor(nfcid_t uid)
+{
+	int flavor = getTokenColorID(uid);
+	return tokenColors[flavor];
+}
+uint8_t getTokenColorID(nfcid_t uid)
 {
 	uid /= 2;
 	int flavor = uid % 5;
@@ -328,31 +378,19 @@ void onClientStateChange(void * arguments, asyncHTTPrequest * aReq, int readySta
 	}
 }
 
-void plusOneZone(long tokenID, int zoneID) {
+void sendVortexActivation() {
  
-	String tokenString = String(tokenID);   
-	String baseURI = API_BASE+API_ENDPOINT + "zones/"+zoneID;
-	String params = "token_id=" + tokenString;  
+	// String tokenString = String(tokenID);   
+	String baseURI = API_BASE+API_ENDPOINT + "vortex/";
+	String params = "";
 	
 	startAsyncRequest(baseURI,params,"POST");
 }
 
-void registerToken(long tokenID, int readerID) {
-	
-	String tokenString = String(tokenID);
-	String baseURI = API_BASE+API_ENDPOINT + "readers/";
-	String params = "token_id=" + tokenString;  
+void changeState(int newstate) {
 
-	startAsyncRequest(baseURI,params,"POST");
-}
-
-void registerMintToken(long tokenID, int readerID) {
-	
-	String tokenString = String(tokenID);
-	String baseURI = API_BASE+API_ENDPOINT + "readers/"+ readerID;
-	String params = "token_id=" + tokenString;  
-
-	startAsyncRequest(baseURI,params,"POST");
+	ac_state = newstate;
+	logAction("Changing State to "+ac_state);
 }
 
 // Wifi Setup.
@@ -364,8 +402,8 @@ void setupWiFi() {
 
 	Serial.print("Wifi Connecting.");
 	while (wifiMulti.run() != WL_CONNECTED) {
-	 Serial.print(".");
-	 delay(1000);
+		Serial.print(".");
+	 	delay(1000);
 	} 
 	
 	logAction("WiFi connected to SSID: '"+WiFi.SSID()+"' @ "+WiFi.localIP().toString());

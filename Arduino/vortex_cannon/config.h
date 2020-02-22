@@ -5,9 +5,7 @@
  * CONFIG DATA: PINS, WIFI PASSWORDS, ETC
  */
 
-#define ZONE_ID 1 // Zone ID's can be found on the website.
-#define READER_ID 2 // 0 for Zone, 1 for intake.
-const String DNS_NAME = "nfc-reader-2"; // Zone DNS
+const String DNS_NAME = "vortex-cannon"; // Zone DNS
 
 #define SSID1 "sendingnudes"
 #define PASSWORD1 "sendnudes"
@@ -25,24 +23,6 @@ const String API_ENDPOINT = "wp-json/mint/v1/";
 
 #define LOG_FILE "/actions.log"
 
-// LED Details
-#define LEDPIN 2
-#define NUM_LEDS 16
-#define BRIGHTNESS 100
-
-// NFC Details
-
-// LOLIN MCU
-// #define PN532_SCK  14	// SK
-// #define PN532_MOSI 13	// S1
-// #define PN532_SS   9		// SC
-// #define PN532_MISO 10	// SO
-
-// WEMOS D1
-#define PN532_SCK  14
-#define PN532_MOSI 13
-#define PN532_SS   15
-#define PN532_MISO 12
-// #define PN532_SS   4
+#define MOTORPIN 2
 
 #endif // CONFIG_H

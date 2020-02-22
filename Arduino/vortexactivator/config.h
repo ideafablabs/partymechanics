@@ -25,10 +25,22 @@ const String API_ENDPOINT = "wp-json/mint/v1/";
 #define LOG_FILE "/actions.log"
 
 // LED Details
-#define LEDPIN1 16
-#define LEDPIN2 17
-#define LEDPIN3 18
-#define LEDPIN4 19
+// #define LEDPIN1 16
+// #define LEDPIN2 17
+// #define LEDPIN3 18
+// #define LEDPIN4 19
+// #define LEDPIN4 16
+// #define LEDPIN1 17
+// #define LEDPIN2 18
+// #define LEDPIN3 19
+
+
+
+#define LEDPIN2 16
+
+#define LEDPIN3 17
+#define LEDPIN1 18
+#define LEDPIN0 19
 #define NUM_LEDS 14
 #define BRIGHTNESS 100
 
@@ -42,9 +54,9 @@ const String API_ENDPOINT = "wp-json/mint/v1/";
 #define PN532_MOSI (13)
 #define PN532_MISO (12)
 
-#define PN532_SS1  (4)
-#define PN532_SS2  (27)
-#define PN532_SS3  (26)
-#define PN532_SS4  (25)
+#define PN532_SS0  (4)  // Down
+#define PN532_SS1  (27) // Left
+#define PN532_SS2  (26) // Up
+#define PN532_SS3  (25) // Right
 
 #endif // CONFIG_H
