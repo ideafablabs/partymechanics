@@ -46,9 +46,9 @@ $(document).ready( function(){
 		$(".nfc_button").on('click', iflpm_ajax_get_token_id_from_reader);
 		
 		// Lock submit button until good token is pulled.
-		$('.submit-button').click(function(event){
-    		event.preventDefault();
-		});
+		// $('.submit-button').click(function(event){
+  //   		event.preventDefault();
+		// });
 
 		///
 		// Interval for regular checking of token.
@@ -203,6 +203,7 @@ function iflpm_ajax_get_token_id_from_reader() {
 			}			
 						
 			$(".submit-button").addClass('active');
+			$('.admit-button').removeClass('hidden');
 			$('.submit-button.active').unbind('click');
 			
 			// console.log(token_color);
@@ -213,7 +214,12 @@ function iflpm_ajax_get_token_id_from_reader() {
 		// Or failure.
 		} else {                
 			// var usermessage = '<p class="ajax-error error">'+response.message+'</p>';                
-			$(".ajax-message").prepend(build_wp_notice(response).fadeIn());	
+			$(".ajax-message").prepend(build_wp_notice(response).fadeIn());
+			
+			/// Last minute hacks
+			$(".ajax-message .notice").removeClass('hidden');
+			$(".ajax-message .notice .notice-dismiss").addClass('hidden');
+
 		}
 
 		// Give some sort of affirmation...

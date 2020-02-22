@@ -6,6 +6,12 @@
 .submit-button.active {
 	color:inherit;
 }
+.admit-button,.nfc-button {
+	min-width:10em;
+}
+.admit-button,.nfc-button:visited {
+	color:white !important;
+}
 
 #page-heading {
 	/*display: none;*/
@@ -215,12 +221,11 @@ span.token {
 
 /*==============*/
 a.admit-button {
-	/*color:#1D8CB5;*/
 	color:white;
 	font-weight: bold;
 	padding:.8em;
 	margin-top:.5em;
-	border: 1px solid darkblue;
+	/*border: 1px solid darkblue;*/
 	background:#1D8CB5;
 	border-radius:4px;
 	display: block;
