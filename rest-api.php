@@ -218,6 +218,11 @@ class NFC_Registration_Controller extends WP_REST_Controller {
 		if (empty($reader_id))
 			return new WP_REST_Response("Reader ID not found.", 404);
 
+		// Check if token_id is already in table.
+		if(UserTokens::token_id_exists_in_table($token_id)) {};
+			/// We just want to flash an indicator color for existing user.
+			// return new WP_REST_Response("Token ID already in table.", 404);
+
 		update_option('reader_'.$reader_id,$token_id);
 
 		// return new WP_REST_Response("Reader ".$reader_id." Updated: ".$token_id, 200);

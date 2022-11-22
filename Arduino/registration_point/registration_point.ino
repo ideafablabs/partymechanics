@@ -9,7 +9,10 @@
 #include <Adafruit_PN532.h>
 #include <Adafruit_NeoPixel.h>
 
-// Onboard Libs
+// Onboard Libs...
+// https://github.com/me-no-dev/ESPAsyncTCP
+// https://github.com/boblemaire/asyncHTTPrequest
+
 #include <ESPAsyncWebServer.h>
 #include <asyncHTTPrequest.h>
 
@@ -374,9 +377,9 @@ void setupServer() {
 	//  });
 
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-		request->send(200, "text/plain", "fgkldsjklfgjklgfdljk");
+		// request->send(200, "text/plain", "fgkldsjklfgjklgfdljk");
 
-		// request->send(SPIFFS, LOG_FILE, "text/plain");
+		request->send(SPIFFS, LOG_FILE, "text/plain");
 	});
 
 	server.serveStatic("/log/", SPIFFS, LOG_FILE);

@@ -79,7 +79,8 @@
 		
 		<?php
 			foreach ($attendees as $key => $attendee) {
-				echo '<li>'.$attendee->display_name.'</li>';
+				// pr($attendee);
+				echo '<li>'.$attendee->display_name.' ['.$attendee->user_email.']</li>';
 			}
 		
 		echo '</ul>';
@@ -99,7 +100,7 @@
 		<p class="special-guest-total">Total: <?php echo $special_guest_total; ?></p>
 		<ul class="special-guest-list member-list">
 		<?php foreach ($guest_list as $guest) {
-			echo "<li>" . $guest->guest_first_name . " " . $guest->guest_last_name . "</li>";
+			echo '<li>' . $guest->guest_first_name . ' ' . $guest->guest_last_name . ' ['.$guest->guest_email.']</li>';
 		} ?>
 		</ul>
 	

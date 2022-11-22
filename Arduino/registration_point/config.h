@@ -5,7 +5,7 @@
  * CONFIG DATA: PINS, WIFI PASSWORDS, ETC
  */
 
-#define READER_ID 1
+#define READER_ID 3
 const String DNS_NAME = "nfc-reader-"+READER_ID; // Zone DNS
 
 #define SSID1 "loadingdockap"
