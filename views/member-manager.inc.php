@@ -43,7 +43,7 @@
 			// Get users tokens array.
 			$tokens = UserTokens::get_token_ids_by_user_id($user->ID);
 
-			$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user,$selected_event_id)) ? ' special-guest' : '';
+			$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user->user_email,$selected_event_id)) ? ' special-guest' : '';
 			$guest_list_action = ($guest_list_class == ' special-guest') ? 'remove' : 'add';
 			
 			$user_row_class = array(

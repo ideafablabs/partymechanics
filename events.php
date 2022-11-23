@@ -223,10 +223,12 @@ Class IFLPMEventsManager
 			return -1;
 			// throw new Exception("Attendance Table does not exist in database", 1);
 		}
+		
+		$result = $wpdb->get_var("SELECT COUNT(user_id) FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
 
-		$result = $wpdb->get_results("SELECT COUNT(user_id) FROM " . ATTENDANCE_TABLE_NAME . " WHERE event_id = '" . $event_id . "'");
+		// pr($result);
 
-		return $result->num_rows;
+		return $result;
 	}
 
 

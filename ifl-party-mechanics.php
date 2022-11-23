@@ -149,6 +149,16 @@ Class IFLPartyMechanics {
 			null												// int $position = null
 		);
 
+		add_submenu_page(
+			'iflpm_dashboard',							// string $parent_slug,
+			"Reader Status",							// string $page_title, 
+			"Reader Status",							// string $menu_title,
+			'manage_options',							// string $capability, 
+			"iflpm_readers",							// string $menu_slug, 
+			array($this, 'admin_view_controller'),		// callable $function
+			null										// int $position = null
+		);
+
 		add_submenu_page(								
 			'iflpm_dashboard',							// string $parent_slug,
 			"IFLPM Settings",								// string $page_title, 		
@@ -158,6 +168,7 @@ Class IFLPartyMechanics {
 			array($this, 'admin_view_controller'),	// callable $function
 			null													// int $position = null
 		);
+		
 	}
 	
 	/**
@@ -179,6 +190,9 @@ Class IFLPartyMechanics {
 				break;
 			case 'iflpm_members':
 				include IFLPM_VIEWS_PATH . 'member-manager.inc.php';
+				break;
+			case 'iflpm_readers':
+				include IFLPM_VIEWS_PATH . 'reader-manager.inc.php';
 				break;
 			case 'iflpm_settings':
 				include IFLPM_VIEWS_PATH . 'settings.inc.php';
@@ -346,7 +360,7 @@ Class IFLPartyMechanics {
 			// Build links for each member...
 			foreach ($users as $key => $user) {					
 
-				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user,$event_id)) ? 'special-guest' : '';
+				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user->user_email,$event_id)) ? 'special-guest' : '';
 				$attended_class = (IFLPMEventsManager::user_attended_event($user,$event_id)) ? 'attended' : '';
 
 				// Build item class
@@ -653,7 +667,7 @@ Class IFLPartyMechanics {
 				// Get users tokens array.
 				$tokens = UserTokens::get_token_ids_by_user_id($user->ID);
 
-				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user,$selected_event_id)) ? ' special-guest' : '';
+				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user->user_email,$selected_event_id)) ? ' special-guest' : '';
 				$guest_list_action = ($guest_list_class == ' special-guest') ? 'remove' : 'add';
 				
 				$user_row_class = 'user-'. $user->ID . $guest_list_class;

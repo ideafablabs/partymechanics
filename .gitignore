@@ -4,3 +4,4 @@ logs/
 */config.h
 Arduino/.DS_Store
 Arduino/vortexrings/config.h
+.vscode
