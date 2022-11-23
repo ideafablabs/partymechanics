@@ -53,7 +53,7 @@ void setup() {
 	Serial.println("Henlo!");
 	
 	pinMode(MOTORPIN, OUTPUT);
-
+	// digitalWrite(MOTORPIN, LOW);
 	setupWiFi();
 	setupServer();	
 	setupClient();
@@ -119,7 +119,7 @@ void onClientStateChange(void * arguments, asyncHTTPrequest * aReq, int readySta
     		successTime = now;
      		
     		digitalWrite(MOTORPIN, LOW);
-    		delay(25);
+    		delay(500);
     		digitalWrite(MOTORPIN, HIGH);
 
    //   		String r;

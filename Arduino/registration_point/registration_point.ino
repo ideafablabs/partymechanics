@@ -321,7 +321,7 @@ void setupNFC() {
 	if (! versiondata) {
 		Serial.print("Didn't find PN53x board");
 		delay(1000); // wait a second and give it a go.
-			ESP.restart();
+		ESP.restart();
 	}
 	// Got ok data, print it out!
 	Serial.print("Found chip PN532"); Serial.println((versiondata>>24) & 0xFF, HEX); 

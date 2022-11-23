@@ -72,14 +72,12 @@ Class SpiritKnobs {
 		$result = $wpdb->query("DROP TABLE IF EXISTS " . $table_name);
 	}
 	
-	public static function update_user_spirits_by_id($user, $spirits) {
+	public static function update_spirits_by_user($user, $spirits) {
 		// echo $user;
 		// echo $spirits;
-		if (self::is_user_in_spirit_table($user)) {
-			// echo "updating";
+		if (self::is_user_in_spirit_table($user->ID)) {			
 			self::update_spirits($user, $spirits);	
-		} else {
-			// echo "inserting";
+		} else {			
 			self::insert_spirits($user, $spirits);	
 		}
 
@@ -97,7 +95,7 @@ Class SpiritKnobs {
 		$where = array('user_id' => $user->ID);
 
 		global $wpdb;
-		$wpdb->update(
+		$result = $wpdb->update(
 			SPIRIT_KNOBS_TABLE_NAME,
 			$data,
 			$where
@@ -113,9 +111,11 @@ Class SpiritKnobs {
 			SPIRIT_KNOBS_TABLE_NAME,
 			array(
 				'user_id' => $user->ID,
-				'spirits' => $spirits				
+				'spirits' => $spirits
 			)
 		);
+		pr($wpdb);
+		
 	}
 
 	public static function get_user_spirits_by_id($id) {
@@ -138,7 +138,7 @@ Class SpiritKnobs {
 		if (!IFLPMDBManager::does_table_exist_in_database(SPIRIT_KNOBS_TABLE_NAME) || self::is_spirit_knobs_table_empty()) {
 			return false;
 		} else {
-			$result = $wpdb->get_results("SELECT * FROM " . SPIRIT_KNOBS_TABLE_NAME . " WHERE id = " . $id);
+			$result = $wpdb->get_results("SELECT * FROM " . SPIRIT_KNOBS_TABLE_NAME . " WHERE user_id = " . $id);
 			
 			if ($wpdb->num_rows == 0) {
 				return false;

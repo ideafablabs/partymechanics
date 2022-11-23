@@ -63,7 +63,7 @@ Class UserTokens {
 		return $result[0]->user_id;		
 	}
 
-	// if the user ID is in the tokens table, returns associated token ID(s) as array, otherwise returns an error message
+	// if the user ID is in the tokens table, returns associated token ID(s) as array, otherwise returns false
 	public static function get_token_ids_by_user_id($user_id) {
 		global $wpdb;
 

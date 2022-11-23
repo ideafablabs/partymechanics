@@ -55,6 +55,8 @@
 	// IFLPMEventsManager::test_event_title_stuff();
 	// IFLPMEventsManager::test_event_registration_form_stuff();
 	
+	// SpiritKnobs::update_user_spirits_by_id();
+	
 	// MovieQuotes::test_user_pairings_stuff();
 	// MovieQuotes::test_movie_quotes_stuff();
 	// UserTokens::test_tokens_stuff();
