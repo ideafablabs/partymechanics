@@ -10,7 +10,7 @@
 class Users_Tokens_Controller extends WP_REST_Controller {
 	public function register_routes() {
 		$namespace = 'mint/v1';
-		$path = 'users/(?P<created_after>\d+)';
+		$path = 'users';
 
 		register_rest_route( $namespace, '/' . $path, [
 			array(
@@ -22,12 +22,13 @@ class Users_Tokens_Controller extends WP_REST_Controller {
 	}
 	public function get_item($request) {
 		// $user = get_users(array('meta_key' => 'created_at', 'meta_value' => $nfc1));
-		$users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
+		// $users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
+		$response = UserTokens::get_all_user_tokens();
 	
 		$created_after = $request['created_after'];
-		if (empty($users)) return new WP_REST_Response("No New Users Updated.", 404);
+		if (empty($response)) return new WP_REST_Response("No New Users Updated.", 404);
 
-		return new WP_REST_Response($users, 200);
+		return new WP_REST_Response($reponse, 200);
 	}
 
 	public function get_items_permissions_check($request) {

@@ -76,6 +76,14 @@ Class IFLPartyMechanics {
 		add_action('admin_enqueue_scripts', array($this, 'register_iflpm_admin_scripts'));
 		
 		// Register REST API Controllers
+		if (class_exists("Users_Tokens_Controller")) {		
+			add_action('rest_api_init', function () {
+				$user_tokens_controller = new Users_Tokens_Controller();
+				$user_tokens_controller->register_routes();
+			});
+		}
+
+		// Register REST API Controllers
 		if (class_exists("Movie_Quotes_Controller")) {
 			add_action('rest_api_init', function () {
 				$movie_quotes_controller = new Movie_Quotes_Controller();
