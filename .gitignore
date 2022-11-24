@@ -6,3 +6,4 @@ Arduino/.DS_Store
 Arduino/vortexrings/config.h
 .vscode
 .DS_Store
+node_modules
