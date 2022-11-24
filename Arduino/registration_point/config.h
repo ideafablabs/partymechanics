@@ -8,8 +8,10 @@
 #define READER_ID 3
 const String DNS_NAME = "nfc-reader-"+READER_ID; // Zone DNS
 
-#define SSID1 "loadingdockap"
-#define PASSWORD1 "Ldock55AP$securityKEY*"
+// #define SSID1 "loadingdockap"
+// #define PASSWORD1 "Ldock55AP$securityKEY*"
+#define SSID1 "omino warp"
+#define PASSWORD1 "0123456789"
 #define SSID2 "Idea Fab Labs"
 #define PASSWORD2 "vortexrings"
 // #define SSID3 "themint"

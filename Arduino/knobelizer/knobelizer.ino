@@ -8,6 +8,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include <ArduinoOTA.h>
 
 #include <FastLED.h>
 
@@ -69,7 +70,6 @@ long holdStartTimes[READER_COUNT];
 nfcid_t lastIDs[READER_COUNT];
 nfcid_t tokenIDs[READER_COUNT];
 
-
 enum mapping
 {
 	SOCKETSTART1 = 0,
@@ -101,10 +101,10 @@ uint16_t knobperiod = 80;
 uint8_t knobsend = 0;
 
 // connect to 3.3v
-int knob1 = 32;
-int knob2 = 33;
-int knob3 = 34;
-int knob4 = 35;
+int knob1 = 32; // ANIMALS
+int knob2 = 33; // FOODS
+int knob3 = 34; // ELEMENTS
+int knob4 = 35; // CHARACTER
 
 // connect to 3.3v not 5v
 uint8_t knobpins[KNOB_COUNT] = {32,33,34,35};
@@ -160,11 +160,12 @@ void loop() {
 			for(int i=0; i<KNOB_COUNT; i++){
                    
 				int read = analogRead(knobpins[i]);	        
-				knobvals[i] = map(read, 0, 4096, 0, 64);
-	        
+				knobvals[i] = map(read, 0, 4096, 0, 15);
+
 				uint8_t hist = 2;
 
-				if (knobvals[i] > lastvalues[i]+hist || knobvals[i] < lastvalues[i]-hist) {        
+				// if (knobvals[i] > lastvalues[i]+hist || knobvals[i] < lastvalues[i]-hist) {        
+				if (knobvals[i] != lastvalues[i]) {        
 	            
 	            // String output = time+" - "+dicks[selector]+" of Dicks (ps:Send Nudes)";	            
 	            // String val = (String)knobvals[i];	         
@@ -173,18 +174,20 @@ void loop() {
 	            lastvalues[i] = knobvals[i];
 	            knobsend = 1;
 				}
-        	} 
+        	
 
-        	if (knobsend) {
-        		knobPackage = "K,";
-        		for(int i=0; i<KNOB_COUNT; i++){
-        			knobPackage.concat((String)knobvals[i]);
-        			knobPackage.concat(",");
-        		}        		
-        		Serial.println(knobPackage);
-        		if (socketActive) webSocket.sendTXT(knobPackage);
-				knobsend = 0;
-        	}
+	        	if (knobsend) {
+	        		knobPackage = "K,";
+	        		knobPackage.concat(i);
+	        		knobPackage.concat(",");
+	        		knobPackage.concat((String)knobvals[i]);
+	        				        	
+	        		Serial.println(knobPackage);
+	        		if (socketActive) webSocket.sendTXT(knobPackage);
+					knobsend = 0;
+	        	}
+
+        	} 
 
      	}
       lastknob = now;
@@ -233,6 +236,8 @@ void loop() {
 					webSocket.sendTXT(package);
 					Serial.println(package);
 					socketState = 0;
+
+					sendSpiritsToMainFrame(lastIDs[i]);
 
 					// Reader state becomes inactive.
 					holdTimes[i] = 0;				
@@ -285,10 +290,13 @@ void loop() {
 			} 
 		} 
 
-		if (state == RQ_PENDING) {
-			c = tokenColors[getTokenColor(tokenID)];
-		} 
-
+		for(int i=0; i<READER_COUNT; i++){
+			if (holdTimes[i]) {
+				c = tokenColors[getTokenColor(tokenIDs[i])];
+			} 
+    
+		}
+		
 		if (state == RQ_SUCCESS) {
 			c = 0xFFFFFF;
 			if (step % 10) {
@@ -431,30 +439,26 @@ void onClientStateChange(void * arguments, asyncHTTPrequest * aReq, int readySta
   }
 }
 
-void plusOneZone(long tokenID, int zoneID) {
+String getKnobString() {
+	
+	String knobPackage;
+
+	for(int i=0; i<KNOB_COUNT; i++){
+		// knobPackage.concat(i);
+		int select = map(knobvals[i],0,15,1,5);
+		knobPackage.concat((String)select);
+		knobPackage.concat(",");
+	}
+	
+	return knobPackage;
+}
+
+void sendSpiritsToMainFrame(nfcid_t tokenID) {
  
-	String tokenString = String(tokenID);		
-	String baseURI = API_BASE+API_ENDPOINT + "zones/"+zoneID;
-	String params = "token_id=" + tokenString;	
+	String tokenString = String(tokenID);			
+	String baseURI = API_BASE+API_ENDPOINT + "spirits/"+tokenString;	
+	String params = "spirits="+getKnobString();	
 	
-	startAsyncRequest(baseURI,params,"POST");
-}
-
-void registerToken(long tokenID, int readerID) {
-	
-	String tokenString = String(tokenID);
-	String baseURI = API_BASE+API_ENDPOINT + "readers/";
-	String params = "token_id=" + tokenString;	
-
-	startAsyncRequest(baseURI,params,"POST");
-}
-
-void registerMintToken(long tokenID, int readerID) {
-	
-	String tokenString = String(tokenID);
-	String baseURI = API_BASE+API_ENDPOINT + "readers/"+ readerID;
-	String params = "token_id=" + tokenString;	
-
 	startAsyncRequest(baseURI,params,"POST");
 }
 

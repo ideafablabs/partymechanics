@@ -324,7 +324,6 @@ function iflpm_ajax_remove_token_by_id(e) {
 		$(".iflpm-wrap").prepend(build_wp_notice(response).fadeIn());		
 		console.log(response.message);
 
-
 	}
 
 	// Send the package ==>

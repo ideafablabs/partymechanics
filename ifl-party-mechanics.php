@@ -402,7 +402,7 @@ Class IFLPartyMechanics {
 			
 			$response .= '<p><a data-reader_id="' . $reader_id . '" class="nfc_button button"><span class="ifl-svg2"></span>Load Reader '.$reader_id.'</a><br />';			
 			$response .= '<p><div class="token-response"></div></p>';
-			$response .= '<a class="admit-button submit-button button hidden" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1">Admit Guest</a></p>';
+			$response .= '<a class="admit-button submit-button button" href="./?reader_id=' . $reader_id . '&user_email=' . $user_email . '&submit=1">Admit Guest</a></p>';
 
 
 			$start_over_link .= '</div>';

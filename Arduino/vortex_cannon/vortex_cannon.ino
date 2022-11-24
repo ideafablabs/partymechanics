@@ -6,7 +6,6 @@
  */
 
 #include <SPI.h>
-#include <Adafruit_NeoPixel.h>
 
 // Onboard Libs
 #include <ESPAsyncWebServer.h>
@@ -30,18 +29,11 @@ long now = 0;
 
 typedef uint32_t nfcid_t; // We treat the NFCs as 4 byte values throughout, for easiest.
 long lastRead, successTime = 0;
-uint16_t cardreaderPeriod = 5000; // ms
+uint16_t cardreaderPeriod = 10000; // ms
 uint16_t successPeriod = 3000; 	// ms
 
 enum requestState {RQ_STANDBY,RQ_PENDING,RQ_SUCCESS,RQ_FAILED};
 uint8_t state = RQ_STANDBY;
-
-// LED
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LEDPIN, NEO_GRB + NEO_KHZ800);
-int step = 0 ;
-long lastBlink = 0;
-const uint16_t ledPeriod = 40; // ms 24fps
-uint32_t tokenColors[] = { 0x00FF00, 0xFFFF00, 0xFF0000, 0x0000FF, 0xFF00FF, 0xFFFFFF,  }; // Should be G Y R B (& secret purple)
 
 // Communications
 asyncHTTPrequest apiClient;
@@ -58,27 +50,18 @@ uint32_t tokenFlavor;
 void setup() {
 
 	Serial.begin(115200);
-	Serial.println("Hello!");
+	Serial.println("Henlo!");
 	
-	// LED Launch.
-	strip.setBrightness(BRIGHTNESS);
-	strip.begin();
-
-	showAll(0x0000FF);
-
+	pinMode(MOTORPIN, OUTPUT);
+	// digitalWrite(MOTORPIN, LOW);
 	setupWiFi();
-
-	showAll(0x00FF00);
-
-	setupServer();
-	
+	setupServer();	
 	setupClient();
 
 	logAction("Booted Up");
 
 	// printLog();
-	listFiles();
-
+	// listFiles();
 }
 
 void loop() {
@@ -98,108 +81,11 @@ void loop() {
 		// continue success notice...
 			// getReaderToken(2);
 			getVortexActivation();
-			// state == RQ_PENDING;
+			// state == RQ_PENDING;			
 		}
-
-			
-
 
 		lastRead = now;
 	}
-
-	// if (state == RQ_SUCCESS && now >= successTime + successPeriod) { 
-	// 	state == RQ_STANDBY;
-	// }
-	// if (state == RQ_SUCCESS) {
-	// 	// continue success notice...
-	// }
-	// else if (state >= RQ_SUCCESS && now >= successTime + successPeriod) { 
-	// 	state = RQ_STANDBY;
-	// }	
-
-	// +-------------------------
-	// | Do LEDs.	
-	if (now >= lastBlink + ledPeriod) {
-		
-		// Clear pixels.
-		for(int i=0; i<NUM_LEDS; i++){
-			strip.setPixelColor(i, 0);
-		}
-
-		// Default color.
-		uint32_t c = tokenColors[getTokenColor(tokenFlavor)];
-	
-		// if (state == RQ_FAILED) {
-		// 	c = 0xFF0000;
-		// 	if (step % 10) {
-		// 		c = 0;
-		// 	} 
-		// } 
-
-		// if (state == RQ_PENDING) {
-		// 	c = tokenColors[getTokenColor(tokenID)];
-		// } 
-
-		// if (state == RQ_SUCCESS) {
-		// 	c = 0xFFFFFF;
-		// 	if (step % 10) {
-		// 		c = 0;
-		// 	} 
-			
-		// } 
-
-		uint8_t colormin = 10;
-		uint8_t colormax = 100-colormin;
-		// Color wave
-		uint8_t a = step % colormax;
-		if (a > colormax/2) a = colormax - a;
-			
-		for(int i=0; i<NUM_LEDS; i++){				
-			strip.setPixelColor(i, alpha(c,colormin+a));
-		}
-
-		// Let the magic happen.
-		strip.show();
- 
-		// Update step.
-		step++;
-
-		// Update timer.
-		lastBlink = now;
-	}
-}
-
-// we think idcode is always even...
-// this is mostly because we read the little-endian id as if it were
-// big-endian and are getting kinda lucky. But this /2 mod5 thing works so ok for now. dvb 2019.
-uint8_t getTokenColor(int uid)
-{
-	uid /= 2;
-	int flavor = uid % 5;
-	return flavor;
-}
-
-// Helpers to extract RGB from 32bit color.
-uint8_t extractRed(uint32_t c) { return (( c >> 16 ) & 0xFF); } 
-uint8_t extractGreen(uint32_t c) { return ( (c >> 8) & 0xFF ); } 
-uint8_t extractBlue(uint32_t c) { return ( c & 0xFF ); }
-
-uint32_t rgba(byte r, byte g, byte b, int a) {
-  
-  int rr = (r*a)/100;
-  int gg = (g*a)/100;
-  int bb = (b*a)/100;
-
-  return strip.Color(rr,gg,bb);
-}
-
-uint32_t alpha(uint32_t c, int a) {
-  
-  uint8_t r = extractRed(c);
-  uint8_t g = extractGreen(c);
-  uint8_t b = extractBlue(c);
-    
-  return rgba(r,g,b,a);
 }
 
 // https://github.com/boblemaire/asyncHTTPrequest
@@ -232,21 +118,25 @@ void onClientStateChange(void * arguments, asyncHTTPrequest * aReq, int readySta
     		state = RQ_STANDBY;
     		successTime = now;
      		
-     		String r;
-			for(unsigned int i = 0; i<rtext.length(); i++) {
-				if (isDigit(rtext[i])) {
-					r.concat(rtext[i]);
-				}				
-			}
-    		// if (isDigit(response.charAt(2))) {
-    			// String r = rtext.replace("\"","dd");
-    			tokenFlavor = r.toInt();
-    			// tokenFlavor = aReq->responseText();
-    			Serial.println(tokenFlavor);
-    		// }
+    		digitalWrite(MOTORPIN, LOW);
+    		delay(500);
+    		digitalWrite(MOTORPIN, HIGH);
+
+   //   		String r;
+			// for(unsigned int i = 0; i<rtext.length(); i++) {
+			// 	if (isDigit(rtext[i])) {
+			// 		r.concat(rtext[i]);
+			// 	}				
+			// }
+   //  		// if (isDigit(response.charAt(2))) {
+   //  			// String r = rtext.replace("\"","dd");
+   //  			tokenFlavor = r.toInt();
+   //  			// tokenFlavor = aReq->responseText();
+   //  			Serial.println(tokenFlavor);
+   //  		// }
 
     	} else {
-    		state = RQ_FAILED;
+    		state = RQ_STANDBY;
     		successTime = now;
     	}
 
@@ -259,7 +149,7 @@ void onClientStateChange(void * arguments, asyncHTTPrequest * aReq, int readySta
 void getVortexActivation() {
 	
 	// String tokenString = String(tokenID);
-	String baseURI = API_BASE+API_ENDPOINT + "vortexrings/";
+	String baseURI = API_BASE+API_ENDPOINT + "vortex/";
 	String type = "GET";
 	String params = "";	
 
@@ -361,13 +251,6 @@ long id(uint8_t bins[]) {
 		c |= bins[i];
 	}
 	return c;
-}
-// === LED Functions ===
-void showAll(uint32_t color) {
-	for(int i=0; i<NUM_LEDS; i++){
-	    strip.setPixelColor(i,color);
-	}
-	strip.show();
 }
 
 // === Log Functions ===

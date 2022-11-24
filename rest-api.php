@@ -242,14 +242,14 @@ class Spirit_Knobs_Controller extends WP_REST_Controller {
 		$path = 'spirits/(?P<token_id>\d+)';
 
 		register_rest_route( $namespace, '/' . $path, [
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'get_item' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' )
-				),
+			// array(
+			// 	'methods'             => 'GET',
+			// 	'callback'            => array( $this, 'get_spirits' ),
+			// 	'permission_callback' => array( $this, 'get_items_permissions_check' )
+			// 	),
 			array(
 				'methods'             => 'POST',
-				'callback'            => array( $this, 'post_item' ),
+				'callback'            => array( $this, 'send_spirits' ),
 				'permission_callback' => array( $this, 'get_items_permissions_check' )
 			),
 
@@ -270,6 +270,27 @@ class Spirit_Knobs_Controller extends WP_REST_Controller {
 			),
 
 		]);
+	}
+
+	public function send_spirits($request) {
+
+		$token_id = $request->get_param( 'token_id' );
+		$spirits = $request->get_param( 'spirits' );
+		
+		if (empty($token_id) ) {
+			return new WP_REST_Response("Token ID not found", 404);
+		}
+
+		$user_id = UserTokens::get_user_id_from_token_id($token_id);		
+		$user = get_user_by("ID",$user_id);
+		if (empty($user->ID)) {
+			return new WP_REST_Response("User ID not found", 404);
+		}
+
+		SpiritKnobs::update_spirits_by_user($user,$spirits);
+
+		return new WP_REST_Response("YES",200);
+
 	}
 	public function get_vortex($request) {
 
