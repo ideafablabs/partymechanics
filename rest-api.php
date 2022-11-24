@@ -7,6 +7,34 @@
 
 // https://codex.wordpress.org/Creating_Tables_with_Plugins
 // https://www.wpeka.com/make-custom-endpoints-wordpress-rest-api.html
+class Users_Tokens_Controller extends WP_REST_Controller {
+	public function register_routes() {
+		$namespace = 'mint/v1';
+		$path = 'users/(?P<created_after>\d+)';
+
+		register_rest_route( $namespace, '/' . $path, [
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_item' ),
+				'permission_callback' => array( $this, 'get_items_permissions_check' )
+				)
+		]);
+	}
+	public function get_item($request) {
+		// $user = get_users(array('meta_key' => 'created_at', 'meta_value' => $nfc1));
+		$users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
+	
+		$created_after = $request['created_after'];
+		if (empty($users)) return new WP_REST_Response("No New Users Updated.", 404);
+
+		return new WP_REST_Response($users, 200);
+	}
+
+	public function get_items_permissions_check($request) {
+		return true;
+	}
+}
+
 
 class Movie_Quotes_Controller extends WP_REST_Controller {
 	public function register_routes() {

@@ -1,0 +1,25 @@
+{
+  "name": "partymechanics",
+  "version": "1.0.0",
+  "description": "Node server for pushing user tables updates to the ESPs",
+  "main": "start.js",
+  "scripts": {
+    "test": "test",
+    "dev": "run start.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ideafablabs/partymechanics.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ideafablabs/partymechanics/issues"
+  },
+  "homepage": "https://github.com/ideafablabs/partymechanics#readme",
+  "dependencies": {
+    "request": "^2.88.2",
+    "sqlite": "^4.1.2",
+    "ws": "^8.11.0"
+  }
+}
