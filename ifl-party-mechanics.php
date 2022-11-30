@@ -581,6 +581,15 @@ Class IFLPartyMechanics {
 				}
 					
 				break;
+
+			case 'activate_vortex_cannon':
+				update_option('vortexcannon',1);
+
+				$return['message'] = "Vortex Activated";
+				$return['success'] = true;
+				$return['status'] = get_option('vortexcannon');
+
+				break;
 			default:
 				// err out                
 				$return['message'] = "Bad request object";                

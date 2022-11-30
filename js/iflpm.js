@@ -39,6 +39,9 @@ $(document).ready( function(){
 		iflpm_ajax_guest_list_toggle
 	);
 	
+
+	$(".vortex_button").on('click', iflpm_ajax_activate_vortex_cannon);
+
 	$(".iflpm-member-table").on('click','.remove-token', iflpm_ajax_remove_token_by_id);
 		
 	if ($(".nfc_button").length) {
@@ -363,6 +366,65 @@ function build_wp_notice(response) {
 	}
 
 	return notice;
+}
+
+
+// Front end ajax for getting token.
+function iflpm_ajax_activate_vortex_cannon() {
+			
+	///TODO Add loading graphic 
+	
+	// Get the relevant data.
+	// var reader_id = $(".nfc_button").data( 'reader_id' );
+	// console.log("Getting Token from reader "+reader_id);
+	
+	// Bundle the package.
+	package = {
+		request : 'activate_vortex_cannon',
+		data : {
+			activated : 1
+		}
+	}
+
+	// Forsee outcomes.
+	package.success = function(response) {
+		
+		// Actual success.
+		if (response.success == true) {
+			if (response.message) {
+				/// UIdisplayMessage(response);	we could make a function that manages the UI message			
+				var usermessage = '<p class="ajax-success">'+response.message+'</p>';
+				console.log(response.message)
+			}			
+						
+			// $(".submit-button").addClass('active');
+			// $('.admit-button').removeClass('hidden');
+			// $('.submit-button.active').unbind('click');
+			
+			// console.log(token_color);
+
+			// $(".token-response").html('<span class="token '+response.token_color+'" />');			
+			
+
+		// Or failure.
+		} else {                
+			// var usermessage = '<p class="ajax-error error">'+response.message+'</p>';                
+			$(".ajax-message").prepend(build_wp_notice(response).fadeIn());
+			
+			/// Last minute hacks
+			$(".ajax-message .notice").removeClass('hidden');
+			$(".ajax-message .notice .notice-dismiss").addClass('hidden');
+
+		}
+
+		// Give some sort of affirmation...
+		/// 
+			
+	}
+
+	// Send the package ==>
+	iflpm_ajax_request(package);
+			
 }
 
 function iflpm_ajax_request(package) {
