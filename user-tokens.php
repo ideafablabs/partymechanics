@@ -76,12 +76,17 @@ Class UserTokens {
 		return array_map(function ($token) {return $token->token_id;}, $result);
 	}
 
+	// Get all user tokens and their users_ids
 	public static function get_all_user_tokens() {
+		global $wpdb;
 		
-			
-		/// how about we just get all tokens and their users on the right.
-	}
+		$result = $wpdb->get_results("SELECT user_id, token_id FROM " . USER_TOKENS_TABLE_NAME );
 
+		if ($wpdb->num_rows == 0) return false;
+		
+		return array_map(function ($token) {return $token_id->user_id;}, $result);.
+	}
+	
 	public static function add_token_id_and_user_id_to_tokens_table($token_id, $user_id) {
 		global $wpdb;
 		if (!IFLPMDBManager::does_table_exist_in_database(USER_TOKENS_TABLE_NAME)) {
