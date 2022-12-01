@@ -5,22 +5,42 @@
 #include <Servo.h>
 #include <Bounce2.h>
 
-#define dirPin 6 //direction of stepperw
+#define dirPin 6 //direction of stepper
 #define stepPin 7 //send steps to stepper
 #define motorInterfaceType 1
 #define homeSwitchPin 4 //limit switch pin
 #define triggerPin 5 //press button to fire --replace with a low signal from arduino
 #define latchServoPin 3
 #define smokeServoPin 2
-#define triggerPin2 12
+#define webPin 12
 int steps;
 
+// Latch values
+#define latchOpen 0
+#define latchClosed 50
+#define latchDelay 1500
+
+// Stepper coordinates
+#define stepperBackward 500
+#define stepperStartPos -200
+#define stepperLoadPos -4200
+
+// Smoke machine
+#define smokeDeactive 0
+#define smokeActive 7
+#define smokeFillTime 6000
+
 int buttonState;             // the current reading from the input pin
-int lastButtonState = 0;   // the previous reading from the input pin
-// the following variables are unsigned longs because the time, measured in
-// milliseconds, will quickly become a bigger number than can be stored in an int.
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay = 50;   
+int webSignal;
+int homeSwitchState = 1;
+
+enum State {
+  CALIBRATE = 0,
+  LOAD,
+  FIRE,
+  IDLE
+};
+int state;
 
 // Create a new instance of the AccelStepper class:
 AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
@@ -28,7 +48,9 @@ AccelStepper stepper = AccelStepper(motorInterfaceType, stepPin, dirPin);
 Servo latchServo;
 Servo smokeServo;
 
-Bounce limitSwitch = Bounce(); // Instantiate a Bounce object
+ // Instantiate a Bounce object
+Bounce triggerButton = Bounce();
+Bounce homeSwitch = Bounce();
 
 void setup() {
   // Set the maximum speed and acceleration:
@@ -37,112 +59,117 @@ void setup() {
   Serial.begin(115200);
   delay(100);
 
-  limitSwitch.attach(homeSwitchPin,INPUT_PULLUP); // Attach the debouncer to a pin with INPUT_PULLUP mode
-  limitSwitch.interval(25); // Use a debounce interval of 25 milliseconds
-//  trigger.attach(triggerPin,INPUT_PULLUP); // Attach the debouncer to a pin with INPUT_PULLUP mode
-//  trigger.interval(25); // Use a debounce interval of 25 milliseconds
+  // Attach the debouncer to a pin with INPUT_PULLUP mode
+  triggerButton.attach(triggerPin, INPUT_PULLUP);
+  homeSwitch.attach(homeSwitchPin, INPUT_PULLUP);
+  // Use a debounce interval of 25 milliseconds
+  triggerButton.interval(25);
+  homeSwitch.interval(25);
 
-  pinMode(triggerPin, INPUT_PULLUP); //limit switch to detect home
-  pinMode(triggerPin2, INPUT_PULLUP);
-//  pinMode(homeSwitchPin, INPUT_PULLUP); //limit switch to detect home
+  pinMode(webPin, INPUT_PULLUP);
+  pinMode(homeSwitchPin, INPUT_PULLUP); //limit switch to detect home
   
-  latchServo.attach(latchServoPin); 
+  latchServo.attach(latchServoPin); // Must write initial value to latch servo as default is unknown
+  latchServo.write(latchOpen);
+  delay(latchDelay);
   smokeServo.attach(smokeServoPin); 
-  smokeServo.write(0);
-  goHome(); //zero the stepper at home
-  
-  delay(200);
+  smokeServo.write(smokeDeactive);
+  delay(latchDelay);
+
+  /* Set initial state */
+  state = CALIBRATE;
 }
 
 void loop() {
-    int reading = digitalRead(triggerPin);
-    Serial.print("reading: ");
-    Serial.println(reading);
-    Serial.print("bs: ");
-    Serial.println(buttonState);
+  /* Refresh button state */
+  triggerButton.update();
+  /* Read web signal */
+  webSignal = 0; // digitalRead(webPin);
 
-    if (reading != lastButtonState) {
-    // reset the debouncing timer
-    lastDebounceTime = millis();
-  }
-    if ((millis() - lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-    // if the button state has changed:
-    if (reading != buttonState) {
-      buttonState = reading;
-      Serial.print("trigger2: ");
-      Serial.println(digitalRead(buttonState));
-      // only toggle the LED if the new button state is LOW
-      if (buttonState == LOW) {
-        Serial.println("triggered");
-        fill(30,6000); //rotate servo 30 degrees for 4 seconds
-  //    goHome(); // just ensure the drive tray is close to the cannon
-        arm(700); //pull back bungee 4200 steps
-      fire(); //release servo and go home
-      }
-    }
-  }
+  switch (state)
+  {
+  case CALIBRATE:
+    /* Only runs once */
+    Serial.println("Calibrating");
+    calibrateStepper();
+    Serial.println("Calibration complete");
+    
+    /* Once calibrated, change to load state */
+    Serial.println("CALIBRATE --> LOAD");
+    state = LOAD;
+    break;
 
+  case LOAD:
+    /* Move forwards, latch, retract and fill */
+    Serial.println("Loading canon!");
+    loadCanon();
+
+    /* Once loaded, change to idle state */
+    Serial.println("LOAD --> IDLE");
+    state = IDLE;
+    break;
+
+  case FIRE:
+    /* Fire cannon! */
+    Serial.println("Fire in the hole!");
+    fireCanon();
+    Serial.println("FIRE --> LOAD");
+    state = LOAD;
+    break;
   
+  case IDLE:
+    /* Read button press or web server signal */
+    if (triggerButton.read() == 0 || webSignal == 1) 
+    {
+      /* If signal received, set to fire state */
+      Serial.println("IDLE --> FIRE");
+      state = FIRE;
+    }
+    break;
+
+  default:
+    Serial.println("Invalid state");
+    break;
+  }
 }
 
-void goHome() { //need to add debounce
-  limitSwitch.update();
-  latchServo.write(0); //make sure latch is open so it doesn't catch on the way up
+void calibrateStepper() {
+  // Move stepper backward until home switch is toggled
+  while (homeSwitchState) {
+    homeSwitch.update();
+    homeSwitchState = homeSwitch.read();
+    stepper.setSpeed(stepperBackward);
+    stepper.runSpeed();
+  }
+  // Set orin to home switch 
   stepper.setCurrentPosition(0);
-  stepper.moveTo(-500); 
-      stepper.runToPosition();
-    stepper.setCurrentPosition(0);
-}
 
-
-void goHomeback() { //need to add debounce
-  limitSwitch.update();
-  latchServo.write(0); //make sure latch is open so it doesn't catch on the way up
-  delay(100);
-  Serial.println("Going home");
-//  while (digitalRead(homeSwitchPin)) {  // Do this until the switch is closed
-//    stepper.setSpeed(500); //backward
-//    stepper.runSpeed();
-//    Serial.println("GOING home...");
-//  }
-
-    Serial.print("Limit switch hit:");
-    Serial.println(homeSwitchPin);
-    stepper.setCurrentPosition(0);
-    stepper.moveTo(-4300); //come off the switch to get carriage
-    stepper.runToPosition();
-    stepper.setCurrentPosition(0);
-    //zero the counter
-    Serial.println("home!");
-}
-
-void fill(int servoEnd, int fillTime){
-  Serial.println("filling");
-  smokeServo.write(servoEnd); //hold down button
-  delay(fillTime);
-  smokeServo.write(0); //remove servo arm from buttom
-  Serial.println("done filling");
-}
-
-void arm(int distance) {
-  latchServo.write(0); //move servo arm to catch tray
-  Serial.println("arming");
-  stepper.moveTo(-4000); //come off the switch to get carriage
+  // Move stepper slightly forwards
+  stepper.moveTo(stepperStartPos); 
   stepper.runToPosition();
-  delay(200);
-  latchServo.write(40); //move servo arm to catch tray
-  delay(300); //wait for servo to move
-  stepper.moveTo(-200); //move stepper back to arm
-//  stepper.setCurrentPosition(0);
-  stepper.runToPosition(); 
-  Serial.println("done arming");
 }
 
-void fire(){
-  delay(1000);
-  Serial.println("firing!");
-  latchServo.write(0);
-  delay(200);
+void loadCanon() {
+  /* Advance towards carriage */
+  stepper.moveTo(stepperLoadPos);
+  stepper.runToPosition();
+
+  /* Close latch */
+  latchServo.write(latchClosed);
+  delay(latchDelay);
+
+  /* Retract to load */
+  stepper.moveTo(stepperStartPos);
+  stepper.runToPosition();
+
+  /* Start filling with smoke */
+  smokeServo.write(smokeActive);
+  delay(smokeFillTime);
+  smokeServo.write(smokeDeactive);
+}
+
+void fireCanon() {
+  /* Fire canon by opening latch */
+  latchServo.write(latchOpen);
+  delay(latchDelay);
 }
