@@ -2,17 +2,30 @@ const request = require('request');
 const { Server } = require('ws');
  
 const sockserver = new Server({ port: 443 });
+//Print out local websocket Ip address and port
+sockserver.on('listening', () => { console.log(`Listening on ${sockserver.address().address}:${sockserver.address().port}`); });    
+
+
+
 sockserver.on('connection', (ws) => {
-   console.log('New client connected!'); 
-   ws.on('close', () => console.log('Client has disconnected!'));
+    // print out unique socket IP address and connection id 
+    console.log('New Connection: ' + ws._socket.remoteAddress + ' ' + ws._socket.remotePort);
+    
+    console.log('New client connected!'); 
+    ws.on('close', () => console.log('Client has disconnected!'));
 });
 
 // Get Recent Users From Database
-request('https://mint.ideafablabs.com/index.php/wp-json/mint/v1/users', { json: true }, (err, res, body) => {
-  if (err) { return console.log(err); }
-  console.log(body);
-});
- 
+const users = (searchState) => {
+    request('https://mint.ideafablabs.com/index.php/wp-json/mint/v1/users', { json: true }, (err, res, body) => {
+        if (err) { return console.log(err); }
+        let users = body
+        console.log(users);
+    })
+};
+
+users()
+
 setInterval(() => {
    sockserver.clients.forEach((client) => {
        const data = JSON.stringify({'type': 'time', 'time': new Date().toTimeString()});
