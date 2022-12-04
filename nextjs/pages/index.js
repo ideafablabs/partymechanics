@@ -1,8 +1,25 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import { useState, useEffect } from 'react'
 
 export default function Home() {
+  const [data, setData] = useState(null)
+  const [isLoading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch('https://mint.ideafablabs.com/index.php/wp-json/mint/v1/users')
+      .then((res) => res.json())
+      .then((data) => {
+        setData(data)
+        setLoading(false)
+      })
+  }, [])
+
+  if (isLoading) return <p>Loading...</p>
+  if (!data) return <p>No profile data</p>
+
   return (
     <div className={styles.container}>
       <Head>
@@ -18,10 +35,14 @@ export default function Home() {
 
         <p className={styles.description}>
           IP address currently connected to websocket:{' '}
-          <code className={styles.code}>pages/index.js</code>
-          <code className={styles.code}>pages/index.js</code>
-          <code className={styles.code}>pages/index.js</code>
+          <code className={styles.code}>IP / ID</code>
         </p>
+        <div>
+          {data}
+            {/* {data.map(user=>(
+              <code className={styles.code}> {post.title} by {post.author}</code>
+            ))} */}
+        </div>
 
         <div className={styles.grid}>
           <a href="https://nextjs.org/docs" className={styles.card}>
