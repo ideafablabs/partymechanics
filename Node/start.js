@@ -1,7 +1,19 @@
 const request = require('request');
 const { Server } = require('ws');
+
+// JSON response
+// current WIFI network 
+// IP address
+// Clock time
+// mDNS address
+// data array - last error
+// ID - ESP 32 chip id
+
+// Click actions for more info 
+// Get log from actions.log() chip serves action.log() 
+// Click causes it to reply with data and send log
  
-const sockserver = new Server({ port: 443 });
+const sockserver = new Server({ port: 6969 });
 //Print out local websocket Ip address and port
 sockserver.on('listening', () => { console.log(`Listening on ${sockserver.address().address}:${sockserver.address().port}`); });    
 

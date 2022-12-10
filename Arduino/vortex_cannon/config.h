@@ -15,7 +15,7 @@ const String DNS_NAME = "vortex-cannon"; // Zone DNS
 // #define PASSWORD1 "vortexrings"
 
 // const String API_BASE = "http://192.168.0.72/"; //Temporary Local
-const String API_BASE = "http://mint.ideafablabs.com/"; //Live
+const String API_BASE = "http://mint.ideafablabs.com/"; // Live
 // const String API_BASE = "http://santacruz.ideafablabs.com/"; //Live
 
 // const String API_ENDPOINT = "wp-json/zoneplusone/v1/";

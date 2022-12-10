@@ -32,7 +32,7 @@ const String API_ENDPOINT = "wp-json/mint/v1/";
 #define NUM_LEDS 16
 #define BRIGHTNESS 100
 
-#define WEBSOCKETSERVER_ADDRESS "http://192.168.0.72"
+#define WEBSOCKETSERVER_ADDRESS "192.168.0.30"
 #define USE_SERIAL Serial
 
 // NFC Details
