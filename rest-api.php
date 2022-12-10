@@ -28,7 +28,7 @@ class Users_Tokens_Controller extends WP_REST_Controller {
 		$created_after = $request['created_after'];
 		if (empty($response)) return new WP_REST_Response("No New Users Updated.", 404);
 
-		return new WP_REST_Response($reponse, 200);
+		return new WP_REST_Response($response, 200);
 	}
 
 	public function get_items_permissions_check($request) {

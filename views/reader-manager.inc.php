@@ -36,7 +36,7 @@ global $wpdb;
 		$token_id = get_option('reader_'.$reader_id);
         if(UserTokens::token_id_exists_in_table($token_id)) {  
             $user = get_user_by('id',UserTokens::get_user_id_from_token_id($token_id));
-            
+			
             
             pr($user);
             // echo '<p>'.$user

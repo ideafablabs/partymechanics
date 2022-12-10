@@ -17,13 +17,13 @@
 #include <asyncHTTPrequest.h>
 
 #ifdef ESP32
-#include <WiFiMulti.h>
-#include <ESPmDNS.h>
-#include <SPIFFS.h>
+	#include <WiFiMulti.h>
+	#include <ESPmDNS.h>
+	#include <SPIFFS.h>
 #else
-#include <ESP8266WiFiMulti.h>
-#include <ESP8266mDNS.h>
-#include <FS.h>
+	#include <ESP8266WiFiMulti.h>
+	#include <ESP8266mDNS.h>
+	#include <FS.h>
 #endif
 
 // Setup Config.h by duplicating config-sample.h.
@@ -392,7 +392,8 @@ void setupServer() {
 	if (!MDNS.begin(DNS_NAME)) { 
 		Serial.println("Error setting up MDNS responder!");
 	} else {
-		Serial.println("DNS Name: " + DNS_NAME);
+		Serial.print("DNS Name: ");
+		Serial.println(DNS_NAME);
 	}
 }
 void notFound(AsyncWebServerRequest *request) {

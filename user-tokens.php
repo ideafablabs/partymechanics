@@ -82,9 +82,13 @@ Class UserTokens {
 		
 		$result = $wpdb->get_results("SELECT user_id, token_id FROM " . USER_TOKENS_TABLE_NAME );
 
+		
 		if ($wpdb->num_rows == 0) return false;
 		
-		return array_map(function ($token) {return $token_id->user_id;}, $result);.
+		return json_encode($result, JSON_UNESCAPED_SLASHES);
+
+
+		return array_map(function ($token) {return $token_id->user_id;}, $result);
 	}
 	
 	public static function add_token_id_and_user_id_to_tokens_table($token_id, $user_id) {

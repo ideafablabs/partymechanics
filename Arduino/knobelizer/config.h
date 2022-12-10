@@ -5,7 +5,7 @@
  * CONFIG DATA: PINS, WIFI PASSWORDS, ETC
  */
 #define READER_COUNT 1 // 0 for Zone, 1 for intake.
-const String DNS_NAME = "kobelizer"; // Zone DNS
+const String DNS_NAME = "knobelizer"; // Zone DNS
 
 #define SSID1 "sendingnudes"
 #define PASSWORD1 "sendnudes"
@@ -33,7 +33,7 @@ const String API_ENDPOINT = "wp-json/mint/v1/";
 #define BRIGHTNESS 100
 
 
-#define WEBSOCKETSERVER_ADDRESS "192.168.0.108"
+#define WEBSOCKETSERVER_ADDRESS "192.168.0.30"
 #define USE_SERIAL Serial
 
 // NFC Details

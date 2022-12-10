@@ -6,7 +6,9 @@
  */
 
 #define READER_ID 3
-const String DNS_NAME = "nfc-reader-"+READER_ID; // Zone DNS
+// #define DNS_NAME "nfc-reader-"+READER_ID
+#define DNS_NAME "nfc-reader-X"
+// static const char * DNS_NAME = "nfc-reader-"+READER_ID; // Zone DNS
 
 // #define SSID1 "loadingdockap"
 // #define PASSWORD1 "Ldock55AP$securityKEY*"

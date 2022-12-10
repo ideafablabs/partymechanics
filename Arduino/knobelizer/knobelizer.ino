@@ -126,7 +126,7 @@ void setup() {
   
 	showAll(0xFF0000);
 
-	setupNFC();	
+	//setupNFC();	
 
 	setupKnobs();	
 
