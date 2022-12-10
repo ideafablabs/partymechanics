@@ -4,7 +4,7 @@
 #include <WiFi.h>
 // Communications
 asyncHTTPrequest apiClient;
-AsyncWebServer server(80);
+AsyncWebServer server(443);
 
 #ifdef ESP32
 #include <WiFiMulti.h>
@@ -16,8 +16,10 @@ AsyncWebServer server(80);
 #include <FS.h>
 #endif
 
-#define SSID1 "Idea Fab Labs"
-#define PASSWORD1 "vortexrings"
+#define SSID1 "Greenby"
+#define PASSWORD1 ""
+#define SSID2 "Idea Fab Labs"
+#define PASSWORD2 "vortexrings"
 
 // https://pusher.com/
 //[scheme]://ws-[cluster_name].pusher.com:[port]/app/[key]
@@ -26,7 +28,7 @@ AsyncWebServer server(80);
 // cluster_name - The name of the cluster that you’re using
 // port - Default WebSocket ports: 80 (ws) or 443 (wss)
 // key - The app key for the application connecting to Pusher Channels
-const char *websockets_connection_string = "wss://ws-us3.pusher.com:443/app/01a52d68bccce5e260bd"; // Enter server adress
+const char *websockets_connection_string = "ws://192.168.0.30:443"; // Enter server adress
 
 const char pusher_ssl_ca_cert[] PROGMEM =
     "-----BEGIN CERTIFICATE-----\n"
@@ -105,28 +107,27 @@ void setup()
 
     WiFi.mode(WIFI_STA);
     wifiMulti.addAP(SSID1, PASSWORD1);
+    wifiMulti.addAP(SSID2, PASSWORD2);
     // Wait some time to connect to wifi
     Serial.print("Wifi Connecting.");
-    while (wifiMulti.run() == WL_CONNECTED)
+    while (wifiMulti.run() != WL_CONNECTED)
+    {
+      Serial.print(".");
+      delay(1000);
+    }
+    if (wifiMulti.run() == WL_CONNECTED)
     {
         Serial.println("");
         Serial.println("WiFi connected");
         Serial.println("IP address: ");
         Serial.println(WiFi.localIP());
     }
-    //    while (wifiMulti.run() != WL_CONNECTED)
-    //    {
-    //      Serial.print(".");
-    //      delay(1000);
-    //    }
-    //      Serial.println("Connecting Wifi...");
 
-    client.setCACert(pusher_ssl_ca_cert);
+//    client.setCACert(pusher_ssl_ca_cert);
 
     Serial.println("Connected to Wifi, Connecting to server.");
     // try to connect to Websockets server
-    bool connected = client.connect(websockets_connection_string);
-    if (connected)
+    if (client.connect(websockets_connection_string))
     {
         Serial.println("Connected!");
         client.send("Hello Server");

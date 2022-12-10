@@ -1,0 +1,11 @@
+{
+  "name": "partymechanics-webhooks",
+  "version": "1.0.0",
+  "description": "",
+  "main": "start.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Cooper Newby",
+  "license": "ISC"
+}
