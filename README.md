@@ -20,6 +20,61 @@ contains functions for working with the movie quotes, user pairings, and rf toke
 [quotes.csv](https://github.com/ideafablabs/partymechanics/blob/master/quotes.csv) is the database of short science
 fiction movie quotes in CSV form.
 
+##Party Mechanics Web Socket Architecture:
+                        ┌──────────────────────────────────────┐                           
+                        │    Vercel Hosting and Deployment     │                           
+                        └──────────────────────────────────────┘                           
+                  ┌──────────────────────────────────────────────────┐                     
+                  │                 NextJs Monolith                  │                     
+                  │                 - API endpoints                  │                     
+                  │  - Nodejs Server logic for game progress events  │                     
+                  │     - React Frontend for ESP logs monitoring     │                     
+                  └──────────────────────────────────────────────────┘                     
+                                           ▲                                               
+                                           │                                               
+                                           │                                               
+                                           ▼                                               
+                        ┌──────────────────────────────────────┐                           
+                        │          Pusher Websockets           │                           
+                        │         https://pusher.com/          │                           
+                        │      - Event Message ingestion       │                           
+                        └──────────────────────────────────────┘                           
+                                ▲                      ▲                                   
+                                │                      │                                   
+                                ▼                      ▼                                   
+┌───────────────────────────────────────────┐ ┌───────────────────────────────────────────┐
+│                   ESP 1                   │ │                   ESP 2                   │
+│    Unique ID: Friendly-Name_{CHIP_ID}     │ │    Unique ID: Friendly-Name_{CHIP_ID}     │
+│Status: Active | Disabled | Offline | Error│ │Status: Active | Disabled | Offline | Error│
+│        - Pull Log Files Log files         │ │        - Pull Log Files Log files         │
+│      - Event Listener or Broadcaster      │ │      - Event Listener or Broadcaster      │
+└───────────────────────────────────────────┘ └───────────────────────────────────────────┘
+
+##Party Mechanics Websocket Event Definition (WIP) 
+┌──────────────────────────────┐
+│        Pusher Events         │
+│   Channel: partymechanics    │
+│                              │
+└──────────────────────────────┘
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+ Subscribe to these events to  │
+│see new users online:          
+ pusher:subscription_succeeded │
+│pusher:member_added            
+ pusher:member_removed         │
+│                               
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+        Party_ESP_Events       │
+│              {                
+            chipId:            │
+│          chipName:            
+         triggerAction:        │
+│       UserTriggererId:        
+        UserCheckpoint:        │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+
+
 The [Party Mechanics Notes](https://docs.google.com/document/d/1-3XrTe-Q02qRC4WK6LZkSj_1pk22UXLcHj5TGS_8biM/edit)
 Google Doc is the place to collaborate on more extensive documentation.
 

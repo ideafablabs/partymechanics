@@ -1,6 +1,7 @@
 {
-  "name": "websocket-example",
+  "name": "mint-websockets",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,9 +13,12 @@
     "eslint": "8.29.0",
     "eslint-config-next": "13.0.6",
     "next": "13.0.6",
+    "pusher": "^5.1.2",
+    "pusher-js": "^8.0.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "request": "^2.88.2",
+    "swr": "^2.0.1",
     "ws": "^8.11.0"
   }
 }
