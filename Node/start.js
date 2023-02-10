@@ -13,7 +13,7 @@ const { Server } = require('ws');
 // Get log from actions.log() chip serves action.log() 
 // Click causes it to reply with data and send log
  
-const sockserver = new Server({ port: 6969 });
+const sockserver = new Server({ port: 443 });
 //Print out local websocket Ip address and port
 sockserver.on('listening', () => { console.log(`Listening on ${sockserver.address().address}:${sockserver.address().port}`); });    
 

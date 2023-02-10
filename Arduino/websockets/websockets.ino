@@ -31,7 +31,10 @@ AsyncWebServer server(443);
 // cluster_name - The name of the cluster that you’re using
 // port - Default WebSocket ports: 80 (ws) or 443 (wss)
 // key - The app key for the application connecting to Pusher Channels
-const char *websockets_connection_string = "ws://192.168.0.30:443"; // Enter server adress
+
+const char *websockets_connection_string = "ws://192.168.0.33:443"; // Enter server adress
+ws://ws-ap1.pusher.com:80/app/01a52d68bccce5e260bd?client=js&version=7.0.3&protocol=5
+wss://ws-us3.pusher.com/app/01a52d68bccce5e260bd
 
 const char pusher_ssl_ca_cert[] PROGMEM =
     "-----BEGIN CERTIFICATE-----\n"
