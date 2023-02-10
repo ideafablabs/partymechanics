@@ -5,10 +5,12 @@
  * @contributors: Jordan Layman, David Van Brink, John Szymanski, Geoff Gnau, Tané Tachyon, Corey Brown
  */
 
+
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
 #include <ArduinoOTA.h>
+#include <ArduinoJson.h>
 
 #include <FastLED.h>
 
@@ -93,6 +95,14 @@ AsyncWebServer server(80);
 WebSocketsClient webSocket;
 uint8_t socketState;
 
+//ESP Reporting for duty sir!
+// JSON object to hold ESP32 data
+DynamicJsonDocument jsonDoc(1024);
+//Device Chip ID in unsigned 64bit integer
+//https://microdigisoft.com/esp32-with-arduino-json-using-arduino-ide/
+uint32_t chipId = 0;
+
+
 // DICKKNOBS
 #define KNOB_COUNT 4
 
@@ -128,13 +138,13 @@ void setup() {
 
   //setupNFC(); 
 
-  setupKnobs(); 
+//  setupKnobs(); 
 
-  showAll(0x0000FF);
+//  showAll(0x0000FF);
 
   setupWiFi();
 
-  showAll(0x00FF00);
+//  showAll(0x00FF00);
 
   setupServer();
   
@@ -474,7 +484,8 @@ void setupWiFi() {
     Serial.print(".");
     delay(1000);
   } 
-  
+  jsonDoc["wifi_network"] = WiFi.SSID();
+  jsonDoc["ip_address"] = WiFi.localIP().toString();
   logAction("WiFi connected to SSID: '"+WiFi.SSID()+"' @ "+WiFi.localIP().toString());
 }
 

@@ -2,6 +2,9 @@
 #include <ESPAsyncWebServer.h>
 #include <asyncHTTPrequest.h>
 #include <WiFi.h>
+#include <ArduinoJson.h>
+#include <stdio.h>
+#include <stdint.h> // To handle string conversion
 // Communications
 asyncHTTPrequest apiClient;
 AsyncWebServer server(443);
@@ -67,14 +70,21 @@ const char pusher_ssl_ca_cert[] PROGMEM =
     "nChpyGQqoS715avbaEBuhdxrOFROMeIOJRG2K2l2H9cx3958CVNns0lxKz9r5oyD\n"
     "8is=\n"
     "-----END CERTIFICATE-----\n";
+// JSON object to hold ESP32 data
+DynamicJsonDocument jsonDoc(1024);
 
 using namespace websockets;
+
+//Device Chip ID in unsigned 64bit integer
+//https://microdigisoft.com/esp32-with-arduino-json-using-arduino-ide/
+uint32_t chipId = 0;
 
 void onMessageCallback(WebsocketsMessage message)
 {
     Serial.print("Got Message: ");
     Serial.println(message.data());
 }
+
 
 void onEventsCallback(WebsocketsEvent event, String data)
 {
@@ -112,8 +122,8 @@ void setup()
     Serial.print("Wifi Connecting.");
     while (wifiMulti.run() != WL_CONNECTED)
     {
-      Serial.print(".");
-      delay(1000);
+        Serial.print(".");
+        delay(1000);
     }
     if (wifiMulti.run() == WL_CONNECTED)
     {
@@ -121,9 +131,13 @@ void setup()
         Serial.println("WiFi connected");
         Serial.println("IP address: ");
         Serial.println(WiFi.localIP());
+        jsonDoc["wifi_network"] = "Test";
+//        jsonDoc["wifi_network"] = WiFi.SSID().toString();
+        jsonDoc["ip_address"] = WiFi.localIP().toString();
+        jsonDoc["clock_time"] = time;
     }
 
-//    client.setCACert(pusher_ssl_ca_cert);
+    //    client.setCACert(pusher_ssl_ca_cert);
 
     Serial.println("Connected to Wifi, Connecting to server.");
     // try to connect to Websockets server
@@ -131,6 +145,14 @@ void setup()
     {
         Serial.println("Connected!");
         client.send("Hello Server");
+//        jsonDoc["wifi_network"] = WiFi.SSID();
+//        jsonDoc["ip_address"] = WiFi.localIP().toString();
+//        jsonDoc["clock_time"] = time;
+        //serializeJson(jsonDoc, Serial);
+//        jsonDoc["mdns_address"] = "esp32.local";
+//        jsonDoc["last_error"] = String(ESP.getLastError());
+//        jsonDoc["chip_id"] = String(ESP.getChipId());
+//        Serial.println(jsonDoc);
     }
     else
     {
@@ -139,17 +161,38 @@ void setup()
 
     // run callback when messages are received
     client.onMessage([&](WebsocketsMessage message)
-                     {
-        Serial.print("Got Message: ");
-        Serial.println(message.data()); });
+    {
+       Serial.print("Got Message: ");
+       Serial.println(message.data()); 
+    });
+//    
+//    serializeJson(jsonDoc, jsonString);
+//    Serial.println(jsonDoc);
+  // Write JSON object to log file
+  //  if (logFile) {
+  //    serializeJson(jsonDoc, logFile);
+  //    logFile.println();
+//    }
+
+  // Send JSON object to client
+  //  String jsonString;
+  //  serializeJson(jsonDoc, jsonString);
+  //  server.send(200, "application/json", jsonString);
 }
 
 void loop()
 {
+    for(int i=0; i<17; i=i+8) {
+      chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+    }
+  
+    Serial.printf("ESP32 Chip model = %s Rev %d\n", ESP.getChipModel(), ESP.getChipRevision());
+    Serial.printf("This chip has %d cores\n", ESP.getChipCores());
+    Serial.print("Chip ID: "); Serial.println(chipId);
     // let the websockets client check for incoming messages
     if (client.available())
     {
         client.poll();
     }
-    delay(500);
+    delay(3000);
 }

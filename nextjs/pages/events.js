@@ -12,10 +12,11 @@ export default function Home() {
   const [username, setUsername] = useState('username');
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
-  const [members, setMembers] = useState([]);
   let allMessages = [];
-  let allMembers = [];
-
+  var channel = pusher.subscribe('partymechanics');
+  channel.bind('connected', function(data) {
+    alert(JSON.stringify(data));
+  });
     useEffect(() => {
       setLoading(true)
       fetch('https://mint.ideafablabs.com/index.php/wp-json/mint/v1/users')
@@ -31,21 +32,10 @@ export default function Home() {
         });
 
         const channel = pusher.subscribe('partymechanics');
-
         channel.bind('esp-test-event', function (data) {
             allMessages.push(data);
             setMessages(allMessages);
         });
-        // channel.bind("pusher:subscription_succeeded", () =>
-        //   channel.members.each((member) => setMembers(member.id))
-        // );
-        // channel.bind("pusher:member_added", (member) =>
-        //   setMembers(member.id)
-        // );
-        // channel.bind("pusher:member_removed", (member) => {
-        //   const userEl = document.getElementById("user_" + member.id);
-        //   userEl.parentNode.removeChild(userEl);
-        // });
     }, [])
 
     const submit = async (e) => {
