@@ -193,12 +193,13 @@ while True:                                                     # loop tp listen
                 block += readBlock(8)
                 block += readBlock(9)
                 print(block.decode())
+                buffer = {}
+                buffer['name'] = block.decode()
+                print("json: " + json.dumps(buffer))
+                
 
             except:
                 print('error')
 
-            buffer = {}
-            buffer['name'] = block.decode()
-            print("json: " + json.dumps(buffer))
-            
+
 
