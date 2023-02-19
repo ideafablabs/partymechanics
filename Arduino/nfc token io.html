@@ -1,0 +1,313 @@
+<style>
+    * {
+        background-color: #555;
+		border-color: #999;
+		color: #fff;
+		font-family: sans-serif;
+
+    }
+	
+	button {
+		background-color: #666;
+		color: #fff;
+		
+		padding: 10px;
+		
+		border-width: 10px;
+		border-style: solid;
+		border-radius: 10px;
+	}
+	
+	
+	div#serialOutput {
+		background-color: #333;
+		color: ccc;
+
+
+		font-family: monospace;
+		blue-space: pre;
+		overflow-y: scroll;
+		
+		
+		width: 80%;
+		height: 30%;
+		margin: auto;
+		margin-top: 2%;
+		
+		padding: 10px;
+		border-width: 10px;
+		border-style: solid;
+		border-radius: 10px;
+    }
+	
+	div#serialInput {
+		width: 80%;
+		margin: auto;
+		margin-top: 2%;
+		margin-bottom: 2%;
+		
+		text-align: center;
+	}
+	
+	div#serialInput input {
+		color: #fff;
+		
+		width: 91%;
+		margin: auto;
+		text-align: center;
+	
+		padding: 10px;
+	
+		border-width: 10px;
+		border-style: solid;
+		border-radius: 10px;
+	}
+	
+		
+	div#serialInput button {
+		width: 8%;
+		margin: auto;
+		text-align: center;
+	
+		border-width: 10px;
+		border-style: solid;
+		border-radius: 10px;
+	}
+	
+	
+	
+	
+	div#buttonContainer {
+		width: 80%;
+		margin: auto;
+		margin-top: 2%;
+		text-align: center;
+	}
+	
+	div#buttonContainer button {
+//		background-color: #ccc;
+		
+		padding: 10px;
+		border-width: 10px;
+		border-style: solid;
+		border-radius: 10px;
+	}
+
+	 button:hover {
+		//background-color: #bbb;
+		border-color: #888;
+	}
+	
+	
+	
+	div#lightingButtons {
+		text-align: center;
+		width: 100%
+	}
+
+	div#lightingSliders {
+		text-align: right;
+		display: none;
+	}	
+	
+	input[type=range] {		
+		width: 80%;
+	}
+	
+	input[type=number] {		
+		
+		margin: auto;
+		text-align: center;
+	
+		padding: 1px;
+		
+		margin-top: 1%;
+
+	
+		border-width: 10px;
+		border-style: solid;
+		border-radius: 10px;
+	}
+    
+	
+
+	
+	input::-webkit-outer-spin-button,
+	input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+	
+	
+</style>
+
+<title>vienna controls</title>
+<div id="buttonContainer">
+	<button class="serialButton" onclick="connectSerial()">Connect</button>
+	&lt;===== Remeber to connect first, and init modules before using them
+	<br/>
+	
+
+	<div id="lightingButtons">	
+		<button onclick="sendSerialText('r:06')">read 0x06</button>
+<!--		<button onclick="sendSerialText('light setColor ' + blue`	Indicator.value + ' ' +greenIndicator.value+ ' ' +redIndicator.value)">update values</button>
+		<button onclick="sendSerialText('light setColor 0 0 0')">light off</button>
+	//-->
+		<br/>
+	</div>
+	<div id="lightingSliders">
+		
+		Red:<input id="redSlider"    type="range"  min="100" max="65535" value="0" oninput="redIndicator.value=redSlider.value;slideChange()" onchange="updateLight()">
+		<input id="redIndicator" type="number" min="0" max="65535" value="0" oninput="redSlider.value=redIndicator.value" onchange="updateLight()">
+		<br/>		
+		green:<input id="greenSlider"    type="range"  min="0" max="65535" value="0" oninput="greenIndicator.value=greenSlider.value;slideChange()" onchange="updateLight()">
+		<input id="greenIndicator" type="number" min="0" max="65535" value="0" oninput="greenSlider.value=greenIndicator.value" onchange="updateLight()">
+		<br/>	
+
+		blue:<input id="blueSlider"    type="range"  min="0" max="65535" value="0" oninput="blueIndicator.value=blueSlider.value;slideChange()" onchange="updateLight()">
+		<input id="blueIndicator" type="number" min="0" max="65535" value="0" oninput="blueSlider.value=blueIndicator.value" onchange="updateLight()">
+		<br/>	
+	</div>
+
+
+</div>
+
+<div id="serialInput">
+	<input type="text" id="lineToSend" value="put text here" onclick="this.value=''">
+	<button class="serialButton" onclick="sendSerialLine()">Send</button>
+
+
+</div>
+
+<div id="serialOutput">
+hola
+</div>
+
+
+
+
+
+
+
+
+<script>
+    var port, textEncoder, writableStreamClosed, writer;
+
+	function playTone(toneID) {
+		ascending = (ascendingCheckbox.checked ? 1 : 0);
+		infinite  = (audioLoopCheckbox.checked ? 1 : 0);
+	
+	
+		console.log('ascending = '+ascending);
+	
+		sendSerialText('playback play ' + toneID +' '+ volumeSlider.value +' '+ ascending +' '+ infinite);
+		
+	
+	}
+
+
+	function slideChange() {
+		console.log(redIndicator.value);
+		updateLight();
+	}
+
+
+	function updateLight() {
+		sendSerialText('r,' +redIndicator.value);
+		sendSerialText('g,' +greenIndicator.value);
+		sendSerialText('b,' +blueIndicator.value);
+
+	}
+
+	function escapeHtml(unsafe) {
+		return unsafe
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#039;");
+	}
+
+    async function connectSerial() {
+        try {
+            // Prompt user to select any serial port.
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 9600 });  //baud rate doesn't matter for USB serial 
+            listenToPort();
+
+            textEncoder = new TextEncoderStream();
+            writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+
+            writer = textEncoder.writable.getWriter();
+        } catch {
+            alert("Serial Connection Failed");
+        }
+    }
+
+    async function sendCharacterNumber(){
+       document.getElementById("lineToSend").value = String.fromCharCode(document.getElementById("lineToSend").value);
+    }
+   
+    async function sendSerialLine() {
+        dataToSend = document.getElementById("lineToSend").value;
+		dataToSend = dataToSend + "\r\n";
+		
+        //if (document.getElementById("addLine").checked == true) dataToSend = dataToSend + "\r\n";
+        //if (document.getElementById("echoOn").checked == true) appendToTerminal("> " + dataToSend);
+        await writer.write(dataToSend);
+        document.getElementById("lineToSend").value = "";
+        //await writer.releaseLock();
+    }
+
+
+    async function sendSerialText(dataToSend) {
+        //dataToSend = text
+		dataToSend = dataToSend + "\r";
+//		if (document.getElementById("addLine").checked == true) dataToSend = dataToSend + "\r\n";
+//      if (document.getElementById("echoOn").checked == true) appendToTerminal("> " + dataToSend);
+        await writer.write(dataToSend);
+        document.getElementById("lineToSend").value = "";
+        //await writer.releaseLock();
+    }
+
+
+    async function listenToPort() {
+        const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        const reader = textDecoder.readable.getReader();
+
+        // Listen to data coming from the serial device.
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+                // Allow the serial port to be closed later.
+                //reader.releaseLock();
+                break;
+            }
+            // value is a string.
+            appendToTerminal(value);
+        }
+    }
+
+    const serialResultsDiv = document.getElementById("serialOutput");  //output from device
+
+    async function appendToTerminal(newStuff) {
+        serialResultsDiv.innerHTML += escapeHtml(newStuff);
+        if (serialResultsDiv.innerHTML.length > 3000) serialResultsDiv.innerHTML = serialResultsDiv.innerHTML.slice(serialResultsDiv.innerHTML.length - 3000);
+
+        //scroll down to bottom of div
+        serialResultsDiv.scrollTop = serialResultsDiv.scrollHeight;
+    }
+
+    document.getElementById("lineToSend").addEventListener("keyup", async function (event) {
+        if (event.keyCode === 13) {
+            sendSerialLine();
+        }
+    })
+
+    document.getElementById("baud").value = (localStorage.baud == undefined ? 9600 : localStorage.baud);
+    document.getElementById("addLine").checked = (localStorage.addLine == "false" ? false : true);
+    document.getElementById("echoOn").checked = (localStorage.echoOn == "false" ? false : true);
+
+</script>
