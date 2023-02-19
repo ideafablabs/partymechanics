@@ -1,6 +1,7 @@
 #include <ArduinoWebsockets.h>
 #include <ESPAsyncWebServer.h>
 #include <asyncHTTPrequest.h>
+#include <AsyncTCP.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
 #include <stdio.h>
@@ -19,7 +20,7 @@ AsyncWebServer server(443);
 #include <FS.h>
 #endif
 
-#define SSID1 "Greenby"
+#define SSID1 ""
 #define PASSWORD1 ""
 #define SSID2 "Idea Fab Labs"
 #define PASSWORD2 "vortexrings"
@@ -32,9 +33,12 @@ AsyncWebServer server(443);
 // port - Default WebSocket ports: 80 (ws) or 443 (wss)
 // key - The app key for the application connecting to Pusher Channels
 
-const char *websockets_connection_string = "ws://192.168.0.33:443"; // Enter server adress
-ws://ws-ap1.pusher.com:80/app/01a52d68bccce5e260bd?client=js&version=7.0.3&protocol=5
-wss://ws-us3.pusher.com/app/01a52d68bccce5e260bd
+const char* websockets_connection_string  = "wss://ws-us3.pusher.com:443/app/01a52d68bccce5e260bd?protocol=7&client=ESP32&version=7.0.3&protocol=5";
+
+//const char *websockets_connection_string = "ws://ws-us3.pusher.com:80/app/01a52d68bccce5e260b"; // Enter server adress
+//"ws://192.168.0.33:443"
+//ws://ws-us3.pusher.com:80/app/01a52d68bccce5e260bd?client=js&version=7.0.3&protocol=5
+//wss://ws-us3.pusher.com/app/01a52d68bccce5e260bd
 
 const char pusher_ssl_ca_cert[] PROGMEM =
     "-----BEGIN CERTIFICATE-----\n"
@@ -134,20 +138,32 @@ void setup()
         Serial.println("WiFi connected");
         Serial.println("IP address: ");
         Serial.println(WiFi.localIP());
-        jsonDoc["wifi_network"] = "Test";
 //        jsonDoc["wifi_network"] = WiFi.SSID().toString();
-        jsonDoc["ip_address"] = WiFi.localIP().toString();
-        jsonDoc["clock_time"] = time;
+//        jsonDoc["ip_address"] = WiFi.localIP().toString();
+//        jsonDoc["clock_time"] = time;
     }
 
-    //    client.setCACert(pusher_ssl_ca_cert);
+//        client.setCACert(pusher_ssl_ca_cert);
 
-    Serial.println("Connected to Wifi, Connecting to server.");
+    Serial.println("Connected to Wifi, Connecting to sockets.");
     // try to connect to Websockets server
-    if (client.connect(websockets_connection_string))
-    {
-        Serial.println("Connected!");
-        client.send("Hello Server");
+    
+//
+//  client.begin(websockets_connection_string, String(cluster));
+  Serial.println(websockets_connection_string);
+  while (!client.connect(websockets_connection_string)) {
+    Serial.println("Failed to connect to Pusher");
+    delay(3000);
+  }
+  Serial.println("Connected to Pusher");
+    jsonDoc["name"] = "Party_ESP_Events";
+    jsonDoc["data"] = WiFi.localIP().toString();
+    jsonDoc["channel"] = "partymechanics";
+
+    char data[17];
+    size_t len = serializeJson(jsonDoc, data);
+    client.send(data, len);
+//  client.send("Hello Server");
 //        jsonDoc["wifi_network"] = WiFi.SSID();
 //        jsonDoc["ip_address"] = WiFi.localIP().toString();
 //        jsonDoc["clock_time"] = time;
@@ -156,11 +172,7 @@ void setup()
 //        jsonDoc["last_error"] = String(ESP.getLastError());
 //        jsonDoc["chip_id"] = String(ESP.getChipId());
 //        Serial.println(jsonDoc);
-    }
-    else
-    {
-        Serial.println("Not Connected!");
-    }
+
 
     // run callback when messages are received
     client.onMessage([&](WebsocketsMessage message)

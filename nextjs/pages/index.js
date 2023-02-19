@@ -8,7 +8,6 @@ import { getURL, classNames } from '../utils/helpers';
 import { SignalIcon, CommandLineIcon } from "@heroicons/react/24/outline";
 
 import Avatar from '../components/Avatar';
-import EventList from '../components/EventList';
 import EventBroadcast from '../components/EventBroadcast';
 
 const initconnections = [
@@ -23,16 +22,17 @@ const initconnections = [
   } ]
 
   const tabs = [
-    { name: 'Events', href: '#', current: true },
     { name: 'Connections', href: '#', current: false },
+    { name: 'Events', href: '#', current: true }
   ]
 
 export default function Home() {
   const [data, setData] = useState(null)
   const [isLoading, setLoading] = useState(false)
   const [connections, setConnections] = useState(initconnections);
-  let allMembers = [];
-
+  const [connected, setConnected] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [messages, setMessages] = useState([]);
     useEffect(() => {
       setLoading(true)
       fetch('https://mint.ideafablabs.com/index.php/wp-json/mint/v1/users')
@@ -46,22 +46,32 @@ export default function Home() {
         const pusher = new Pusher('01a52d68bccce5e260bd', {
             cluster: 'us3'
         });
-
         const channel = pusher.subscribe('partymechanics');
 
-      //   channel.bind("pusher:subscription_succeeded", (members) => {
-      //     members.each((member) => setConnections(member.id))
-      //     console.log('test')
-      //     console.log(members)
-      // });
-        channel.bind("pusher:member_added", (member) => {
-          console.log(member)
-          setConnections(member.id)
-      });
-        // channel.bind("pusher:member_removed", (member) => {
-        //   const userEl = document.getElementById("user_" + member.id);
-        //   userEl.parentNode.removeChild(userEl);
-        // });
+        channel.bind('Party_ESP_Events', function (data) {
+          setMessages((currentMessages) => [...currentMessages, data]);
+        });
+
+        // pusher.get({ path: "/channels"})
+        channel.bind("pusher:member_added", (data) => {
+          // Method to be dispatched on trigger.
+          setMembers((currentMembers) => [...currentMembers, data]);
+          console.log('member_added' + + JSON.stringify(data, null, 2))
+        });
+        channel.bind("pusher:connection_established", (data) => {
+          console.log('subscription_succeeded' + JSON.stringify(data, null, 2))
+        });
+        
+        channel.bind("pusher:subscription_succeeded", (data) => {
+          // Method to be dispatched on trigger.
+          console.log('subscription_succeeded' + JSON.stringify(data, null, 2))
+        });
+        channel.bind("pusher:subscription_count", (data) => {
+          console.log(data.subscription_count);
+        });
+        return () => {
+          pusher.disconnect();
+         };
     }, [])
 
   if (isLoading) return <p>Loading...</p>
@@ -82,79 +92,11 @@ export default function Home() {
           </p>
           <p className="mt-6 text-sm leading-6 text-gray-600">
             Websockets Connections from ESPs<br/>
-            app_id = "1519191"<br/>
-key = "01a52d68bccce5e260bd"<br/>
-secret = "2bcc41fd04af3fa546a8"<br/>
-cluster = "us3"<br/>
+            Current Connections = {connections.length}<br/>
+            SocketUrl = wss://ws-us3.pusher.com/app/01a52d68bccce5e260bd?protocol=7&client=ESP32&version=7.0.3&protocol=5
           </p>
         </div>
-        <div className="mx-auto max-w-3xl sm:px-6  lg:gap-8 lg:px-8">
-            <div className="lg:col-span-9 xl:col-span-6">
-              <div className="px-4 sm:px-0">
-                <div className="sm:hidden">
-                  <label htmlFor="events-tabs" className="sr-only">
-                    Select a tab
-                  </label>
-                  <select
-                    id="events-tabs"
-                    className="block w-full rounded-md border-gray-300 text-base font-medium text-gray-900 shadow-sm focus:border-sky-500 focus:ring-sky-500"
-                    defaultValue={tabs.find((tab) => tab.current).name}
-                  >
-                    {tabs.map((tab) => (
-                      <option key={tab.name}>{tab.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="hidden sm:block">
-                  <nav className="isolate flex divide-x divide-gray-200 rounded-lg shadow" aria-label="Tabs">
-                    {tabs.map((tab, tabIdx) => (
-                      <a
-                        key={tab.name}
-                        href={tab.href}
-                        aria-current={tab.current ? 'page' : undefined}
-                        className={classNames(
-                          tab.current ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700',
-                          tabIdx === 0 ? 'rounded-l-lg' : '',
-                          tabIdx === tabs.length - 1 ? 'rounded-r-lg' : '',
-                          'group relative min-w-0 flex-1 overflow-hidden bg-white py-4 px-6 text-sm font-medium text-center hover:bg-gray-50 focus:z-10'
-                        )}
-                      >
-                        <span>{tab.name}</span>
-                        <span
-                          aria-hidden="true"
-                          className={classNames(
-                            tab.current ? 'bg-sky-500' : 'bg-transparent',
-                            'absolute inset-x-0 bottom-0 h-0.5'
-                          )}
-                        />
-                      </a>
-                    ))}
-                  </nav>
-                </div>
-              </div>
-              <div className="mt-4">
-                <h1 className="sr-only">Recent Events</h1>
-                <EventList/>
-              </div>
-            </div>
-            <aside className="hidden xl:col-span-4 xl:block">
-              <EventBroadcast/> 
-            </aside>
-          </div>
-        {/* <div className="d-flex flex-column align-items-stretch flex-shrink-0 bg-white">
-          <div className="list-group list-group-flush border-bottom scrollarea">
-            {messages.map(message => {
-              return (
-                <div className="list-group-item list-group-item-action py-3 lh-tight">
-                  <div className="d-flex w-100 align-items-center justify-content-between">
-                      <strong className="mb-1">{message.username}</strong>
-                  </div>
-                  <div className="col-10 mb-1 small">{message.message}</div>
-                </div>
-              )
-            })}
-          </div>
-        </div> */}
+        {/* <NavTabs /> */}
         <ul
           role="list"
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
@@ -175,6 +117,7 @@ cluster = "us3"<br/>
                       {device.triggerAction}
                     </span>
                   </div>
+                  <pre>{JSON.stringify(device, null, 2)}</pre>
                   <p className="mt-1 truncate text-sm text-gray-500">
                     {device.EventMessage}
                     {device.UserCheckpoint}
@@ -213,7 +156,66 @@ cluster = "us3"<br/>
             </li>
           ))}
         </ul>
+
       </main>
+      <div className="mt-4">
+        <h1 className="sr-only">Recent Events</h1>
+        <EventBroadcast/> 
+        <div className="px-6 lg:px-8">
+      <div className="sm:flex sm:items-center">
+        <div className="sm:flex-auto">
+          <h1 className="text-xl font-semibold text-gray-900">Events</h1>
+          <p className="mt-2 text-sm text-gray-700">
+            Events and Messages
+          </p>
+        </div>
+      </div>
+      <div className="mt-8 flow-root">
+        <div className="-my-2 -mx-6 overflow-x-auto lg:-mx-8">
+          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+            <table className="min-w-full divide-y divide-gray-300">
+              <thead>
+                <tr>
+                  <th scope="col" className="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                    Message
+                  </th>
+                  <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900">
+                    Username
+                  </th>
+                  {/* <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900">
+                    Email
+                  </th>
+                  <th scope="col" className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900">
+                    Role
+                  </th>
+                  <th scope="col" className="relative py-3.5 pl-3 pr-6 sm:pr-0">
+                    <span className="sr-only">Edit</span>
+                  </th> */}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {messages.map((message, idx) => (
+                  <tr key={idx}>
+                    <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+                      {message.message}
+                    </td>
+                    <td className="whitespace-nowrap py-4 px-3 text-sm text-gray-500">{message.username}</td>
+                    {/* <td className="whitespace-nowrap py-4 px-3 text-sm text-gray-500">{person.email}</td>
+                    <td className="whitespace-nowrap py-4 px-3 text-sm text-gray-500">{person.role}</td>
+                    <td className="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium sm:pr-0">
+                      <a href="#" className="text-indigo-600 hover:text-indigo-900">
+                        Edit<span className="sr-only">, {person.name}</span>
+                      </a>
+                    </td> */}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+      </div>
 
       <footer className={styles.footer}>
         <a
