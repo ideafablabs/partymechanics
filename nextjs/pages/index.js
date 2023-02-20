@@ -30,7 +30,6 @@ export default function Home() {
   const [data, setData] = useState(null)
   const [isLoading, setLoading] = useState(false)
   const [connections, setConnections] = useState(initconnections);
-  const [connected, setConnected] = useState(false);
   const [members, setMembers] = useState([]);
   const [messages, setMessages] = useState([]);
     useEffect(() => {
@@ -93,7 +92,7 @@ export default function Home() {
           <p className="mt-6 text-sm leading-6 text-gray-600">
             Websockets Connections from ESPs<br/>
             Current Connections = {connections.length}<br/>
-            SocketUrl = wss://ws-us3.pusher.com/app/01a52d68bccce5e260bd?protocol=7&client=ESP32&version=7.0.3&protocol=5
+            SocketUrl = wss://ws-us3.pusher.com/app/94b06acb67c44442887f?protocol=7&client=ESP32&version=7.0.3&protocol=5
           </p>
         </div>
         {/* <NavTabs /> */}
