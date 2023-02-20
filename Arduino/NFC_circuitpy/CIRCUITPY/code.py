@@ -10,12 +10,55 @@ import json
 from digitalio import DigitalInOut
 from adafruit_pn532.i2c import PN532_I2C
 
+# set to 1 to enable debug messages
+DEBUGFLAG = 1
+
+
+blankToken = {
+    "uid"               :   0,
+    "email"             :   "nullll",
+
+    "dd_equiped_index" :    0,  # 0 = no weapon, 1-13 refences dd_items
+    "hv_npcs_alive":        1,  # t/f
+    "hv_quest_complete":    0,  # t/f
+    "dragons_den_won":      0,  # t/f
+    "pandoras_box":         5,  # 0-9? small int
+    "color_code":           0,  # 0-? small int
+
+
+    #inventory stored at raw level (should be nested)    
+    "sword"     :   0,
+    "axe"       :   0, 
+    "bow"       :   0, 
+    "armor"     :   0, 
+    "dagger"    :   0, 
+    "staff"     :   0, 
+    "spear"     :   0, 
+    "claws"     :   0, 
+    "gun"       :   0, 
+    "mushroom"  :   0, 
+    "shield"    :   0, 
+    "orb"       :   0, 
+    "UFO"       :   0,
+    
+}
+
+
+#initialize empty token buffer
+tokenBuffer = blankToken
+
+
+
+
+
 
 
 ########################
 ## init
 ########################
-print("init I2C")
+if DEBUGFLAG : print("init I2C")
+
+
 # I2C connection:
 i2c = busio.I2C(board.SCL, board.SDA)
  
@@ -201,5 +244,52 @@ while True:                                                     # loop tp listen
             except:
                 print('error')
 
+        elif value == "writeMasterJSON":
+            print("json switch")
+            try: 
 
 
+
+
+        ##name is stored as 16 ascii bytes in blocks 6,7,8,9
+        elif value == "readMapJSON":
+            print("json switch")
+            try: 
+                block = readBlock(10)
+                block += readBlock(11)
+                block += readBlock(12)
+                block += readBlock(13)
+
+    #indices & booleans
+    tokenBuffer["dd_equiped_index"]       =    readBlock(10)
+    tokenBuffer["hv_npcs_alive"]          =    readBlock(11)
+    tokenBuffer["hv_quest_complete"]      =    readBlock(12)
+    tokenBuffer["dragons_den_won"]        =    readBlock(13)
+    tokenBuffer["pandoras_box"]           =    readBlock(14)
+    tokenBuffer["color_code"]             =    readBlock(15)
+ 
+ 
+    #items
+    tokenBuffer["sword"]        = readBlock(50)
+    tokenBuffer["axe"]          = readBlock(51)
+    tokenBuffer["bow"]          = readBlock(52)
+    tokenBuffer["armor"]        = readBlock(53)
+    tokenBuffer["dagger"]       = readBlock(54)
+    tokenBuffer["staff"]        = readBlock(55)
+    tokenBuffer["spear"]        = readBlock(56)
+    tokenBuffer["claws"]        = readBlock(57)
+    tokenBuffer["gun"]          = readBlock(58)
+    tokenBuffer["mushroom"]     = readBlock(59)
+    tokenBuffer["shield"]       = readBlock(60)
+    tokenBuffer["orb"]          = readBlock(61)
+    tokenBuffer["UFO"]          = readBlock(62)
+
+
+
+
+
+
+                print(block.decode())
+
+            except:
+                print('error')
