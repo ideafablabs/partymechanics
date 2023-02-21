@@ -45,8 +45,9 @@ Class IFLPartyMechanics {
 	public $defaultOptions = array(
 		
 		// Basic form vars.
-		'registrationform_id' => '2',
-		'attendanceform_id' => '1',
+		'registrationform_id' => '1',
+		'ticketform_id' => '2',
+		'attendanceform_id' => '3',
 		'email_id' => '9',
 		'event_field_id' => '12',
 		'attendees_list_id' => '7',
@@ -221,12 +222,14 @@ Class IFLPartyMechanics {
 		$args = shortcode_atts(array(
 			'event' => $this->menu_options['form_event_title'],
 			'regform' => $this->menu_options['registrationform_id'],
+			'ticketform' => $this->menu_options['ticketform_id'],
 			'event_id' => get_option('iflpm_selected_event_id')
 			// 'attendanceform' => $this->menu_options['attendanceform_id'],
 			// 'event_field_id' => $this->menu_options['event_field_id']
 		), $atts);
 
 		$event = $args['event'];
+		$ticketform = $args['ticketform'];
 
 		$event_id = (isset($_REQUEST['event_id'])) ? $_REQUEST['event_id'] : $args['event_id'];
 		$reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
@@ -350,7 +353,24 @@ Class IFLPartyMechanics {
 		if ($user_email == '') {
 
 			// Get the users from the DB...
-			$users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
+			// $users = get_users(array('orderby' => 'display_name', 'fields' => 'all_with_meta'));
+
+			$attended_id_offset = 100;
+			
+			$event_field_id = '12';
+			$email_field_id = '9';
+			$attendees_list_id = '7';    
+			$attended_list_id = '16';
+			$attendee_count = 0;
+			$admitted_count = 0;
+
+			$search_criteria['field_filters'][] = array( 'key' => $event_field_id, 'value' => $event );
+			// $sorting = array( 'key' => $sort_field, 'direction' => 'ASC', 'is_numeric' => true );
+			$sorting = array();
+			$paging = array( 'offset' => 0, 'page_size' => 600 );
+
+			$entries = GFAPI::get_entries( $ticketform, $search_criteria, $sorting, $paging);
+			// $users = 
 
 			$start_over_link .= '</ul>';
 			$response .= $start_over_link;
@@ -365,33 +385,85 @@ Class IFLPartyMechanics {
 			// Build list HTML
 			$response .= '<ul class="member_select_list filterable list-group">';
 
-			// Build links for each member...
-			foreach ($users as $key => $user) {					
+			foreach ($entries as $entry_key => $entry) {
 
-				$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user->user_email,$event_id)) ? 'special-guest' : '';
-				$attended_class = (IFLPMEventsManager::user_attended_event($user,$event_id)) ? 'attended' : '';
+				$attendee_names = unserialize($entry[$attendees_list_id]);
+		        $attended_list = unserialize($entry[$attended_list_id]);
+				$attendee_class = '';
+				$admin_guest_list_flag = '';
 
-				// Build item class
-				$list_item_class = array(
-					'user-'.$user->ID, 				
-					'filter-item list-group-item',
-					$guest_list_class,
-					$attended_class
-				);
-				$list_item_class = trim(implode(' ',$list_item_class));
+				$response .= '<li data-sort="'.$attendee_names[0]['First Name'].'">
+            	<div class="entry large '
+                	.$attendee_class.'" '.$admin_guest_list_flag.'>';
+            
+                foreach ($attendee_names as $attendee_key => $attendee) {
+                
+                    $attended_key = (is_array($attended_list)) ? $attended_list[$attendee_key] : '';
 
-				// Build for link.
-				$formlink = './?user_email=' . $user->user_email . '&membername=' . urlencode($user->display_name) . '&reader_id=' . $reader_id;
+                    // if ($attendee_key == 0) $attended_key = $attended_list_id;
+                                        
+                    if ($attended_key == 1) {
+                        $admitted = " admitted";
+                        $admitted_count++;
+                    } else {
+                        $admitted = "";
+                    }               
 
-				$response .= '<li class="'.$list_item_class.'" data-sort="' . $user->display_name . '">
-				<a class="attendee-link" id="' . $user->ID . '" href="' . $formlink . '">
-				<span class="glyphicon glyphicon-user"></span>
-				<span class="member-displayname">' . $user->display_name . '</span></a>
-				<span class="member-email">' . $user->user_email . '</span>
-				</li>';
+                    // if ($entry[$attended_key] == 1) {
+                    //     $admitted = " admitted";
+                    //     $admitted_count++;
+                    // } else {
+                    //     $admitted = "";
+                    // }               
+
+                    $response .= '<a class="admit-button'.$admitted.'"  data-entry="'
+                    .$entry['id'].'" data-attendee="'.$attendee_key.'">'
+                    .$attendee['First Name'].' '.$attendee['Last Name']
+                    .'</a>';
+                    // pr($attendee);
+
+                    $attendee_count++;
+                }                
+            
+           	 	$response .= '<span class="entry-email">'.$entry[$email_field_id].' - <span class="entry-id">#'.$entry['id'].'</span></span>';
+            	if (count($attendee_names) >1 ) {
+                	$response .= '<a class="admit-all" data-entry="'.$entry['id'].'">Admit All</a>';
+
+            	}
+            
+            	$response .= '</div>
+        		</li>';
 			}
+		
+			// // Build links for each member...
+			// foreach ($users as $key => $user) {					
+
+			// 	$guest_list_class = (IFLPMEventsManager::user_is_on_guest_list($user->user_email,$event_id)) ? 'special-guest' : '';
+			// 	$attended_class = (IFLPMEventsManager::user_attended_event($user,$event_id)) ? 'attended' : '';
+
+			// 	// Build item class
+			// 	$list_item_class = array(
+			// 		'user-'.$user->ID, 				
+			// 		'filter-item list-group-item',
+			// 		$guest_list_class,
+			// 		$attended_class
+			// 	);
+			// 	$list_item_class = trim(implode(' ',$list_item_class));
+
+			// 	// Build for link.
+			// 	$formlink = './?user_email=' . $user->user_email . '&membername=' . urlencode($user->display_name) . '&reader_id=' . $reader_id;
+
+			// 	$response .= '<li class="'.$list_item_class.'" data-sort="' . $user->display_name . '">
+			// 	<a class="attendee-link" id="' . $user->ID . '" href="' . $formlink . '">
+			// 	<span class="glyphicon glyphicon-user"></span>
+			// 	<span class="member-displayname">' . $user->display_name . '</span></a>
+			// 	<span class="member-email">' . $user->user_email . '</span>
+			// 	</li>';
+			// }
 
 			$response .= '</ul>';
+			$response .=  '<p class="attendee_count">'.$admitted_count.'/'.$attendee_count.'</p>';
+
 			return $response;
 		} else {
 			// We have the reader ID so lets give a link to get back to just after that.
