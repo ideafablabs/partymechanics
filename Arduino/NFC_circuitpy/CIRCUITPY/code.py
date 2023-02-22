@@ -162,10 +162,14 @@ def blockToInt(blockNumber):
     tokenBlock = readBlock(blockNumber)
 #    return tokenBlock.from_bytes()
     result = 0
-    for b in tokenBlock:
-        result = (result << 8) + b
-    return result
 
+    try: 
+        for b in tokenBlock:
+            result = (result << 8) + b
+        return result
+    except:
+        if DEBUGFLAG :
+            print("blockToInt failed")
 
 
 
@@ -198,8 +202,10 @@ def scanForTag():
 
 
         if DEBUGFLAG : print('.')
+        # we want to be able to CTRL D here... ///
         time.sleep(0.1)
 
+    # we want to do a clear buffer here ///
 
 
 
@@ -248,7 +254,6 @@ def writeBlockInt(blockNumber, intToWrite):
 
 
 
-
 ############################
 ## write a name (16 chars)
 ## takes name string and converts to byte array and writes
@@ -280,7 +285,6 @@ while True:                                                     # loop tp listen
         if DEBUGFLAG : print("RX: {}".format(value))                           # repeat back the command for debugging
 
         
-
         #do somefin
         if value == "scan":
             if DEBUGFLAG : print("entering scan mode")
@@ -327,7 +331,7 @@ while True:                                                     # loop tp listen
 
         ##name is stored as 16 ascii bytes in blocks 6,7,8,9
         elif value == "readName":
-            if DEBUGFLAG : print("json switch")
+            if DEBUGFLAG : print("readName")
             try: 
                 block = readBlock(6)
                 block += readBlock(7)
@@ -341,7 +345,7 @@ while True:                                                     # loop tp listen
 
         ##name is stored as 16 ascii bytes in blocks 6,7,8,9
         elif value == "readNameJSON":
-            if DEBUGFLAG : print("json switch")
+            if DEBUGFLAG : print("readNameJSON")
             try: 
                 block = readBlock(6)
                 block += readBlock(7)
@@ -357,21 +361,27 @@ while True:                                                     # loop tp listen
                 if DEBUGFLAG : print('error')
 
         elif value == "writeMasterJSON":
-            if DEBUGFLAG : print("json switch")
+            if DEBUGFLAG : print("writeMasterJSON")
+
+        elif value == "ch":
+            if DEBUGFLAG : print("writeMasterJSON")
+            for i in range(51):
+                readBlock(i)
+
 
 
         elif value == "eject":
-            if DEBUGFLAG : print("json switch")
+            if DEBUGFLAG : print("eject")
             solenoid_pin.value = True
 
         elif value == "uneject":
-            if DEBUGFLAG : print("json switch")
+            if DEBUGFLAG : print("uneject")
             solenoid_pin.value = False    
             
 
         ##name is stored as 16 ascii bytes in blocks 6,7,8,9
         elif value == "readMapJSON":
-            if DEBUGFLAG : print("json switch")
+            if DEBUGFLAG : print("readMapJSON")
             try: 
                 block = readBlock(10)
                 block += readBlock(11)
@@ -392,19 +402,19 @@ while True:                                                     # loop tp listen
         
         
             #items
-            tokenBuffer["sword"]        = blockToInt(50)
-            tokenBuffer["axe"]          = blockToInt(51)
-            tokenBuffer["bow"]          = blockToInt(52)
-            tokenBuffer["armor"]        = blockToInt(53)
-            tokenBuffer["dagger"]       = blockToInt(54)
-            tokenBuffer["staff"]        = blockToInt(55)
-            tokenBuffer["spear"]        = blockToInt(56)
-            tokenBuffer["claws"]        = blockToInt(57)
-            tokenBuffer["gun"]          = blockToInt(58)
-            tokenBuffer["mushroom"]     = blockToInt(59)
-            tokenBuffer["shield"]       = blockToInt(60)
-            tokenBuffer["orb"]          = blockToInt(61)
-            tokenBuffer["UFO"]          = blockToInt(62)
+            tokenBuffer["sword"]        = blockToInt(16)
+            tokenBuffer["axe"]          = blockToInt(17)
+            tokenBuffer["bow"]          = blockToInt(18)
+            tokenBuffer["armor"]        = blockToInt(19)
+            tokenBuffer["dagger"]       = blockToInt(20)
+            tokenBuffer["staff"]        = blockToInt(21)
+            tokenBuffer["spear"]        = blockToInt(22)
+            tokenBuffer["claws"]        = blockToInt(23)
+            tokenBuffer["gun"]          = blockToInt(24)
+            tokenBuffer["mushroom"]     = blockToInt(25)
+            tokenBuffer["shield"]       = blockToInt(26)
+            tokenBuffer["orb"]          = blockToInt(27)
+            tokenBuffer["UFO"]          = blockToInt(28)
             
 
             print(json.dumps(tokenBuffer))
@@ -426,19 +436,19 @@ while True:                                                     # loop tp listen
         
         
             #items
-            writeBlockInt(50, masterToken["sword"])
-            writeBlockInt(51, masterToken["axe"])
-            writeBlockInt(52, masterToken["bow"])
-            writeBlockInt(53, masterToken["armor"])
-            writeBlockInt(54, masterToken["dagger"])
-            writeBlockInt(55, masterToken["staff"])
-            writeBlockInt(56, masterToken["spear"])
-            writeBlockInt(57, masterToken["claws"])
-            writeBlockInt(58, masterToken["gun"])
-            writeBlockInt(59, masterToken["mushroom"])
-            writeBlockInt(60, masterToken["shield"])
-            writeBlockInt(61, masterToken["orb"])
-            writeBlockInt(62, masterToken["UFO"])
+            writeBlockInt(16, masterToken["sword"])
+            writeBlockInt(17, masterToken["axe"])
+            writeBlockInt(18, masterToken["bow"])
+            writeBlockInt(19, masterToken["armor"])
+            writeBlockInt(20, masterToken["dagger"])
+            writeBlockInt(21, masterToken["staff"])
+            writeBlockInt(22, masterToken["spear"])
+            writeBlockInt(23, masterToken["claws"])
+            writeBlockInt(24, masterToken["gun"])
+            writeBlockInt(25, masterToken["mushroom"])
+            writeBlockInt(26, masterToken["shield"])
+            writeBlockInt(27, masterToken["orb"])
+            writeBlockInt(28, masterToken["UFO"])
             
             print("write success")
 
