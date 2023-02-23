@@ -196,7 +196,7 @@ def scanForTag():
                     return new_uid
                     break
                 except:
-                    if DEBUGFLAG : print("error on scan"    )
+                    if DEBUGFLAG : print("error on scan")
 
 
         if DEBUGFLAG : print('.')
@@ -207,7 +207,6 @@ def scanForTag():
 
 def scanOnceForTag() :
     cardfound =  pn532.read_passive_target()
-    #print(cardfound)
     return cardfound
     
     # if DEBUGFLAG : print("Waiting for RFID/NFC card...")
@@ -288,6 +287,43 @@ def writeName(nameString):
 
     except:
         if DEBUGFLAG : print("fail during write (maybe partial write)")
+
+############################
+## write a whole blob to token
+## takes all the data in the token assuming it is available
+############################
+def writeJSONtoCard(JSON):
+    
+    try:
+        #indices & booleans
+        writeBlockInt(10, JSON["dd_equiped_index"])
+        writeBlockInt(11, JSON["hv_npcs_alive"])
+        writeBlockInt(12, JSON["hv_quest_complete"])
+        writeBlockInt(13, JSON["dragons_den_won"])
+        writeBlockInt(14, JSON["pandoras_box"])
+        writeBlockInt(15, JSON["color_code"])
+            
+        #items
+        writeBlockInt(16, JSON["sword"])
+        writeBlockInt(17, JSON["axe"])
+        writeBlockInt(18, JSON["bow"])
+        writeBlockInt(19, JSON["armor"])
+        writeBlockInt(20, JSON["dagger"])
+        writeBlockInt(21, JSON["staff"])
+        writeBlockInt(22, JSON["spear"])
+        writeBlockInt(23, JSON["claws"])
+        writeBlockInt(24, JSON["gun"])
+        writeBlockInt(25, JSON["mushroom"])
+        writeBlockInt(26, JSON["shield"])
+        writeBlockInt(27, JSON["orb"])
+        writeBlockInt(28, JSON["UFO"])
+
+        return 1
+
+    except:    
+        if DEBUGFLAG : print("JSON write failed")                           # repeat back the command for debugging
+        return 0
+           
 
 
 ########################
@@ -442,7 +478,19 @@ while True:                                                     # loop tp listen
             print(json.dumps(tokenBuffer))
 
 
+        elif "updateJSON" in value:
+            json_blob = value.split(":")[1] 
+            #print(json_blob)
+            try: 
+                new_JSON = json.loads(json_blob)
 
+                if (writeJSONtoCard(new_JSON)):
+                    print("write success")
+                else:
+                    print("write failed")    
+
+            except:
+                print("JSON parse failed. Was it good JSON??")
 
 
         elif value == "writeMaster":
@@ -455,8 +503,7 @@ while True:                                                     # loop tp listen
             writeBlockInt(13, masterToken["dragons_den_won"])
             writeBlockInt(14, masterToken["pandoras_box"])
             writeBlockInt(15, masterToken["color_code"])
-        
-        
+                
             #items
             writeBlockInt(16, masterToken["sword"])
             writeBlockInt(17, masterToken["axe"])
@@ -473,4 +520,5 @@ while True:                                                     # loop tp listen
             writeBlockInt(28, masterToken["UFO"])
             
             print("write success")
+
 
