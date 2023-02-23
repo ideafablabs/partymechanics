@@ -12,7 +12,7 @@ from digitalio import Direction
 from adafruit_pn532.i2c import PN532_I2C
 
 # set to 1 to enable debug messages
-DEBUGFLAG = 1
+DEBUGFLAG = 0
 
 # set appropriately - the small purp boards are "S2MINI"
 # BOARDTYPE = "tft"
@@ -21,7 +21,6 @@ BOARDTYPE = "S2MINI"
 
 blankToken = {
     "uid"               :   0,
-    "email"             :   "nullll",
 
     "dd_equiped_index" :    0,  # 0 = no weapon, 1-13 refences dd_items
     "hv_npcs_alive":        1,  # t/f
@@ -51,7 +50,6 @@ blankToken = {
 
 masterToken = {
     "uid"               :   69,
-    "email"             :   "MASTAH",
 
     "dd_equiped_index" :    9,  # 0 = no weapon, 1-13 refences dd_items
     "hv_npcs_alive":        1,  # t/f
