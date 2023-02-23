@@ -207,7 +207,28 @@ def scanForTag():
 
     # we want to do a clear buffer here ///
 
+def scanOnceForTag() :
+    cardfound =  pn532.read_passive_target()
+    #print(cardfound)
+    return cardfound
+    
+    # if DEBUGFLAG : print("Waiting for RFID/NFC card...")
+    
+    # # Check if a card is available to read
+    # if irq_pin.value == 0:
+    #     time.sleep(0.1)
+    #     read_uid = pn532.get_passive_target()
+    #     print("madeit into here")
+    #     if read_uid != 0:
+    #         print("UH OH!!")
+    #         try:
+    #             new_uid = read_uid
+    #             if DEBUGFLAG : print("\nFound card with UID:", [hex(i) for i in new_uid])
+    #             return new_uid                
+    #         except:
+    #             if DEBUGFLAG : print("error on scan")
 
+    # return 0    
 
 ############################
 ## read a block 
@@ -288,14 +309,17 @@ while True:                                                     # loop tp listen
         #do somefin
         if value == "scan":
             if DEBUGFLAG : print("entering scan mode")
-            tokenID = scanForTag()
-            if DEBUGFLAG : print('found tag eh')
-
-            buffer = '0x'
-            for i in tokenID:
-                buffer += hex(i)[2:4]
-            if DEBUGFLAG : print("tagID " + buffer)
-
+            # tokenID = scanForTag()
+            tokenID = scanOnceForTag()
+            #print("WTF: "+str(tokenID))
+            if tokenID != None:
+                print("scan success")
+                # buffer = '0x'
+                # for i in tokenID:
+                #     buffer += hex(i)[2:4]
+                # if DEBUGFLAG : print("tagID " + buffer)
+            else:
+                print("scan failed")
 
         elif value == "read":
             if DEBUGFLAG : print("entering read mode")

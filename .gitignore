@@ -7,3 +7,4 @@ Arduino/vortexrings/config.h
 .vscode
 node_modules
 Arduino/.DS_Store
+secrets.py
