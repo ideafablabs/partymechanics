@@ -136,7 +136,7 @@ a.reader-select-button {
 	background-color: rgba(38,38,38, 0.95) ;
 	border: 2px solid #34b1eb;
 }
-.member_select_list .list-group-item:hover {
+.member_select_list .admit-button:hover {
 	background: #7d18a8;
 }
 .member_select_list .list-group-item a.attendee-link {

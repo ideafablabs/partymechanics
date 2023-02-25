@@ -392,8 +392,8 @@ Class IFLPartyMechanics {
 				$attendee_class = '';
 				$admin_guest_list_flag = '';
 
-				$response .= '<li data-sort="'.$attendee_names[0]['First Name'].'">
-            	<div class="entry large '
+				$response .= '<li class="filter-item list-group-item" data-sort="'.$attendee_names[0]['First Name'].'">
+            	<div class="entry large'
                 	.$attendee_class.'" '.$admin_guest_list_flag.'>';
             
                 foreach ($attendee_names as $attendee_key => $attendee) {
