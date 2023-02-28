@@ -249,6 +249,32 @@ Class IFLPMEventsManager
 		return $result[0]->title;
 	}
 
+	/// incomplete here. we hacked in the dashboard view.
+	public static function import_members_from_json($api_endpoint) {
+		/// sanitize
+		$json = file_get_contents($api_endpoint);
+		$members = json_decode($json);
+		
+		
+		pr($this->menu_options['form_id']);
+		pr($json);
+		// pr($obj);
+	
+		foreach ($members as $key => $member) {
+				
+			$active_member_list[0]['First Name'] = $member->first_name;
+			$active_member_list[0]['Last Name'] = $member->last_name;
+	
+			$entries[$key] = array(
+				'form_id' => $this->->menu_options['ticketform_id'], 
+				'9' => 'mint@ideafablabs.com',
+				$this->->menu_options['event_field_id'] => $event_name,
+				// $this->attendees_list_id => $active_member_list
+				$this->->menu_options['attendees_list_id'] => serialize($active_member_list)
+			);
+			
+		}	 
+	}
 
 	public static function get_list_of_special_guests_by_event($event_id) {
 		global $wpdb;

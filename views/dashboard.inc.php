@@ -50,7 +50,74 @@
 		<!-- <input class="button" type="submit" name="submit" value="Submit Selection Change" /> -->
 	</form>
 	
+
+	<!-- <h2>active members</h2> -->
 	<?php 
+	// $mem = IFLPartyMechanics::import_members('https://santacruz.ideafablabs.com/wp-json/members/v1/active');
+	/*
+	$json = file_get_contents('https://santacruz.ideafablabs.com/wp-json/members/v1/active');
+	$members = json_decode($json);
+	
+	// pr($this->menu_options['form_id']);
+	pr($json);
+	// pr($obj);
+
+	// $event_name = 
+
+	// Set the form ID and field ID to be updated
+	$form_id = 2;
+	$field_id = 12;
+
+	$search_criteria = array( 'status' => 'active' );
+	$paging = array( 'offset' => 0, 'page_size' => 300 );
+
+	// Get all entries for the form
+	// $entries = GFAPI::get_entries($form_id, array('status' => 'active', 'page_size' => 300)); // filter by status and limit to 200 entries
+	$entries = GFAPI::get_entries( $form_id, $search_criteria, null, $paging );
+
+	// pr(count($entries)); die();
+
+	foreach ($entries as $entry) {
+		$entry_id = $entry['id'];
+		$value = "VillainJACK's Arcade"; // Set the new value for the field
+	
+		// Check if the field value matches the condition
+		if ($entry[$field_id] == "VillainJACK\'s Arcade") {
+			pr($entry);
+			// Update the specified field for the entry
+			$entry[$field_id] = $value;
+			// GFAPI::update_entry($entry);
+			// pr($entry);
+			
+		}
+	}
+
+	echo "Field updated for " . count($entries) . " entries.";			
+
+	//die();
+
+	foreach ($members as $key => $member) {
+	    	
+		$active_member_list[0]['First Name'] = $member->first_name;
+		$active_member_list[0]['Last Name'] = $member->last_name;
+
+		$entries[$key] = array(
+			// 'form_id' => $this->->menu_options['ticketform_id'], 
+			'form_id' => 2, 
+			'9' => 'mint@ideafablabs.com',
+			// $this->menu_options['event_field_id'] => $event_name,
+			'12' => $event->title,
+			// $this->->menu_options['attendees_list_id'] => serialize($active_member_list)
+			'7' => serialize($active_member_list)
+		);
+
+		// update_entry_field( $entry_id, $input_id, $value, $item_index = '' );
+		
+	}	    
+	pr($entries);	   
+*/
+	// $result = GFAPI::add_entries( $entries );
+
 
 	// IFLPMEventsManager::test_event_title_stuff();
 	// IFLPMEventsManager::test_event_registration_form_stuff();

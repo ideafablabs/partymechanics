@@ -231,19 +231,23 @@ Class IFLPartyMechanics {
 		$event = $args['event'];
 		$ticketform = $args['ticketform'];
 
+		
 		$event_id = (isset($_REQUEST['event_id'])) ? $_REQUEST['event_id'] : $args['event_id'];
 		$reader_id = (isset($_REQUEST['reader_id'])) ? $_REQUEST['reader_id'] : '';
 		$user_email = (isset($_REQUEST['user_email'])) ? $_REQUEST['user_email'] : '';
 		$token_id = (isset($_REQUEST['token_id'])) ? $_REQUEST['token_id'] : '0';
 		$submit = (isset($_REQUEST['submit'])) ? $_REQUEST['submit'] : '0';
-				
+		
 		$event_title = IFLPMEventsManager::get_event_title_by_id($event_id);
 		$attendee_count = IFLPMEventsManager::get_attendee_count_for_event($event_id);
 		// pr($attendee_count);
 		// Begin response html string.
 		$response = '<div class="iflpm-container iflpm-entry-processor"><div class="ajax-message"></div>';
-		$response .= '<h1 class="event-title">'.$event_title.'</h1>';
+		$response .= '<h1 class="event-title">'.stripcslashes($event_title).'</h1>';
 		$start_over_link = '<div class="return-links">';
+		
+		/// READER HARDCODED TO SKIP ///
+ 		$reader_id = 1; /////////
 
 		// Complete with Entry GForm and go back to Entry List or Create New User again.
 		if ($submit) {
@@ -327,16 +331,22 @@ Class IFLPartyMechanics {
 			// Do GF create user
 			if (is_plugin_active('gravityforms/gravityforms.php')) {
 
+				$first_name = (isset($_REQUEST['first_name'])) ? $_REQUEST['first_name'] : ""; 	 
+				$last_name = (isset($_REQUEST['last_name'])) ? $_REQUEST['last_name'] : ""; 	 
+
 				$field_values = array(
 					'event' => $event,
 					// 'price' => $price,
-					'reader_id' => $reader_id
+					'reader_id' => $reader_id,
+					'first_name' => $first_name,
+					'last_name' => $last_name,
 				);
 
 				// Pass everything on to Gravity Forms
-				$response = '<div class="form-container"><p>';
-				$response .= gravity_form($args['regform'], 0, 1, 0, $field_values, 1, 0, 0);
-				$response .= '</p></div';                
+				$response = '<h2>Please sign event waiver...</h2>';
+				$response .= '<div class="form-container"><p>';
+				$response .= gravity_form($args['regform'], 0, 0, 0, $field_values, 1, 0, 0);
+				$response .= '</p></div>';                
 
 			} else {
 				/// Error on form being active.
@@ -415,8 +425,9 @@ Class IFLPartyMechanics {
                     // } else {
                     //     $admitted = "";
                     // }               
-
-                    $response .= '<a class="admit-button'.$admitted.'"  data-entry="'
+					
+						// &first_name='.$attendee['First Name'].'&last_name='.$attendee['Last Name'].'
+                    $response .= '<a href="./?create=1&reader_id=' . $reader_id . '" class="admit-button'.$admitted.'"  data-entry="'
                     .$entry['id'].'" data-attendee="'.$attendee_key.'">'
                     .$attendee['First Name'].' '.$attendee['Last Name']
                     .'</a>';
