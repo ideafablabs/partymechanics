@@ -232,6 +232,33 @@ Class IFLPMEventsManager
 	}
 
 
+	public static function get_rsvp_entries_for_event_id( $event_id ) {
+		/// if no gravity forms, fail.
+		
+		global $wpdb;
+
+		/// magic numbers
+		$event_field_id = '12';
+		$ticketform = '2';
+		/// this needs to be set in the settings for the plugin, not here and not at the top of the plugin php file.
+		/// then we should do something like: get_plugin_option('event_field_id');
+
+		// Get the event title from the and strip slashes on the title.
+		$selected_event = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME . " WHERE event_id = ".$event_id);	
+		$event_title = stripslashes($selected_event[0]->title);
+
+		// build tickets list
+		$search_criteria['field_filters'][] = array( 'key' => $event_field_id, 'value' => $event_title );
+		
+		// $sorting = array( 'key' => $sort_field, 'direction' => 'ASC', 'is_numeric' => true );
+		$sorting = array();
+		$paging = array( 'offset' => 0, 'page_size' => 600 );
+
+		$entries = GFAPI::get_entries( $ticketform, $search_criteria, $sorting, $paging);
+		pr($event_title);
+		return $entries;
+	}
+
 	public static function get_event_title_by_id($event_id) {
 
 		global $wpdb;
@@ -266,11 +293,11 @@ Class IFLPMEventsManager
 			$active_member_list[0]['Last Name'] = $member->last_name;
 	
 			$entries[$key] = array(
-				'form_id' => $this->->menu_options['ticketform_id'], 
+				'form_id' => $this->menu_options['ticketform_id'], 
 				'9' => 'mint@ideafablabs.com',
-				$this->->menu_options['event_field_id'] => $event_name,
+				$this->menu_options['event_field_id'] => $event_name,
 				// $this->attendees_list_id => $active_member_list
-				$this->->menu_options['attendees_list_id'] => serialize($active_member_list)
+				$this->menu_options['attendees_list_id'] => serialize($active_member_list)
 			);
 			
 		}	 

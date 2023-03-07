@@ -434,7 +434,7 @@ Class IFLPartyMechanics {
                     // pr($attendee);
 
                     $attendee_count++;
-                }                
+                }
             
            	 	$response .= '<span class="entry-email">'.$entry[$email_field_id].' - <span class="entry-id">#'.$entry['id'].'</span></span>';
             	if (count($attendee_names) >1 ) {

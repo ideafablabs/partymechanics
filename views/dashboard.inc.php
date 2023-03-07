@@ -21,8 +21,12 @@
 	$selected_event_id = get_option('iflpm_selected_event_id');
 
 	/// write and use 'GET event function' instead.
-	$events = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME);		
-
+	$events = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME);	
+	
+	// Get the selected event and strip slashes on the title.
+	$selected_event = $wpdb->get_results("SELECT * FROM " . EVENTS_TABLE_NAME . " WHERE event_id = ".$selected_event_id);	
+	$selected_event_title = stripslashes($selected_event[0]->title);
+	
 	?>
 	
 	<?php include 'admin-header.inc.php'  ?>
@@ -42,7 +46,7 @@
 					$pretty_date = date_format(date_create($event->date),'F j, Y');
 					$selected = ($event->event_id == $selected_event_id) ? ' selected' : '';
 
-					echo '<option value="' . strval($event->event_id) . '"' . $selected . '>' . $event->title . ' - ' . $pretty_date . '</option>';
+					echo '<option value="' . strval($event->event_id) . '"' . $selected . '>' . stripslashes($event->title) . ' - ' . $pretty_date . '</option>';
 
 				} ?>
 		
@@ -138,19 +142,77 @@
 	
 	<?php 
 	try{
-		$attendees = IFLPMEventsManager::get_attendees_for_event($selected_event_id);
-		$attendance_total = count($attendees);
+		// $attendees = IFLPMEventsManager::get_attendees_for_event($selected_event_id);
+		// $attendance_total = count($attendees);
+
+		/// here come more magic numbers!
+		$attendees_list_id = '7';
+		$attended_list_id = '16';
+		$attendee_count = 0;
+		$paying_attendee_count = 0;
+		$payment_total = 0;
+
+		$rsvp_entries = IFLPMEventsManager::get_rsvp_entries_for_event_id($selected_event_id);
+		// pr($rsvp_entries); die();	
+		
+		foreach ($rsvp_entries as $entry_key => $entry) {
+
+			$attendee_names = unserialize($entry[$attendees_list_id]);
+			$attended_list = unserialize($entry[$attended_list_id]);
+			$attendee_class = '';
+			$admin_guest_list_flag = '';
+
+			if (intval($entry['payment_amount']) > 12) {
+				$payment_total += intval($entry['payment_amount']);
+				// pr(intval($entry['payment_amount']));
+			}
+
+			// $response .= '<li class="filter-item list-group-item" data-sort="'.$attendee_names[0]['First Name'].'">
+			// <div class="entry large'
+				// .$attendee_class.'" '.$admin_guest_list_flag.'>';
+		
+			foreach ($attendee_names as $attendee_key => $attendee) {
+			
+				$attended_key = (is_array($attended_list)) ? $attended_list[$attendee_key] : '';
+
+				// if ($attendee_key == 0) $attended_key = $attended_list_id;
+									
+				if ($attended_key == 1) {
+					$admitted = " admitted";
+					$admitted_count++;
+				} else {
+					$admitted = "";
+				}               
+				
+				
+					// &first_name='.$attendee['First Name'].'&last_name='.$attendee['Last Name'].'
+				// $response .= '<a href="./?create=1&reader_id=' . $reader_id . '" class="admit-button'.$admitted.'"  data-entry="'
+				// .$entry['id'].'" data-attendee="'.$attendee_key.'">'
+				// .$attendee['First Name'].' '.$attendee['Last Name']
+				// .'</a>';
+				// pr($attendee);
+
+				$attendee_count++;
+				if (intval($entry['payment_amount']) > 12) {
+					$paying_attendee_count++;					
+				}
+			}
+		
+			// $response .= '<span class="entry-email">'.$entry[$email_field_id].' - <span class="entry-id">#'.$entry['id'].'</span></span>';
+			
+		
+			// $response .= '</div>
+			// </li>';
+		}
 		?>
 		
 		<h2>Event Attendees</h2>
-		<p class="attendance-total">Total: <?php echo $attendance_total; ?></p>
+		<p class="attendance-total">Expected: <?php echo $attendee_count; ?></p>
+		<p class="attendance-total">Paying: <?php echo $paying_attendee_count; ?></p>
+		<p class="attendance-total">$: <?php echo $payment_total; ?></p>
 		<ul>
 		
-		<?php
-			foreach ($attendees as $key => $attendee) {
-				// pr($attendee);
-				echo '<li>'.$attendee->display_name.' ['.$attendee->user_email.']</li>';
-			}
+		<?php			
 		
 		echo '</ul>';
 	} catch (Exception $e) {
