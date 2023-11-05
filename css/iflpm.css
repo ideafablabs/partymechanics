@@ -83,7 +83,7 @@ a.button,a.button:visited {
 	margin:0 .5em 0 0;
 	color:white;
 	font-weight: bold;
-	background-color:#1D8CB5;
+	background-color:#78406f;
 	cursor: pointer;
 }
 a.button:hover,a.button:visited:hover {
@@ -101,7 +101,7 @@ a.reader-select-button {
 
 .nav-buttons {		
 	display:grid;
-	grid-template-columns:20% 20% 20% 20% 20%;
+	grid-template-columns:50% 50%;
 	margin-bottom:.5em; 
 }
 .member_select_search {
@@ -116,7 +116,7 @@ a.reader-select-button {
 	box-shadow: 0 0 0 transparent;
    border-radius: 4px;
    border: 2px solid white;
-   background-color: #DDD;
+   /* background-color: #DDD; */
    color: #32373c;   
 	font-size: 1.5em;
 	/*height: 50px;*/
@@ -134,7 +134,7 @@ a.reader-select-button {
 	padding:.5em;
 	border-radius: 5px;	
 	background-color: rgba(38,38,38, 0.95) ;
-	border: 2px solid #34b1eb;
+	border: 2px solid #ba55b5;
 }
 .member_select_list .admit-button:hover {
 	background: #7d18a8;
@@ -217,8 +217,6 @@ span.token {
 */
 
 
-
-
 /*==============*/
 a.admit-button {
 	color:white;
@@ -226,7 +224,7 @@ a.admit-button {
 	padding:.8em;
 	margin-top:.5em;
 	/*border: 1px solid darkblue;*/
-	background:#1D8CB5;
+	background:#78406f;
 	border-radius:4px;
 	display: block;
 	font-size: 1.2em;

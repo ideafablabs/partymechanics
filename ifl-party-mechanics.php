@@ -374,7 +374,7 @@ Class IFLPartyMechanics {
 			$attendee_count = 0;
 			$admitted_count = 0;
 
-			$search_criteria['field_filters'][] = array( 'key' => $event_field_id, 'value' => $event );
+			$search_criteria['field_filters'][] = array( 'key' => $event_field_id, 'value' => $event_title );
 			// $sorting = array( 'key' => $sort_field, 'direction' => 'ASC', 'is_numeric' => true );
 			$sorting = array();
 			$paging = array( 'offset' => 0, 'page_size' => 600 );
@@ -386,7 +386,13 @@ Class IFLPartyMechanics {
 			$response .= $start_over_link;
 
 			// Build nav/tool buttons.
-			$response .= '<div class="nav-buttons"><a class="new_registration_button button" href="./?reader_id=' . $reader_id . '&create=1">Add New Member</a><a class="return-link reader-choice button" href="./">Back to Readers</a><a class="toggle-attended button" data-action="show">Show Attended</a><a class="toggle-members button" data-action="show">Show IFL Members</a><a class="toggle-guest-list button" data-action="show">Show Guest List</a></div>';
+			$response .= '<div class="nav-buttons">
+				<a class="new_registration_button button" href="./?reader_id=' . $reader_id . '&create=1">Add New Member</a>
+				<a class="return-link reader-choice button" href="./">Back to Readers</a>
+				<!-- <a class="toggle-attended button" data-action="show">Show Attended</a>
+				<a class="toggle-members button" data-action="show">Show IFL Members</a>
+				<a class="toggle-guest-list button" data-action="show">Show Guest List</a> -->
+			</div>';
 
 			// Build search HTML.
 			$response .= '<div class="member_select_search filter">				
