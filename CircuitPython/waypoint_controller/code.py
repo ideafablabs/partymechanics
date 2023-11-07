@@ -21,6 +21,18 @@ DEBUGFLAG = 1
 # BOARDTYPE = "tft"
 BOARDTYPE = "S2MINI"
 
+# Define the step, direction, and enable pins
+step_pin = DigitalInOut(board.IO39)
+dir_pin = DigitalInOut(board.IO21)
+
+# Set the direction of the pins
+step_pin.direction = Direction.OUTPUT
+dir_pin.direction = Direction.OUTPUT
+
+# Set the direction
+dir_pin.value = True  # Set to False to change direction
+
+
 
 blankToken = {
     "uid"               :   0,
@@ -41,7 +53,8 @@ blankToken = {
 
 #initialize empty token buffer
 tokenBuffer = blankToken
-
+last_scan = 0
+uid = 0
 
 
 
@@ -96,12 +109,95 @@ elif BOARDTYPE == "S2MINI":
     solenoid_pin.direction = Direction.OUTPUT
 
     # Configure the setup
-    PIXEL_PIN = board.D6  # Pin where NeoPixels are connected
-    NUM_PIXELS = 30  # Number of NeoPixels in your strip
-    ORDER = neopixel.GRB  # Pixel color channel order
-    BRIGHTNESS = 1  # Set brightness (0.0 to 1.0)
+    PIXEL_PIN = board.IO6  # Pin where NeoPixels are connected
+    
+
+NUM_PIXELS = 10  # Number of NeoPixels in your strip
+ORDER = neopixel.GRB  # Pixel color channel order
+BRIGHTNESS = 1  # Set brightness (0.0 to 1.0)
+LED_RATE_MS = 100
+last_frame = 0
+now = time.monotonic
+
+j=0
+fade_dir = 1
 
 
+# Initialize the NeoPixels
+pixels = neopixel.NeoPixel(PIXEL_PIN, NUM_PIXELS, brightness=BRIGHTNESS, auto_write=False, pixel_order=ORDER)
+
+# Define some basic colors
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 150, 0)
+PURPLE = (180, 0, 255)
+CYAN = (0, 255, 255)
+WHITE = (255, 255, 255)
+
+def clear():
+    """Clears all the pixels."""
+    pixels.fill((0, 0, 0))
+    pixels.show()
+
+def color_chase(color, wait):
+    """Chase a single color down the strip."""
+    for i in range(NUM_PIXELS):
+        pixels[i] = color
+        time.sleep(wait)
+        pixels.show()
+    clear()
+
+def rainbow_cycle():
+    """Draws a rainbow that uniformly distributes itself across all pixels."""
+    global j
+    j+=1
+    if j>255: j=0
+    for i in range(NUM_PIXELS):
+        pixel_index = (i * 256 // NUM_PIXELS) + j
+        pixels[i] = wheel(pixel_index & 255)
+        pixels.show()        
+
+def wheel(pos):
+    """Generate rainbow colors across 0-255 positions."""
+    if pos < 85:
+        return (pos * 3, 255 - pos * 3, 0)
+    elif pos < 170:
+        pos -= 85
+        return (255 - pos * 3, 0, pos * 3)
+    else:
+        pos -= 170
+        return (0, pos * 3, 255 - pos * 3)
+
+def breathe(color, wait, steps=50):
+    """Gradually lights up and down a color."""
+    for i in range(0, steps):
+        brightness = (i / float(steps))**2
+        pixels.fill([int(c * brightness) for c in color])
+        pixels.show()
+        time.sleep(wait)
+    for i in range(steps, -1, -1):
+        brightness = (i / float(steps))**2
+        pixels.fill([int(c * brightness) for c in color])
+        pixels.show()
+        time.sleep(wait)
+
+def breathe(color, steps=50):
+    """Gradually lights up and down a color."""
+    global j, fade_dir    
+    if fade_dir == 1:
+        j+=1
+        if j>=steps:          
+            fade_dir = 0
+    else:
+        j-=1
+        if j<=0:            
+            fade_dir = 1 
+
+    brightness = (j / float(steps))**2
+    pixels.fill([int(c * brightness) for c in color])
+    pixels.show()
+  
 
 #############################
 ## scan for tag / init comms 
@@ -130,6 +226,24 @@ def scanForTag():
 
     # we want to do a clear buffer here ///
       
+def scanOnceForTag():
+    uid = pn532.read_passive_target(0x00,.05)
+
+    # Extract the first 4 bytes (assuming big-endian order for UID)
+    if uid:
+        uid_four_bytes = uid[:4]
+
+        # Combine into a 32-bit integer
+        uid = int.from_bytes(uid_four_bytes, 'big')        
+
+    return uid
+
+
+# Function to get the "color" or "flavor" from the UID
+def get_token_color(uid):
+    uid //= 2
+    flavor = uid % 5
+    return flavor
 
 
 
@@ -206,76 +320,138 @@ def writeName(nameString):
         if DEBUGFLAG : print("fail during write (maybe partial write)")
 
 
+# Define some basic colors
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 150, 0)
+PURPLE = (180, 0, 255)
+CYAN = (0, 255, 255)
+WHITE = (255, 255, 255)
+
+c = CYAN
+
 ########################
 ## main loop
 ########################
-while True:                                                     # loop tp listen to serial input.  if tones.txt is created, program will auto reload
-    
-    #if DEBUGFLAG : print('trying to enter serail read loop')
-    tokenID = scanForTag()
+while True:     # loop tp listen to serial input.  if tones.txt is created, program will auto reload    
 
-    if DEBUGFLAG : print("writing master token")
+    now = time.monotonic()
+
+    # Do LED frame
+    if now - last_frame > .1:        
+        breathe(c,40)  # Rainbow cycle
+        last_frame = now  # Reset the last update time        
+        
+    # Do NFC Scan
+    if now - last_scan > .5:
+        tokenID = scanOnceForTag()
+        # uid = poll_nfc()
+        if tokenID != None: 
+            flavor = get_token_color(tokenID)
+            print(f"The 32-bit UID is: {tokenID:#010x}")  # Using #010x to print it as a zero-padded hexadecimal            
+            print(f"flavor: {flavor}")           
+            
+            if flavor == 0:
+                c = GREEN
+            elif flavor == 1:  
+                c = YELLOW
+            elif flavor == 2:  
+                c = RED    
+            elif flavor == 3:  
+                c = BLUE
+            elif flavor == 4:  
+                c = PURPLE    
+            
+        else:  
+            c = CYAN
+        
+        last_scan = now  # Reset the last update time
+        
+
+    
+
+
+    # # Generate steps
+    # for i in range(200):  # Move 200 steps in one direction
+    #     step_pin.value = True
+    #     time.sleep(0.001)  # Determine step interval based on your motor's specifications
+    #     step_pin.value = False
+    #     time.sleep(0.001)
+
+    # # Change direction
+    # # dir_pin.value = not dir_pin.value
+    # print("reversing")
+
+    # # Move back
+    # for i in range(200):  # Move 200 steps in the other direction
+    #     step_pin.value = True
+    #     time.sleep(0.001)
+    #     step_pin.value = False
+    #     time.sleep(0.001)
+    
+
+    # if DEBUGFLAG : print("writing master token")
      
-    #indices & booleans
-    writeBlockInt(10, masterToken["dd_equiped_index"])
-    writeBlockInt(11, masterToken["hv_npcs_alive"])
-    writeBlockInt(12, masterToken["hv_quest_complete"])
-    writeBlockInt(13, masterToken["dragons_den_won"])
-    writeBlockInt(14, masterToken["pandoras_box"])
-    writeBlockInt(15, masterToken["color_code"])
+    # #indices & booleans
+    # writeBlockInt(10, masterToken["dd_equiped_index"])
+    # writeBlockInt(11, masterToken["hv_npcs_alive"])
+    # writeBlockInt(12, masterToken["hv_quest_complete"])
+    # writeBlockInt(13, masterToken["dragons_den_won"])
+    # writeBlockInt(14, masterToken["pandoras_box"])
+    # writeBlockInt(15, masterToken["color_code"])
 
 
-    #items
-    writeBlockInt(16, masterToken["sword"])
-    writeBlockInt(17, masterToken["axe"])
-    writeBlockInt(18, masterToken["bow"])
-    writeBlockInt(19, masterToken["armor"])
-    writeBlockInt(20, masterToken["dagger"])
-    writeBlockInt(21, masterToken["staff"])
-    writeBlockInt(22, masterToken["spear"])
-    writeBlockInt(23, masterToken["claws"])
-    writeBlockInt(24, masterToken["gun"])
-    writeBlockInt(25, masterToken["mushroom"])
-    writeBlockInt(26, masterToken["shield"])
-    writeBlockInt(27, masterToken["orb"])
-    writeBlockInt(28, masterToken["UFO"])
+    # #items
+    # writeBlockInt(16, masterToken["sword"])
+    # writeBlockInt(17, masterToken["axe"])
+    # writeBlockInt(18, masterToken["bow"])
+    # writeBlockInt(19, masterToken["armor"])
+    # writeBlockInt(20, masterToken["dagger"])
+    # writeBlockInt(21, masterToken["staff"])
+    # writeBlockInt(22, masterToken["spear"])
+    # writeBlockInt(23, masterToken["claws"])
+    # writeBlockInt(24, masterToken["gun"])
+    # writeBlockInt(25, masterToken["mushroom"])
+    # writeBlockInt(26, masterToken["shield"])
+    # writeBlockInt(27, masterToken["orb"])
+    # writeBlockInt(28, masterToken["UFO"])
     
-    print("write success")
+    # print("write success")
 
-    if DEBUGFLAG : print("readMapJSON")
-    try: 
-        block = readBlock(10)
-        block += readBlock(11)
-        block += readBlock(12)
-        block += readBlock(13)
-        if DEBUGFLAG : print(block)
+    # if DEBUGFLAG : print("readMapJSON")
+    # try: 
+    #     block = readBlock(10)
+    #     block += readBlock(11)
+    #     block += readBlock(12)
+    #     block += readBlock(13)
+    #     if DEBUGFLAG : print(block)
 
-    except:
-        if DEBUGFLAG : print("error reading blocks 10-13")
+    # except:
+    #     if DEBUGFLAG : print("error reading blocks 10-13")
 
-    #indices & booleans
-    tokenBuffer["dd_equiped_index"]       =    blockToInt(10)
-    tokenBuffer["hv_npcs_alive"]          =    blockToInt(11)
-    tokenBuffer["hv_quest_complete"]      =    blockToInt(12)
-    tokenBuffer["dragons_den_won"]        =    blockToInt(13)
-    tokenBuffer["pandoras_box"]           =    blockToInt(14)
-    tokenBuffer["color_code"]             =    blockToInt(15)
+    # #indices & booleans
+    # tokenBuffer["dd_equiped_index"]       =    blockToInt(10)
+    # tokenBuffer["hv_npcs_alive"]          =    blockToInt(11)
+    # tokenBuffer["hv_quest_complete"]      =    blockToInt(12)
+    # tokenBuffer["dragons_den_won"]        =    blockToInt(13)
+    # tokenBuffer["pandoras_box"]           =    blockToInt(14)
+    # tokenBuffer["color_code"]             =    blockToInt(15)
 
-    #items
-    tokenBuffer["sword"]        = blockToInt(16)
-    tokenBuffer["axe"]          = blockToInt(17)
-    tokenBuffer["bow"]          = blockToInt(18)
-    tokenBuffer["armor"]        = blockToInt(19)
-    tokenBuffer["dagger"]       = blockToInt(20)
-    tokenBuffer["staff"]        = blockToInt(21)
-    tokenBuffer["spear"]        = blockToInt(22)
-    tokenBuffer["claws"]        = blockToInt(23)
-    tokenBuffer["gun"]          = blockToInt(24)
-    tokenBuffer["mushroom"]     = blockToInt(25)
-    tokenBuffer["shield"]       = blockToInt(26)
-    tokenBuffer["orb"]          = blockToInt(27)
-    tokenBuffer["UFO"]          = blockToInt(28)
+    # #items
+    # tokenBuffer["sword"]        = blockToInt(16)
+    # tokenBuffer["axe"]          = blockToInt(17)
+    # tokenBuffer["bow"]          = blockToInt(18)
+    # tokenBuffer["armor"]        = blockToInt(19)
+    # tokenBuffer["dagger"]       = blockToInt(20)
+    # tokenBuffer["staff"]        = blockToInt(21)
+    # tokenBuffer["spear"]        = blockToInt(22)
+    # tokenBuffer["claws"]        = blockToInt(23)
+    # tokenBuffer["gun"]          = blockToInt(24)
+    # tokenBuffer["mushroom"]     = blockToInt(25)
+    # tokenBuffer["shield"]       = blockToInt(26)
+    # tokenBuffer["orb"]          = blockToInt(27)
+    # tokenBuffer["UFO"]          = blockToInt(28)
     
-    print(json.dumps(tokenBuffer))
+    # print(json.dumps(tokenBuffer))
 
-    time.sleep(3)    
